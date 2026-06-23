@@ -73,13 +73,13 @@ jobs:
         run: pnpm pack --pack-destination /tmp/ruhroh-pack
 
       - name: List example scenarios
-        run: pnpm exec ruhroh --scenario-dir examples/scenarios --list
+        run: node dist/cli.js --scenario-dir examples/scenarios --list
 
       - name: Dry-run Gemini custom-shell smoke
-        run: pnpm exec ruhroh --scenario-dir examples/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
+        run: node dist/cli.js --scenario-dir examples/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
 
       - name: Generate example Harbor task
-        run: pnpm exec ruhroh --scenario-dir examples/scenarios --scenario simple-newsletter --generate-only
+        run: node dist/cli.js --scenario-dir examples/scenarios --scenario simple-newsletter --generate-only
 
       - name: Install Harbor for optional live Gemini smoke
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_gemini == 'true' }}
@@ -96,4 +96,4 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.live_gemini == 'true' }}
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: pnpm exec ruhroh --scenario-dir examples/scenarios --scenario simple-newsletter --adapter examples/adapters/gemini-cli/run.sh
+        run: node dist/cli.js --scenario-dir examples/scenarios --scenario simple-newsletter --adapter examples/adapters/gemini-cli/run.sh
