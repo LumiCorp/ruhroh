@@ -6,7 +6,7 @@ hero:
   text: Real-user tasks for coding-agent evaluation.
   tagline: Generate Harbor-compatible benchmark tasks from realistic user scenarios, run agents through adapters, and judge delivered outcomes.
   image:
-    src: /ruhroh/ruhroh-logo.png
+    src: /ruhroh-logo.png
     alt: Ruhroh logo
   actions:
     - theme: brand

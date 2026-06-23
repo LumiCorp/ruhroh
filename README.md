@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/ruhroh-logo.png" alt="Ruhroh logo" width="220">
+  <img src="https://lumicorp.github.io/ruhroh/ruhroh-logo.png" alt="Ruhroh logo" width="220">
 </p>
 
-# <img src="assets/ruhroh-badge.png" alt="" width="28" align="absmiddle"> Ruhroh
+# <img src="https://lumicorp.github.io/ruhroh/ruhroh-badge.png" alt="" width="28" align="absmiddle"> Ruhroh
 
 Ruhroh is the **Real-User Harness for Repair-Oriented Harbor**.
 

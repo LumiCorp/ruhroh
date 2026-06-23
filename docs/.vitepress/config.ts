@@ -7,7 +7,7 @@ export default defineConfig({
   cleanUrls: true,
   head: [["link", { rel: "icon", href: "/ruhroh/ruhroh-badge.png" }]],
   themeConfig: {
-    logo: "/ruhroh/ruhroh-badge.png",
+    logo: "/ruhroh-badge.png",
     nav: [
       { text: "Guide", link: "/getting-started" },
       { text: "Reference", link: "/architecture" },

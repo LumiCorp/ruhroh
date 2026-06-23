@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0-beta.2
+
+- Fixed hosted logo and badge image URLs for the npm README.
+- Fixed VitePress logo paths so GitHub Pages does not apply the project base twice.
+- Kept package APIs and runtime behavior unchanged from `0.5.0-beta.1`.
+
 ## 0.5.0-beta.1
 
 - Reworked the README as a consumer-focused introduction.
