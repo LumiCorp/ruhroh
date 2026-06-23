@@ -1,0 +1,45 @@
+{
+  "version": "ruhroh_scenario_v2",
+  "id": "vite-sprint-planner",
+  "title": "Vite Sprint Planner",
+  "tier": "nightly",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 900
+  },
+  "requires": {
+    "continuity": "workspace_plus_transcript",
+    "tools": [
+      "filesystem",
+      "shell"
+    ],
+    "network": true
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": [
+      "This is a scaffolded Vite local app-development task.",
+      "The benchmark value is the product workflow and local state behavior, not a prescribed file layout.",
+      "The user explicitly asked the run-agent to build and check the core workflow."
+    ],
+    "goalRubric": [
+      "The final app is a Vite app that can be installed and run locally by a reviewer.",
+      "The app includes planning board, capacity, and risks/decisions views or equivalent user-visible areas.",
+      "Tasks can be added, edited, moved between statuses, filtered, and counted in sprint totals.",
+      "Risks or decisions can be added and reviewed.",
+      "Sprint data persists locally and can be exported as JSON and imported back.",
+      "The implementation is not an untouched starter template."
+    ],
+    "evidenceGuidance": [
+      "Run build/start commands in the eval workspace when practical.",
+      "Explore the app workflow as a user: task creation, movement, filtering, risk/decision entry, export/import, and totals.",
+      "Use source inspection only to understand behavior when browser exploration is unavailable or incomplete."
+    ]
+  }
+}

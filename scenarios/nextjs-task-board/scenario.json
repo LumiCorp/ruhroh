@@ -1,0 +1,45 @@
+{
+  "version": "ruhroh_scenario_v2",
+  "id": "nextjs-task-board",
+  "title": "Next.js Task Board",
+  "tier": "nightly",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 900
+  },
+  "requires": {
+    "continuity": "workspace_plus_transcript",
+    "tools": [
+      "filesystem",
+      "shell"
+    ],
+    "network": true
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": [
+      "This is a local full-stack Next.js app-development task.",
+      "The scenario is inspired by Mountaintop's task-board case, but Ruhroh should judge the delivered user workflow rather than static required artifact names.",
+      "External databases and hosted services are out of scope; persistence should be local to the workspace."
+    ],
+    "goalRubric": [
+      "The final workspace provides a local full-stack Next.js task board app.",
+      "The app supports creating, editing, and archiving tasks through a visible UI.",
+      "The app validates empty input and has a sensible empty state.",
+      "Task data persists through a local API or server route backed by workspace-local file storage, not only browser localStorage.",
+      "The app builds successfully and avoids obvious scaffold/runtime errors.",
+      "A reviewer can run the app locally and verify the task workflow."
+    ],
+    "evidenceGuidance": [
+      "Run install/build/start commands in the eval workspace when practical.",
+      "Explore the UI/API workflow as a user: create, edit, archive, empty validation, and persistence after reload or restart.",
+      "Do not require Mountaintop's historical filenames as a pass/fail condition unless the user-facing delivered app otherwise fails the workflow."
+    ]
+  }
+}

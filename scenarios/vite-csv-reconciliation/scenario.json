@@ -1,0 +1,48 @@
+{
+  "version": "ruhroh_scenario_v2",
+  "id": "vite-csv-reconciliation",
+  "title": "Vite CSV Reconciliation",
+  "tier": "nightly",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "assets": [
+    "assets/prompt-assets/csv-reconciliation-people"
+  ],
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 900
+  },
+  "requires": {
+    "continuity": "workspace_plus_transcript",
+    "tools": [
+      "filesystem",
+      "shell"
+    ],
+    "network": true
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": [
+      "This is a local data-workflow app-development task with provided CSV assets.",
+      "The prompt-assets/csv-reconciliation-people directory is the source material supplied to the run-agent.",
+      "The benchmark value is CSV handling, reconciliation workflow, review state, and export/import behavior."
+    ],
+    "goalRubric": [
+      "The final app is a Vite React + TypeScript app that can be installed and run locally by a reviewer.",
+      "The app uses or embeds the supplied Source A and Source B CSV sample data.",
+      "The app normalizes people records, detects likely duplicates, flags missing records, and surfaces field conflicts.",
+      "The user can resolve conflicts, choose winning field values, mark duplicates reviewed, and filter by conflict type.",
+      "Reconciliation counts update as review decisions change.",
+      "Review state persists locally and the cleaned result can be exported as JSON or CSV and imported back."
+    ],
+    "evidenceGuidance": [
+      "Inspect the copied prompt assets and final workspace before judging.",
+      "Run build/start commands and exercise the reconciliation workflow when practical.",
+      "Prefer evidence from app behavior and exported data over source text matches."
+    ]
+  }
+}

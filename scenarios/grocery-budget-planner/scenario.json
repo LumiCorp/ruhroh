@@ -1,0 +1,44 @@
+{
+  "version": "ruhroh_scenario_v2",
+  "id": "grocery-budget-planner",
+  "title": "Grocery Budget Planner",
+  "tier": "nightly",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 600
+  },
+  "requires": {
+    "continuity": "workspace_plus_transcript",
+    "tools": [
+      "filesystem",
+      "shell"
+    ],
+    "network": false
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": [
+      "This is a dependency-free local app-development task.",
+      "The user asked for an immediately usable grocery budget planner, not a prose plan.",
+      "The user did not prescribe a framework or file layout."
+    ],
+    "goalRubric": [
+      "The final workspace provides a locally usable grocery budget planner.",
+      "The app supports adding grocery items with name, category, estimated price, and purchased state.",
+      "The app groups or clearly organizes items by category.",
+      "Purchased and unpurchased totals plus remaining budget update when the list changes.",
+      "Starter dinner grocery data is present and local persistence survives reloads."
+    ],
+    "evidenceGuidance": [
+      "Inspect the final workspace and run or open the local app when practical.",
+      "Exercise the user workflow: add an item, mark an item purchased, and verify totals update.",
+      "Do not require a specific filename or framework unless the delivered app itself documents that as its local run path."
+    ]
+  }
+}

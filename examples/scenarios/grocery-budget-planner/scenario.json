@@ -1,0 +1,35 @@
+{
+  "version": "ruhroh_scenario_v1",
+  "id": "grocery-budget-planner",
+  "title": "Grocery Budget Planner",
+  "tier": "nightly",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "assets": ["assets/grocery-items.csv"],
+  "driver": {
+    "adapter": "custom-shell",
+    "timeoutSeconds": 900
+  },
+  "requires": {
+    "continuity": "workspace_only",
+    "tools": ["filesystem", "shell"],
+    "network": false
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": ["Dependency-free local state app with provided CSV starter data."],
+    "goalRubric": [
+      "The final workspace contains a runnable grocery budget planner.",
+      "The app supports review, add, edit, remove, status, totals, and local persistence behavior.",
+      "The provided CSV is used as starter data or clearly imported into the app."
+    ],
+    "evidenceGuidance": [
+      "Inspect the workspace and run the app when useful.",
+      "Verify behavior through the app, storage, or exported state rather than source keyword checks."
+    ]
+  }
+}

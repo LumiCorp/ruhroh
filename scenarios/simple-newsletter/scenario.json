@@ -1,0 +1,40 @@
+{
+  "version": "ruhroh_scenario_v2",
+  "id": "simple-newsletter",
+  "title": "Simple Newsletter",
+  "tier": "smoke",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 420
+  },
+  "requires": {
+    "continuity": "workspace_plus_transcript",
+    "tools": [
+      "filesystem",
+      "shell"
+    ],
+    "network": false
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": [
+      "This is a tiny local-app smoke task.",
+      "The user did not prescribe a framework or file layout."
+    ],
+    "goalRubric": [
+      "The final workspace provides a locally viewable newsletter page.",
+      "The page presents three sample stories or an equivalent clearly visible set of story items.",
+      "The delivered result is the requested newsletter experience, not only an untouched starter template or prose-only answer."
+    ],
+    "evidenceGuidance": [
+      "Inspect the final workspace and run the app or open the static page if needed.",
+      "Use Kestrel transcripts and event logs only as supporting evidence; judge the final delivered state."
+    ]
+  }
+}

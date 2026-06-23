@@ -1,0 +1,47 @@
+{
+  "version": "ruhroh_scenario_v2",
+  "id": "shift-coverage-planner",
+  "title": "Shift Coverage Planner",
+  "tier": "nightly",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "assets": [
+    "assets/prompt-assets/shift-coverage"
+  ],
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 900
+  },
+  "requires": {
+    "continuity": "workspace_plus_transcript",
+    "tools": [
+      "filesystem",
+      "shell"
+    ],
+    "network": false
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": [
+      "This is a complex local app-development task with provided schedule assets.",
+      "The prompt-assets/shift-coverage directory is the source material supplied to the run-agent.",
+      "The user did not prescribe a framework, route, file layout, or command contract."
+    ],
+    "goalRubric": [
+      "The app uses the provided shift-coverage assets as the basis for the schedule workflow.",
+      "The app helps a user identify coverage gaps and time-off conflicts.",
+      "The app suggests or records replacement assignments while respecting the stated constraints.",
+      "The app exposes an audit trail and a way to review or export the repaired schedule.",
+      "The final delivered app is usable locally by a reviewer."
+    ],
+    "evidenceGuidance": [
+      "Inspect the final workspace, the copied prompt assets, and the implementation choices before judging.",
+      "Run local commands or start the app in the eval workspace when that is the most direct way to verify the delivered behavior.",
+      "Do not require a specific framework, route path, source filename, or build command unless the user goal itself made that explicit."
+    ]
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "version": "ruhroh_scenario_v1",
+  "id": "simple-newsletter",
+  "title": "Simple Newsletter",
+  "tier": "smoke",
+  "kind": "real_user",
+  "userPromptPath": "instruction.md",
+  "assets": [],
+  "driver": {
+    "adapter": "custom-shell",
+    "timeoutSeconds": 600
+  },
+  "requires": {
+    "continuity": "workspace_only",
+    "tools": ["filesystem", "shell"],
+    "network": false
+  },
+  "loop": {
+    "defaultMaxIterations": 3,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": ["Dependency-free local app creation task."],
+    "goalRubric": [
+      "The final workspace contains a runnable local newsletter page.",
+      "The page covers the requested signup states and sample issue summaries.",
+      "The implementation avoids live service dependencies."
+    ],
+    "evidenceGuidance": ["Inspect and run the app when useful."]
+  }
+}

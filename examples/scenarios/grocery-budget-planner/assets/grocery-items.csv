@@ -1,0 +1,7 @@
+category,item,estimated_cost,status
+Produce,Bananas,3.20,planned
+Produce,Spinach,4.50,planned
+Dairy,Milk,5.10,purchased
+Pantry,Rice,8.75,planned
+Pantry,Olive oil,12.40,skipped
+Protein,Eggs,6.30,planned
