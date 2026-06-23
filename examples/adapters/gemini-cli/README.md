@@ -34,23 +34,23 @@ export GEMINI_CLI_BIN=/path/to/gemini
 ## Required Env Vars
 
 - Gemini CLI credentials/configuration required by your Gemini installation.
-- `RUHROH_CUSTOM_SHELL_COMMAND=examples/adapters/gemini-cli/run.sh`
-- `RUHROH_CUSTOM_SHELL_COMPLETION_PROTOCOL=json-final-line`
+- `RUHROH_RUN_AGENT_COMMAND=examples/adapters/gemini-cli/run.sh`
+- `RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line`
 
 ## Run
 
 Dry-run without credentials:
 
 ```bash
-pnpm ruhroh --scenario simple-newsletter --scenario-dir examples/scenarios --adapter custom-shell --dry-run
+node dist/cli.js --scenario simple-newsletter --scenario-dir examples/scenarios --adapter custom-shell --dry-run
 ```
 
 Live run when Gemini CLI is installed and authenticated:
 
 ```bash
-RUHROH_CUSTOM_SHELL_COMMAND=examples/adapters/gemini-cli/run.sh \
-RUHROH_CUSTOM_SHELL_COMPLETION_PROTOCOL=json-final-line \
-  pnpm ruhroh --scenario simple-newsletter --scenario-dir examples/scenarios --adapter custom-shell
+RUHROH_RUN_AGENT_COMMAND=examples/adapters/gemini-cli/run.sh \
+RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line \
+  node dist/cli.js --scenario simple-newsletter --scenario-dir examples/scenarios --adapter custom-shell
 ```
 
 ## Continuity
