@@ -1,6 +1,7 @@
 node_modules/
 dist/
 .generated/
+docs/.vitepress/dist/
 *.tgz
 .DS_Store
 __pycache__/

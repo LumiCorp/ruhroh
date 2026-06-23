@@ -121,7 +121,8 @@ Good scenarios usually include:
 - evidence guidance for transcripts, logs, commands, screenshots, or generated
   files.
 
-See [`docs/scenario-format.md`](docs/scenario-format.md) for the full schema.
+See the [scenario format guide](https://lumicorp.github.io/ruhroh/scenario-format)
+for the full schema.
 
 ## How Judging Works
 
@@ -149,7 +150,8 @@ Core artifacts include:
 - `ruhroh-loop-eval.json`
 - `ruhroh-workspace.tar.gz`
 
-See [`docs/artifacts.md`](docs/artifacts.md) for the complete artifact list.
+See the [artifacts guide](https://lumicorp.github.io/ruhroh/artifacts) for the
+complete artifact list.
 
 ## Use It Well
 
@@ -180,17 +182,20 @@ execution substrate.
 
 ## Docs
 
-- Architecture: `docs/architecture.md`
-- Scenario format: `docs/scenario-format.md`
-- Adapter protocol: `docs/adapter-protocol.md`
-- Custom-shell adapter: `docs/custom-shell.md`
-- Harbor: `docs/harbor.md`
-- Eval-agent: `docs/eval-agent.md`
-- Artifacts: `docs/artifacts.md`
-- CI: `docs/ci.md`
-- Security: `docs/security.md`
-- Limitations: `docs/limitations.md`
-- Public repo layout: `docs/public-repo-layout.md`
+- Getting started: <https://lumicorp.github.io/ruhroh/getting-started>
+- Write a scenario: <https://lumicorp.github.io/ruhroh/write-a-scenario>
+- Write an adapter: <https://lumicorp.github.io/ruhroh/write-an-adapter>
+- Architecture: <https://lumicorp.github.io/ruhroh/architecture>
+- Scenario format: <https://lumicorp.github.io/ruhroh/scenario-format>
+- Adapter protocol: <https://lumicorp.github.io/ruhroh/adapter-protocol>
+- Custom-shell adapter: <https://lumicorp.github.io/ruhroh/custom-shell>
+- Harbor: <https://lumicorp.github.io/ruhroh/harbor>
+- Eval-agent: <https://lumicorp.github.io/ruhroh/eval-agent>
+- Artifacts: <https://lumicorp.github.io/ruhroh/artifacts>
+- CI: <https://lumicorp.github.io/ruhroh/ci>
+- Security: <https://lumicorp.github.io/ruhroh/security>
+- Limitations: <https://lumicorp.github.io/ruhroh/limitations>
+- Public repo layout: <https://lumicorp.github.io/ruhroh/public-repo-layout>
 
 ## Security
 

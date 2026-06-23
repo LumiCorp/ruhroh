@@ -40,11 +40,11 @@ workspaces.
 Generate tasks with:
 
 ```bash
-pnpm ruhroh --scenario-dir examples/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
 ```
 
 Adapter selection is runtime configuration, for example:
 
 ```bash
-pnpm ruhroh --scenario-dir examples/scenarios --scenario simple-newsletter --adapter ./adapters/my-agent
+pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter ./adapters/my-agent
 ```

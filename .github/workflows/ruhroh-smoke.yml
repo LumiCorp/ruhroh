@@ -14,6 +14,9 @@ on:
   pull_request:
     paths:
       - "README.md"
+      - "CHANGELOG.md"
+      - "CONTRIBUTING.md"
+      - "SECURITY.md"
       - "package.json"
       - "pnpm-lock.yaml"
       - "assets/**"
@@ -24,12 +27,16 @@ on:
       - "examples/scenarios/**"
       - "examples/adapters/**"
       - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/ruhroh-smoke.yml"
   push:
     branches:
       - main
     paths:
       - "README.md"
+      - "CHANGELOG.md"
+      - "CONTRIBUTING.md"
+      - "SECURITY.md"
       - "package.json"
       - "pnpm-lock.yaml"
       - "assets/**"
@@ -40,6 +47,7 @@ on:
       - "examples/scenarios/**"
       - "examples/adapters/**"
       - "docs/**"
+      - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/ruhroh-smoke.yml"
 
 jobs:
