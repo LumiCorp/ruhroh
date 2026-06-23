@@ -2,7 +2,7 @@
 id: ruhroh-public-repo-layout
 domain: benchmarks
 status: active
-owner: kestrel-quality
+owner: ruhroh-maintainers
 last_verified_at: 2026-06-22
 depends_on:
   - package.json
@@ -16,23 +16,29 @@ Repository shape:
 
 ```text
 ruhroh/
-  
+  assets/
+  python/
+    ruhroh/
   examples/
     scenarios/
       simple-newsletter/
       grocery-budget-planner/
     adapters/
-      custom-shell/
       gemini-cli/
-      aider/
   docs/
     architecture.md
     scenario-format.md
     adapter-protocol.md
+    custom-shell.md
     harbor.md
     eval-agent.md
+    artifacts.md
+    ci.md
+    security.md
+    limitations.md
+    public-repo-layout.md
   .github/workflows/
-    smoke.yml
+    ruhroh-smoke.yml
   README.md
   package.json
 ```
