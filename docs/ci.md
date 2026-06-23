@@ -2,10 +2,10 @@
 id: ruhroh-ci
 domain: benchmarks
 status: active
-owner: kestrel-quality
+owner: ruhroh-maintainers
 last_verified_at: 2026-06-22
 depends_on:
-  - ../../.github/workflows/ruhroh-smoke.yml
+  - ../.github/workflows/ruhroh-smoke.yml
   - package.json
 ---
 

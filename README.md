@@ -93,17 +93,17 @@ harness is package-owned for generated Ruhroh tasks.
 
 ## Docs
 
-- Architecture: `docs/ruhroh/architecture.md`
-- Scenario format: `docs/ruhroh/scenario-format.md`
-- Adapter protocol: `docs/ruhroh/adapter-protocol.md`
-- Custom-shell adapter: `docs/ruhroh/custom-shell.md`
-- Harbor: `docs/ruhroh/harbor.md`
-- Eval-agent: `docs/ruhroh/eval-agent.md`
-- Artifacts: `docs/ruhroh/artifacts.md`
-- CI: `docs/ruhroh/ci.md`
-- Security: `docs/ruhroh/security.md`
-- Limitations: `docs/ruhroh/limitations.md`
-- Public repo layout: `docs/ruhroh/public-repo-layout.md`
+- Architecture: `docs/architecture.md`
+- Scenario format: `docs/scenario-format.md`
+- Adapter protocol: `docs/adapter-protocol.md`
+- Custom-shell adapter: `docs/custom-shell.md`
+- Harbor: `docs/harbor.md`
+- Eval-agent: `docs/eval-agent.md`
+- Artifacts: `docs/artifacts.md`
+- CI: `docs/ci.md`
+- Security: `docs/security.md`
+- Limitations: `docs/limitations.md`
+- Public repo layout: `docs/public-repo-layout.md`
 
 ## Security
 
