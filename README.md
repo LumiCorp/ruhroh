@@ -6,12 +6,27 @@
 
 Ruhroh is the **Real-User Harness for Repair-Oriented Harbor**.
 
-Ruhroh runs real-user task scenarios against coding agents through adapters,
-preserves the full implementation journey, and runs a terminal evaluator over
-the final delivered workspace.
+It runs realistic software tasks against coding agents, preserves the full
+implementation journey, and judges the final delivered workspace through a
+terminal evaluator.
 
-Ruhroh is agent-agnostic. Kestrel is one reference run-agent adapter, not the
-benchmark itself. Harbor is the execution substrate.
+Ruhroh exists because most agent benchmarks are either too static or too easy to
+overfit. Real users do not ask for a required filename or a magic route; they ask
+for an outcome, watch the agent iterate, and care whether the finished workspace
+actually works. Ruhroh packages that loop into repeatable Harbor tasks while
+keeping the benchmark itself agent-agnostic.
+
+Use Ruhroh when you want to:
+
+- turn product-like user requests into repeatable agent tasks;
+- compare agents or prompts on delivered outcomes, not source-text heuristics;
+- preserve transcripts, intermediate attempts, final workspaces, and eval
+  judgments for review;
+- generate Harbor-compatible task directories from portable JSON scenarios.
+
+Ruhroh is not a native agent runner. You bring the run-agent adapter. The public
+package ships the scenario format, generator, CLI, result contracts, and a
+package-owned Python Harbor runtime for command-backed adapters.
 
 ## Install
 
@@ -19,37 +34,70 @@ benchmark itself. Harbor is the execution substrate.
 pnpm add -D @kestrel-agents/ruhroh
 ```
 
-## Quickstart
+## Quickstart: Inspect and Generate Tasks
 
-Create scenarios under `ruhroh/scenarios/<id>/`, or use the bundled scenarios
-under `node_modules/@kestrel-agents/ruhroh/scenarios`, then run:
-
-```bash
-pnpm ruhroh --list
-pnpm ruhroh --scenario simple-newsletter --generate-only
-pnpm ruhroh --scenario simple-newsletter --adapter ./path/to/agent-adapter --dry-run
-```
-
-In this repo, the same package CLI is available with:
+Ruhroh ships bundled scenarios so you can inspect the package before wiring a
+live agent:
 
 ```bash
-pnpm ruhroh --scenario-dir examples/scenarios --list
-pnpm ruhroh --scenario-dir examples/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --list
+pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
 ```
 
-This package currently contains the portable TypeScript surfaces:
+In this repository, build first and use the local CLI output:
 
-- scenario schema and validation;
-- run-agent adapter interfaces and capability compatibility helpers;
-- eval and final result types;
-- verdict mapping helpers;
-- env forwarding and redaction helpers;
-- Harbor command construction helpers;
-- JSON scenario discovery and Harbor task generation helpers.
+```bash
+pnpm build
+node dist/cli.js --scenario-dir examples/scenarios --list
+node dist/cli.js --scenario-dir examples/scenarios --scenario simple-newsletter --generate-only
+```
 
-## Scenario Generation
+Generated Harbor task directories are written under:
 
-Ruhroh can load JSON scenarios from:
+```text
+.generated/ruhroh/harbor/tasks/<scenario-id>/
+```
+
+Use `--dry-run` to see the Harbor command without starting a benchmark:
+
+```bash
+pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
+```
+
+## Run an Agent
+
+Ruhroh selects agents at runtime. For shell-based agents, pass a command path as
+the adapter:
+
+```bash
+pnpm exec ruhroh \
+  --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios \
+  --scenario simple-newsletter \
+  --adapter ./path/to/agent-wrapper.sh
+```
+
+When the adapter value looks like a command or path, the CLI wires it through
+`RUHROH_RUN_AGENT_COMMAND` for the package runtime. The command receives the
+workspace, goal, iteration metadata, and result path. When the goal is satisfied,
+it should exit successfully and emit the completion signal described in
+[`docs/custom-shell.md`](docs/custom-shell.md).
+
+Use `custom-shell` directly when you want to provide the command through the
+environment:
+
+```bash
+export RUHROH_RUN_AGENT_COMMAND=./path/to/agent-wrapper.sh
+export RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line
+pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell
+```
+
+Live agent runs require whatever credentials that agent needs. Default CI and
+package smoke tests should stay credential-free and use `--dry-run` or fixture
+evals.
+
+## Write Scenarios
+
+Create scenarios under `ruhroh/scenarios/<id>/`:
 
 ```text
 ruhroh/scenarios/<id>/
@@ -58,15 +106,64 @@ ruhroh/scenarios/<id>/
   assets/
 ```
 
-and generate local Harbor task directories under:
+The scenario JSON names the user prompt, runtime requirements, loop settings,
+and evaluation rubric. Scenario prompts should read like real user requests:
+describe the desired outcome, relevant context, and success criteria. Avoid
+encoding implementation shortcuts such as "create exactly this file" unless that
+is genuinely part of the user request.
 
-```text
-.generated/ruhroh/harbor/tasks/<scenario-id>/
-```
+Good scenarios usually include:
 
-The generated Harbor verifier is app-agnostic. It only validates that the
-structured Ruhroh result exists and maps to a passing score/reward; it does not
-perform required-file, route, command, or source-text checks.
+- a concrete user goal;
+- constraints the agent must respect;
+- assets or seed data needed by the task;
+- a rubric that tells the evaluator how to judge the final workspace;
+- evidence guidance for transcripts, logs, commands, screenshots, or generated
+  files.
+
+See [`docs/scenario-format.md`](docs/scenario-format.md) for the full schema.
+
+## How Judging Works
+
+Ruhroh intentionally keeps generated Harbor verifiers app-agnostic. The verifier
+checks the structured Ruhroh result and reward mapping; it does not inspect
+source text, required filenames, routes, or hard-coded commands.
+
+The evaluation boundary is:
+
+1. the run-agent iterates in a benchmark workspace;
+2. Ruhroh preserves iteration records, transcripts, event logs, and the final
+   workspace snapshot;
+3. a terminal evaluator reviews the final delivered workspace and journey
+   evidence;
+4. the generic Harbor verifier maps the structured result to reward.
+
+This separation is the point: scenario-specific judgment belongs in the eval
+rubric and evaluator, not in brittle generator logic.
+
+Core artifacts include:
+
+- `ruhroh-loop-result.json`
+- `ruhroh-loop-iterations.jsonl`
+- `ruhroh-loop-journey.json`
+- `ruhroh-loop-eval.json`
+- `ruhroh-workspace.tar.gz`
+
+See [`docs/artifacts.md`](docs/artifacts.md) for the complete artifact list.
+
+## Use It Well
+
+- Start with smoke-tier scenarios that are small but realistic.
+- Keep scenarios agent-agnostic; select adapters at runtime.
+- Prefer outcome rubrics over file-name or source-text checks.
+- Treat prompts and assets as untrusted input, and run agents only in benchmark
+  workspaces.
+- Keep live model credentials out of default CI.
+- Review preserved artifacts when a score looks surprising; the journey often
+  explains whether the failure is an agent issue, adapter issue, or evaluator
+  issue.
+
+## Public API
 
 The public API exports:
 
@@ -75,21 +172,11 @@ The public API exports:
 - `generateHarborTask()`
 - `generateHarborDataset()`
 
-The package CLI exposes this through:
+It also exports TypeScript contracts for scenarios, adapters, results, verdict
+mapping, env forwarding/redaction, and Harbor command construction.
 
-```bash
-pnpm ruhroh --scenario-dir ruhroh/scenarios --generate-only
-pnpm ruhroh --scenario-dir ruhroh/scenarios --dry-run
-```
-
-This package ships the reusable scenario source under `scenarios/` and the
-package-owned Python Harbor runtime under `python/ruhroh`. Run-agents are wired
-into this runtime as command adapters through
-`RUHROH_RUN_AGENT_COMMAND`; terminal evaluation can be supplied through
-`RUHROH_EVAL_COMMAND` or fixture eval variables.
-
-Kestrel is a consumer adapter, not a Ruhroh package dependency. The Harbor
-harness is package-owned for generated Ruhroh tasks.
+Kestrel is one consumer adapter, not a Ruhroh package dependency. Harbor is the
+execution substrate.
 
 ## Docs
 
