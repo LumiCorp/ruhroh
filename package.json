@@ -36,6 +36,7 @@
     "ruhroh": "./dist/cli.js"
   },
   "files": [
+    "assets/**/*",
     "dist",
     "python/**/*.py",
     "python/**/*.sh",
