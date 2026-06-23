@@ -2,7 +2,7 @@
   <img src="assets/ruhroh-logo.png" alt="Ruhroh logo" width="220">
 </p>
 
-# Ruhroh
+# <img src="assets/ruhroh-badge.png" alt="" width="28" align="absmiddle"> Ruhroh
 
 Ruhroh is the **Real-User Harness for Repair-Oriented Harbor**.
 
