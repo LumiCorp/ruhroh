@@ -24,6 +24,12 @@ List the bundled scenarios:
 pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --list
 ```
 
+Validate scenarios before generating tasks:
+
+```bash
+pnpm exec ruhroh validate --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios
+```
+
 Generate a Harbor task without running an agent:
 
 ```bash
@@ -57,3 +63,26 @@ pnpm exec ruhroh \
 Use the artifacts from the Harbor run to review what happened: the final result,
 iteration records, transcripts, event logs, eval judgment, and workspace
 snapshot.
+
+Turn a run artifact into a reviewable report:
+
+```bash
+pnpm exec ruhroh report ./path/to/ruhroh-loop-result.json
+pnpm exec ruhroh report ./path/to/run-artifacts --json
+```
+
+Compare repeated runs across agents or prompts:
+
+```bash
+pnpm exec ruhroh compare ./path/to/results
+pnpm exec ruhroh compare ./path/to/results --json
+```
+
+The recommended workflow is:
+
+1. Author a realistic scenario and rubric.
+2. Run `ruhroh validate`.
+3. Generate Harbor tasks.
+4. Run one or more adapters.
+5. Review `ruhroh report` for each run.
+6. Use `ruhroh compare` for repeated-run analysis.

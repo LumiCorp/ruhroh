@@ -41,6 +41,7 @@ live agent:
 
 ```bash
 pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --list
+pnpm exec ruhroh validate --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios
 pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
 ```
 
@@ -62,6 +63,15 @@ Use `--dry-run` to see the Harbor command without starting a benchmark:
 
 ```bash
 pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
+```
+
+After a run, inspect and aggregate artifacts:
+
+```bash
+pnpm exec ruhroh report ./path/to/ruhroh-loop-result.json
+pnpm exec ruhroh report ./path/to/run-artifacts --json
+pnpm exec ruhroh compare ./path/to/results
+pnpm exec ruhroh compare ./path/to/results --json
 ```
 
 ## Run an Agent
@@ -147,6 +157,7 @@ Core artifacts include:
 - `ruhroh-loop-result.json`
 - `ruhroh-loop-iterations.jsonl`
 - `ruhroh-loop-journey.json`
+- `ruhroh-loop-eval-input.json`
 - `ruhroh-loop-eval.json`
 - `ruhroh-workspace.tar.gz`
 
@@ -171,6 +182,10 @@ The public API exports:
 
 - `discoverRuhrohScenarios()`
 - `loadRuhrohScenario()`
+- `validateRuhrohScenarioSource()`
+- `normalizeRuhrohEvalResult()`
+- `summarizeRuhrohRun()`
+- `aggregateRuhrohRuns()`
 - `generateHarborTask()`
 - `generateHarborDataset()`
 

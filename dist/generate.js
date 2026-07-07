@@ -33,6 +33,54 @@ export function loadRuhrohScenario(input) {
     }
     return { scenario, source };
 }
+export function validateRuhrohScenarioSource(input) {
+    const source = typeof input === "string" ? scenarioSourceFromDir(path.resolve(input)) : input;
+    const errors = [];
+    const warnings = [];
+    if (!existsSync(source.scenarioPath)) {
+        return { source, errors: [`missing scenario.json at ${source.scenarioPath}`], warnings };
+    }
+    let raw;
+    try {
+        raw = readJsonRecord(source.scenarioPath);
+    }
+    catch (error) {
+        return {
+            source,
+            errors: [`invalid scenario.json: ${error instanceof Error ? error.message : String(error)}`],
+            warnings,
+        };
+    }
+    let userPrompt = "";
+    try {
+        userPrompt = readUserPrompt(raw, source);
+    }
+    catch (error) {
+        errors.push(error instanceof Error ? error.message : String(error));
+    }
+    const scenario = {
+        ...raw,
+        version: raw.version,
+        userPrompt,
+        run: readRunDefaults(raw),
+    };
+    try {
+        errors.push(...validateRuhrohScenario(scenario));
+    }
+    catch (error) {
+        errors.push(`scenario shape is invalid: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    errors.push(...validateDeclaredAssets(raw.assets, source));
+    if (scenario.requires?.network === true) {
+        warnings.push("requires.network=true will generate Harbor tasks with public network access");
+    }
+    return {
+        source,
+        ...(errors.length === 0 ? { scenario } : {}),
+        errors,
+        warnings,
+    };
+}
 export function generateHarborDataset(input) {
     const tasks = input.scenarios.map((loaded) => generateHarborTask({
         scenario: loaded.scenario,
@@ -118,6 +166,7 @@ function isRecord(value) {
 }
 function renderTaskToml(input) {
     const artifacts = input.artifacts ?? RUHROH_ARTIFACTS;
+    const networkMode = input.scenario.requires.network ? "public" : "none";
     return [
         'schema_version = "1.3"',
         "artifacts = [",
@@ -143,7 +192,7 @@ function renderTaskToml(input) {
         `timeout_sec = ${input.scenario.run.timeoutSeconds.toFixed(1)}`,
         "",
         "[environment]",
-        'network_mode = "public"',
+        `network_mode = ${tomlString(networkMode)}`,
         "build_timeout_sec = 600.0",
         'os = "linux"',
         "mcp_servers = []",
@@ -153,6 +202,30 @@ function renderTaskToml(input) {
         "[solution.env]",
         "",
     ].join("\n");
+}
+function validateDeclaredAssets(value, source) {
+    if (value === undefined) {
+        return [];
+    }
+    if (!Array.isArray(value)) {
+        return ["assets must be an array of relative paths"];
+    }
+    const errors = [];
+    for (const asset of value) {
+        if (typeof asset !== "string" || asset.trim().length === 0) {
+            errors.push("assets entries must be non-empty relative paths");
+            continue;
+        }
+        if (path.isAbsolute(asset) || asset.split(/[\\/]+/u).includes("..")) {
+            errors.push(`asset path must stay inside the scenario directory: ${asset}`);
+            continue;
+        }
+        const assetPath = path.resolve(source.scenarioDir, asset);
+        if (!existsSync(assetPath)) {
+            errors.push(`declared asset does not exist: ${asset}`);
+        }
+    }
+    return errors;
 }
 function renderGenericVerifier() {
     return `#!/bin/bash

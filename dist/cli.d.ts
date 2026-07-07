@@ -9,13 +9,15 @@ interface RuntimeDeps {
     stderr: Pick<NodeJS.WriteStream, "write">;
 }
 export interface RuhrohCliOptions {
-    command: "run" | "generate";
+    command: "run" | "generate" | "validate" | "report" | "compare";
     list: boolean;
     dryRun: boolean;
     generateOnly: boolean;
+    json: boolean;
     harborBin: string;
     scenarioDir: string;
     generatedDir: string;
+    inputPath?: string | undefined;
     scenarioId?: string | undefined;
     tier?: RuhrohScenarioTier | undefined;
     iterations?: number | undefined;

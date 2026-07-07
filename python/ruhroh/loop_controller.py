@@ -59,6 +59,7 @@ def run_ruhroh_trial(
     runs_path = installed_dir / "ruhroh-loop-iterations.jsonl"
     journey_path = installed_dir / "ruhroh-loop-journey.json"
     eval_result_path = installed_dir / "ruhroh-loop-eval.json"
+    eval_input_path = installed_dir / "ruhroh-loop-eval-input.json"
     result_path = installed_dir / "ruhroh-loop-result.json"
     workspace_tarball_path = installed_dir / "ruhroh-workspace.tar.gz"
     events_tarball_path = installed_dir / "ruhroh-loop-events.tar.gz"
@@ -127,6 +128,7 @@ def run_ruhroh_trial(
             eval_workspace_root=eval_workspace_root,
             original_workspace_root=workspace_root,
             journey_path=journey_path,
+            eval_input_path=eval_input_path,
             eval_output_path=eval_result_path,
         )
         write_workspace_tarball(workspace_root, workspace_tarball_path)
@@ -164,6 +166,7 @@ def run_ruhroh_trial(
                 "implementationRuns": str(runs_path),
                 "journey": str(journey_path),
                 "evalResult": str(eval_result_path),
+                "evalInput": str(eval_input_path),
                 "bridgeLog": str(adapter_artifact_paths.get("bridgeLogPath", "")),
                 "workspaceTarball": str(workspace_tarball_path),
                 "eventsTarball": str(events_tarball_path),
@@ -507,10 +510,20 @@ def run_eval_agent(
     eval_workspace_root: Path,
     original_workspace_root: Path,
     journey_path: Path,
+    eval_input_path: Path,
     eval_output_path: Path,
 ) -> dict[str, Any]:
+    eval_input = build_eval_input(
+        scenario_id=scenario_id,
+        eval_workspace_root=eval_workspace_root,
+        original_workspace_root=original_workspace_root,
+        journey_path=journey_path,
+        eval_output_path=eval_output_path,
+    )
+    eval_input_path.write_text(json.dumps(eval_input, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     fixture = read_eval_fixture()
     if fixture is not None:
+        fixture = normalize_eval_result(fixture)
         fixture.setdefault("artifacts", {})
         if isinstance(fixture["artifacts"], dict):
             fixture["artifacts"].setdefault("workspacePath", str(eval_workspace_root))
@@ -526,6 +539,7 @@ def run_eval_agent(
             "RUHROH_EVAL_WORKSPACE_PATH": str(eval_workspace_root),
             "RUHROH_EVAL_ORIGINAL_WORKSPACE_PATH": str(original_workspace_root),
             "RUHROH_EVAL_JOURNEY_PATH": str(journey_path),
+            "RUHROH_EVAL_INPUT_PATH": str(eval_input_path),
             "RUHROH_EVAL_OUTPUT_PATH": str(eval_output_path),
         }
         completed = subprocess.run(
@@ -547,6 +561,8 @@ def run_eval_agent(
             )
         parsed = read_json_file(eval_output_path)
         if isinstance(parsed, dict):
+            parsed = normalize_eval_result(parsed)
+            eval_output_path.write_text(json.dumps(parsed, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             return parsed
         for line in reversed(completed.stdout.splitlines()):
             try:
@@ -554,6 +570,7 @@ def run_eval_agent(
             except Exception:
                 continue
             if isinstance(parsed_line, dict):
+                parsed_line = normalize_eval_result(parsed_line)
                 eval_output_path.write_text(json.dumps(parsed_line, indent=2, sort_keys=True) + "\n", encoding="utf-8")
                 return parsed_line
         return synthetic_eval_infra_failure(
@@ -568,6 +585,101 @@ def run_eval_agent(
         eval_output_path=eval_output_path,
         diagnostics="Package-owned Ruhroh runtime requires RUHROH_EVAL_RESULT_FIXTURE, RUHROH_EVAL_RESULT_FIXTURE_PATH, or RUHROH_EVAL_COMMAND.",
     )
+
+
+def build_eval_input(
+    scenario_id: str,
+    eval_workspace_root: Path,
+    original_workspace_root: Path,
+    journey_path: Path,
+    eval_output_path: Path,
+) -> dict[str, Any]:
+    return {
+        "version": "ruhroh_eval_input_v1",
+        "scenarioId": scenario_id,
+        "workspacePath": str(eval_workspace_root),
+        "originalWorkspacePath": str(original_workspace_root),
+        "journeyPath": str(journey_path),
+        "evalOutputPath": str(eval_output_path),
+        "scenarioContext": read_json_env_array("RUHROH_EVAL_SCENARIO_CONTEXT_JSON"),
+        "goalRubric": read_json_env_array("RUHROH_EVAL_GOAL_RUBRIC_JSON"),
+        "evidenceGuidance": read_json_env_array("RUHROH_EVAL_EVIDENCE_GUIDANCE_JSON"),
+    }
+
+
+def read_json_env_array(key: str) -> list[str]:
+    raw = os.environ.get(key)
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [item for item in parsed if isinstance(item, str)]
+
+
+def normalize_eval_result(result: dict[str, Any]) -> dict[str, Any]:
+    status = result.get("status")
+    if status not in {"passed", "failed", "review", "infra_failed"}:
+        status = "infra_failed"
+    normalized = {
+        "version": "ruhroh_eval_result_v1",
+        "status": status,
+        "goalMet": bool(result.get("goalMet")) if isinstance(result.get("goalMet"), bool) else status == "passed",
+        "confidence": result.get("confidence") if result.get("confidence") in {"low", "medium", "high"} else "medium",
+        "reasons": string_list(result.get("reasons")),
+        "unmetCriteria": string_list(result.get("unmetCriteria")),
+        "evidenceRefs": evidence_refs(result.get("evidenceRefs")),
+        "commandsRun": command_records(result.get("commandsRun")),
+        "artifacts": string_record(result.get("artifacts")),
+        "finalSummary": result.get("finalSummary") if isinstance(result.get("finalSummary"), str) else f"Eval-agent status: {status}.",
+    }
+    for key in ("repairBrief", "criteriaResults", "subscores", "judge"):
+        if key in result:
+            normalized[key] = result[key]
+    return normalized
+
+
+def string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str)]
+
+
+def string_record(value: Any) -> dict[str, str]:
+    if not isinstance(value, dict):
+        return {}
+    return {str(key): item for key, item in value.items() if isinstance(key, str) and isinstance(item, str)}
+
+
+def evidence_refs(value: Any) -> list[dict[str, str]]:
+    if not isinstance(value, list):
+        return []
+    refs: list[dict[str, str]] = []
+    for item in value:
+        if isinstance(item, dict) and isinstance(item.get("kind"), str) and isinstance(item.get("ref"), str):
+            refs.append({
+                "kind": item["kind"],
+                "ref": item["ref"],
+                "summary": item.get("summary") if isinstance(item.get("summary"), str) else "",
+            })
+    return refs
+
+
+def command_records(value: Any) -> list[dict[str, Any]]:
+    if not isinstance(value, list):
+        return []
+    records: list[dict[str, Any]] = []
+    for item in value:
+        if isinstance(item, dict) and isinstance(item.get("command"), str):
+            records.append({
+                "command": item["command"],
+                "exitCode": item.get("exitCode") if isinstance(item.get("exitCode"), int) else 0,
+                "summary": item.get("summary") if isinstance(item.get("summary"), str) else "",
+            })
+    return records
 
 
 def read_eval_fixture() -> dict[str, Any] | None:

@@ -140,6 +140,9 @@ def build_run_env_values(max_iterations: int) -> dict[str, str]:
         "RUHROH_RUN_AGENT_COMMAND",
         "RUHROH_RUN_AGENT_COMPLETION_PROTOCOL",
         "RUHROH_EVAL_COMMAND",
+        "RUHROH_EVAL_SCENARIO_CONTEXT_JSON",
+        "RUHROH_EVAL_GOAL_RUBRIC_JSON",
+        "RUHROH_EVAL_EVIDENCE_GUIDANCE_JSON",
     ):
         value = os.environ.get(key)
         if value is not None:
@@ -209,6 +212,7 @@ async def persist_ruhroh_debug_artifacts(environment: Any, logs_dir: Any) -> lis
         ("/installed-agent/ruhroh-loop-result.json", "ruhroh-loop-result.json"),
         ("/installed-agent/ruhroh-loop-iterations.jsonl", "ruhroh-loop-iterations.jsonl"),
         ("/installed-agent/ruhroh-loop-journey.json", "ruhroh-loop-journey.json"),
+        ("/installed-agent/ruhroh-loop-eval-input.json", "ruhroh-loop-eval-input.json"),
         ("/installed-agent/ruhroh-loop-eval.json", "ruhroh-loop-eval.json"),
         ("/installed-agent/ruhroh-loop-bridge.jsonl", "ruhroh-loop-bridge.jsonl"),
         ("/installed-agent/ruhroh-workspace.tar.gz", "ruhroh-workspace.tar.gz"),
