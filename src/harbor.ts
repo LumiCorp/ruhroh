@@ -9,6 +9,7 @@ export const RUHROH_ARTIFACTS = [
   "/installed-agent/ruhroh-loop-result.json",
   "/installed-agent/ruhroh-loop-iterations.jsonl",
   "/installed-agent/ruhroh-loop-journey.json",
+  "/installed-agent/ruhroh-loop-eval-input.json",
   "/installed-agent/ruhroh-loop-eval.json",
   "/installed-agent/ruhroh-loop-bridge.jsonl",
   "/installed-agent/ruhroh-workspace.tar.gz",
@@ -17,7 +18,7 @@ export const RUHROH_ARTIFACTS = [
 ] as const;
 
 export interface BuildRuhrohHarborCommandInput {
-  scenario: Pick<RuhrohScenario, "id" | "loop">;
+  scenario: Pick<RuhrohScenario, "id" | "loop"> & Partial<Pick<RuhrohScenario, "evaluation">>;
   adapter: string;
   datasetPath: string;
   iterations?: number | undefined;
@@ -33,6 +34,14 @@ export interface RuhrohHarborCommand {
 
 export function buildRuhrohHarborCommand(input: BuildRuhrohHarborCommandInput): RuhrohHarborCommand {
   const taskPath = path.join(input.datasetPath, "tasks", input.scenario.id);
+  const evaluationEnv = input.scenario.evaluation === undefined ? [] : [
+    "--agent-env",
+    `RUHROH_EVAL_SCENARIO_CONTEXT_JSON=${JSON.stringify(input.scenario.evaluation.scenarioContext)}`,
+    "--agent-env",
+    `RUHROH_EVAL_GOAL_RUBRIC_JSON=${JSON.stringify(input.scenario.evaluation.goalRubric)}`,
+    "--agent-env",
+    `RUHROH_EVAL_EVIDENCE_GUIDANCE_JSON=${JSON.stringify(input.scenario.evaluation.evidenceGuidance)}`,
+  ];
   return {
     scenarioId: input.scenario.id,
     args: [
@@ -47,6 +56,7 @@ export function buildRuhrohHarborCommand(input: BuildRuhrohHarborCommandInput): 
       `RUHROH_MAX_ITERATIONS=${String(input.iterations ?? input.scenario.loop.defaultMaxIterations)}`,
       "--agent-env",
       `RUHROH_RUN_AGENT_ADAPTER=${input.adapter}`,
+      ...evaluationEnv,
       ...buildAgentEnvArgs(input.env ?? process.env),
       ...(input.artifacts ?? RUHROH_ARTIFACTS).flatMap((artifact) => ["--artifact", artifact]),
     ],
@@ -54,7 +64,7 @@ export function buildRuhrohHarborCommand(input: BuildRuhrohHarborCommandInput): 
 }
 
 export function buildRuhrohHarborCommands(input: {
-  scenarios: Array<Pick<RuhrohScenario, "id" | "loop">>;
+  scenarios: Array<Pick<RuhrohScenario, "id" | "loop"> & Partial<Pick<RuhrohScenario, "evaluation">>>;
   adapter: string;
   datasetPath: string;
   iterations?: number | undefined;

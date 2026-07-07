@@ -1,11 +1,25 @@
 #!/usr/bin/env node
 import { spawnSync, type SpawnSyncReturns } from "node:child_process";
-import { realpathSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { RUHROH_ARTIFACTS, RUHROH_HARBOR_AGENT_IMPORT_PATH, buildRuhrohHarborCommands } from "./harbor.js";
-import { discoverRuhrohScenarios, generateHarborDataset, loadRuhrohScenario, type LoadedRuhrohScenario } from "./generate.js";
+import {
+  discoverRuhrohScenarios,
+  generateHarborDataset,
+  loadRuhrohScenario,
+  validateRuhrohScenarioSource,
+  type LoadedRuhrohScenario,
+  type ValidateRuhrohScenarioSourceResult,
+} from "./generate.js";
+import {
+  aggregateRuhrohRuns,
+  summarizeRuhrohRun,
+  type RuhrohAggregateRunGroup,
+  type RuhrohLoopResult,
+  type RuhrohRunSummary,
+} from "./results.js";
 import type { RuhrohScenario, RuhrohScenarioTier } from "./scenarios.js";
 
 interface RuntimeDeps {
@@ -17,13 +31,15 @@ interface RuntimeDeps {
 }
 
 export interface RuhrohCliOptions {
-  command: "run" | "generate";
+  command: "run" | "generate" | "validate" | "report" | "compare";
   list: boolean;
   dryRun: boolean;
   generateOnly: boolean;
+  json: boolean;
   harborBin: string;
   scenarioDir: string;
   generatedDir: string;
+  inputPath?: string | undefined;
   scenarioId?: string | undefined;
   tier?: RuhrohScenarioTier | undefined;
   iterations?: number | undefined;
@@ -48,10 +64,10 @@ export function parseRuhrohCliArgs(argv: string[], cwd: string = process.cwd()):
     list: false,
     dryRun: false,
     generateOnly: false,
+    json: false,
     harborBin: "harbor",
     scenarioDir: path.join(resolveRuhrohPackageRoot(), "scenarios"),
     generatedDir: path.resolve(cwd, ".generated", "ruhroh"),
-    tier: "smoke",
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -59,7 +75,7 @@ export function parseRuhrohCliArgs(argv: string[], cwd: string = process.cwd()):
     if (arg === undefined || arg === "--") {
       continue;
     }
-    if (index === 0 && (arg === "run" || arg === "generate")) {
+    if (index === 0 && (arg === "run" || arg === "generate" || arg === "validate" || arg === "report" || arg === "compare")) {
       options.command = arg;
       if (arg === "generate") {
         options.generateOnly = true;
@@ -75,6 +91,10 @@ export function parseRuhrohCliArgs(argv: string[], cwd: string = process.cwd()):
     }
     if (arg === "--dry-run") {
       options.dryRun = true;
+      continue;
+    }
+    if (arg === "--json") {
+      options.json = true;
       continue;
     }
     if (arg === "--generate-only") {
@@ -118,6 +138,13 @@ export function parseRuhrohCliArgs(argv: string[], cwd: string = process.cwd()):
       index += 1;
       continue;
     }
+    if (!arg.startsWith("-") && (options.command === "report" || options.command === "compare")) {
+      if (options.inputPath !== undefined) {
+        throw new Error(`Unexpected extra argument: ${arg}`);
+      }
+      options.inputPath = path.resolve(cwd, arg);
+      continue;
+    }
     throw new Error(`Unknown argument: ${arg}`);
   }
 
@@ -136,6 +163,16 @@ export async function runRuhrohCli(argv: string[], deps: RuntimeDeps): Promise<n
     deps.stderr.write(`ruhroh failed: ${error instanceof Error ? error.message : String(error)}\n\n`);
     deps.stderr.write(helpText());
     return 1;
+  }
+
+  if (options.command === "report") {
+    return runReportCommand(options, deps);
+  }
+  if (options.command === "compare") {
+    return runCompareCommand(options, deps);
+  }
+  if (options.command === "validate") {
+    return runValidateCommand(options, deps);
   }
 
   let loaded: LoadedRuhrohScenario[];
@@ -213,6 +250,80 @@ export async function runRuhrohCli(argv: string[], deps: RuntimeDeps): Promise<n
     }
   }
   return failed ? 1 : 0;
+}
+
+function runValidateCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
+  const sources = discoverRuhrohScenarios(options.scenarioDir);
+  if (sources.length === 0) {
+    deps.stderr.write(`ruhroh failed: No Ruhroh scenarios found in ${options.scenarioDir}\n`);
+    return 1;
+  }
+  const results = sources
+    .map((source) => validateRuhrohScenarioSource(source))
+    .filter((result) => scenarioValidationMatchesSelection(result, options));
+  if (results.length === 0) {
+    deps.stderr.write(`ruhroh failed: No Ruhroh scenarios matched the requested selection.\n`);
+    return 1;
+  }
+  if (options.json) {
+    deps.stdout.write(`${JSON.stringify({ version: "ruhroh_validation_report_v1", results }, null, 2)}\n`);
+  } else {
+    for (const result of results) {
+      const id = result.scenario?.id ?? path.basename(result.source.scenarioDir);
+      const status = result.errors.length === 0 ? "ok" : "failed";
+      deps.stdout.write(`${id}: ${status}\n`);
+      for (const error of result.errors) {
+        deps.stdout.write(`  error: ${error}\n`);
+      }
+      for (const warning of result.warnings) {
+        deps.stdout.write(`  warning: ${warning}\n`);
+      }
+    }
+  }
+  return results.some((result) => result.errors.length > 0) ? 1 : 0;
+}
+
+function runReportCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
+  if (options.inputPath === undefined) {
+    deps.stderr.write("ruhroh failed: report requires a result JSON file or run directory.\n");
+    return 1;
+  }
+  try {
+    const run = readRunResult(options.inputPath);
+    const summary = summarizeRuhrohRun(run);
+    if (options.json) {
+      deps.stdout.write(`${JSON.stringify({ version: "ruhroh_report_v1", summary }, null, 2)}\n`);
+    } else {
+      deps.stdout.write(formatRunReport(summary));
+    }
+    return 0;
+  } catch (error) {
+    deps.stderr.write(`ruhroh failed: ${error instanceof Error ? error.message : String(error)}\n`);
+    return 1;
+  }
+}
+
+function runCompareCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
+  if (options.inputPath === undefined) {
+    deps.stderr.write("ruhroh failed: compare requires a directory containing Ruhroh result artifacts.\n");
+    return 1;
+  }
+  try {
+    const runs = readRunResults(options.inputPath);
+    if (runs.length === 0) {
+      throw new Error(`No ruhroh_loop_result_v1 JSON files found in ${options.inputPath}`);
+    }
+    const groups = aggregateRuhrohRuns(runs);
+    if (options.json) {
+      deps.stdout.write(`${JSON.stringify({ version: "ruhroh_compare_v1", groups }, null, 2)}\n`);
+    } else {
+      deps.stdout.write(formatCompareReport(groups));
+    }
+    return 0;
+  } catch (error) {
+    deps.stderr.write(`ruhroh failed: ${error instanceof Error ? error.message : String(error)}\n`);
+    return 1;
+  }
 }
 
 function selectScenarios(loaded: LoadedRuhrohScenario[], options: RuhrohCliOptions): LoadedRuhrohScenario[] {
@@ -343,8 +454,170 @@ function formatSpawnFailure(result: SpawnSyncReturns<Buffer>): string {
   return `${parts.join("\n")}\n`;
 }
 
+function scenarioValidationMatchesSelection(
+  result: ValidateRuhrohScenarioSourceResult,
+  options: RuhrohCliOptions,
+): boolean {
+  if (options.scenarioId !== undefined) {
+    return result.scenario?.id === options.scenarioId || path.basename(result.source.scenarioDir) === options.scenarioId;
+  }
+  if (options.tier !== undefined) {
+    return result.scenario?.tier === options.tier || result.scenario === undefined;
+  }
+  return true;
+}
+
+function readRunResult(inputPath: string): RuhrohLoopResult {
+  const resolved = path.resolve(inputPath);
+  const resultPath = statSync(resolved).isDirectory() ? path.join(resolved, "ruhroh-loop-result.json") : resolved;
+  const parsed = readJsonObject(resultPath);
+  if (!isRuhrohLoopResult(parsed)) {
+    throw new Error(`Expected ruhroh_loop_result_v1 JSON at ${resultPath}`);
+  }
+  return parsed;
+}
+
+function readRunResults(inputPath: string): RuhrohLoopResult[] {
+  const resolved = path.resolve(inputPath);
+  if (!existsSync(resolved)) {
+    throw new Error(`Path does not exist: ${resolved}`);
+  }
+  if (!statSync(resolved).isDirectory()) {
+    return [readRunResult(resolved)];
+  }
+  return walkJsonFiles(resolved).flatMap((filePath) => {
+    try {
+      const parsed = readJsonObject(filePath);
+      return isRuhrohLoopResult(parsed) ? [parsed] : [];
+    } catch {
+      return [];
+    }
+  });
+}
+
+function readJsonObject(filePath: string): Record<string, unknown> {
+  const parsed = JSON.parse(readFileSync(filePath, "utf8"));
+  if (!isRecord(parsed)) {
+    throw new Error(`Expected JSON object in ${filePath}`);
+  }
+  return parsed;
+}
+
+function isRuhrohLoopResult(value: unknown): value is RuhrohLoopResult {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return value.version === "ruhroh_loop_result_v1"
+    && typeof value.scenarioId === "string"
+    && typeof value.status === "string"
+    && typeof value.score === "number";
+}
+
+function walkJsonFiles(root: string): string[] {
+  const files: string[] = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const fullPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkJsonFiles(fullPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith(".json")) {
+      files.push(fullPath);
+    }
+  }
+  return files.sort();
+}
+
+function formatRunReport(summary: RuhrohRunSummary): string {
+  const lines = [
+    `Ruhroh report: ${summary.scenarioId}`,
+    `adapter: ${summary.adapter}`,
+    `status: ${summary.status} eval=${summary.evalStatus} score=${summary.score}`,
+    `failureBucket: ${summary.failureBucket}`,
+    `iterations: ${summary.iterationsUsed}`,
+    `duration: ${summary.durationMs}ms`,
+    `summary: ${summary.finalSummary}`,
+  ];
+  if (Object.keys(summary.subscores).length > 0) {
+    lines.push("", "Subscores:");
+    for (const [dimension, score] of Object.entries(summary.subscores)) {
+      lines.push(`  ${dimension}: ${formatNumber(score ?? 0)}`);
+    }
+  }
+  if (summary.criteriaResults.length > 0) {
+    lines.push("", "Criteria:");
+    for (const criterion of summary.criteriaResults) {
+      lines.push(`  ${criterion.id}: ${criterion.status} score=${formatNumber(criterion.score)} - ${criterion.description}`);
+      if (criterion.notes !== undefined && criterion.notes.trim().length > 0) {
+        lines.push(`    ${criterion.notes}`);
+      }
+    }
+  }
+  if (summary.unmetCriteria.length > 0) {
+    lines.push("", "Unmet criteria:");
+    for (const item of summary.unmetCriteria) {
+      lines.push(`  - ${item}`);
+    }
+  }
+  if (summary.commandsRun.length > 0) {
+    lines.push("", "Commands run:");
+    for (const command of summary.commandsRun) {
+      lines.push(`  ${command.command} -> ${command.exitCode}: ${command.summary}`);
+    }
+  }
+  if (Object.keys(summary.artifactPaths).length > 0) {
+    lines.push("", "Artifacts:");
+    for (const [name, artifactPath] of Object.entries(summary.artifactPaths)) {
+      if (artifactPath.trim().length > 0) {
+        lines.push(`  ${name}: ${artifactPath}`);
+      }
+    }
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatCompareReport(groups: RuhrohAggregateRunGroup[]): string {
+  const lines = ["Ruhroh compare"];
+  for (const group of groups) {
+    lines.push(
+      "",
+      `${group.scenarioId} / ${group.adapter}`,
+      `  runs: ${group.runs}`,
+      `  passRate: ${formatPercent(group.passRate)} (${group.passes}/${group.runs})`,
+      `  meanScore: ${formatNumber(group.meanScore)}`,
+      `  medianDuration: ${group.medianDurationMs}ms`,
+      `  iterations: ${formatCounts(group.iterationDistribution)}`,
+      `  failureBuckets: ${formatCounts(group.failureBuckets)}`,
+    );
+    if (Object.keys(group.meanSubscores).length > 0) {
+      lines.push(`  meanSubscores: ${Object.entries(group.meanSubscores).map(([key, value]) => `${key}=${formatNumber(value ?? 0)}`).join(", ")}`);
+    }
+  }
+  return `${lines.join("\n")}\n`;
+}
+
+function formatNumber(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(3).replace(/0+$/u, "").replace(/\.$/u, "");
+}
+
+function formatPercent(value: number): string {
+  return `${Math.round(value * 1000) / 10}%`;
+}
+
+function formatCounts(counts: Record<string, number>): string {
+  const entries = Object.entries(counts);
+  if (entries.length === 0) {
+    return "none";
+  }
+  return entries.map(([key, value]) => `${key}=${value}`).join(", ");
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function helpText(): string {
-  return `Usage: ruhroh [run|generate] [options]\n\nCommon commands:\n  ruhroh --list\n  ruhroh --scenario simple-newsletter --generate-only\n  ruhroh --scenario simple-newsletter --dry-run\n  ruhroh generate --tier smoke\n\nOptions:\n  --list                    List JSON scenarios.\n  --scenario <id>           Select one scenario.\n  --tier <tier>             Select scenarios in tier: smoke, nightly, release. Default: smoke.\n  --scenario-dir <path>     Scenario root. Default: bundled package scenarios.\n  --generated-dir <path>    Generated output root. Default: .generated/ruhroh.\n  --iterations <n>          Override implementation iterations.\n  --adapter <id-or-command> Select run-agent adapter by id or command path. Required for run/dry-run.\n  --generate-only           Generate Harbor task directories without running Harbor.\n  --harbor-bin <path>       Harbor binary. Default: harbor.\n  --dry-run                 Print Harbor commands without writing tasks or running Harbor.\n`;
+  return `Usage: ruhroh [run|generate|validate|report|compare] [options]\n\nCommon commands:\n  ruhroh --list\n  ruhroh validate --scenario-dir ./scenarios --json\n  ruhroh --scenario simple-newsletter --generate-only\n  ruhroh --scenario simple-newsletter --dry-run\n  ruhroh report ./ruhroh-loop-result.json\n  ruhroh compare ./results --json\n\nOptions:\n  --list                    List JSON scenarios.\n  --scenario <id>           Select one scenario.\n  --tier <tier>             Select scenarios in tier: smoke, nightly, release. Default: smoke.\n  --scenario-dir <path>     Scenario root. Default: bundled package scenarios.\n  --generated-dir <path>    Generated output root. Default: .generated/ruhroh.\n  --iterations <n>          Override implementation iterations.\n  --adapter <id-or-command> Select run-agent adapter by id or command path. Required for run/dry-run.\n  --generate-only           Generate Harbor task directories without running Harbor.\n  --harbor-bin <path>       Harbor binary. Default: harbor.\n  --dry-run                 Print Harbor commands without writing tasks or running Harbor.\n  --json                    Emit machine-readable JSON for validate, report, or compare.\n`;
 }
 
 async function main(): Promise<void> {

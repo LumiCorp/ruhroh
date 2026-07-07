@@ -26,6 +26,11 @@ Ruhroh generates local Harbor task directories:
 Generated `task.toml` includes schema version, artifacts, task metadata,
 scenario id, verifier timeout, agent timeout, and environment config.
 
+`requires.network` controls the generated Harbor environment:
+
+- `false` writes `network_mode = "none"`.
+- `true` writes `network_mode = "public"`.
+
 Generated `tests/test.sh` is generic. It reads the final Ruhroh result JSON,
 checks structured completion and score/reward mapping, and does not inspect app
 files, routes, build commands, or source text.

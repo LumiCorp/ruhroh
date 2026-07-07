@@ -25,8 +25,15 @@ export interface GenerateHarborDatasetResult {
     datasetPath: string;
     tasks: GenerateHarborTaskResult[];
 }
+export interface ValidateRuhrohScenarioSourceResult {
+    source: RuhrohScenarioSource;
+    scenario?: RuhrohScenario | undefined;
+    errors: string[];
+    warnings: string[];
+}
 export declare function discoverRuhrohScenarios(scenarioRoot: string): RuhrohScenarioSource[];
 export declare function loadRuhrohScenario(input: string | RuhrohScenarioSource): LoadedRuhrohScenario;
+export declare function validateRuhrohScenarioSource(input: string | RuhrohScenarioSource): ValidateRuhrohScenarioSourceResult;
 export declare function generateHarborDataset(input: GenerateHarborDatasetInput): GenerateHarborDatasetResult;
 export declare function generateHarborTask(input: GenerateHarborTaskInput): GenerateHarborTaskResult;
 //# sourceMappingURL=generate.d.ts.map

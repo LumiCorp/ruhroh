@@ -35,6 +35,13 @@ export interface GenerateHarborDatasetResult {
   tasks: GenerateHarborTaskResult[];
 }
 
+export interface ValidateRuhrohScenarioSourceResult {
+  source: RuhrohScenarioSource;
+  scenario?: RuhrohScenario | undefined;
+  errors: string[];
+  warnings: string[];
+}
+
 interface RawScenarioFile {
   version?: unknown;
   id?: unknown;
@@ -82,6 +89,52 @@ export function loadRuhrohScenario(input: string | RuhrohScenarioSource): Loaded
     throw new Error(`Invalid Ruhroh scenario ${source.scenarioPath}: ${errors.join("; ")}`);
   }
   return { scenario, source };
+}
+
+export function validateRuhrohScenarioSource(input: string | RuhrohScenarioSource): ValidateRuhrohScenarioSourceResult {
+  const source = typeof input === "string" ? scenarioSourceFromDir(path.resolve(input)) : input;
+  const errors: string[] = [];
+  const warnings: string[] = [];
+  if (!existsSync(source.scenarioPath)) {
+    return { source, errors: [`missing scenario.json at ${source.scenarioPath}`], warnings };
+  }
+  let raw: RawScenarioFile;
+  try {
+    raw = readJsonRecord(source.scenarioPath) as RawScenarioFile;
+  } catch (error) {
+    return {
+      source,
+      errors: [`invalid scenario.json: ${error instanceof Error ? error.message : String(error)}`],
+      warnings,
+    };
+  }
+  let userPrompt = "";
+  try {
+    userPrompt = readUserPrompt(raw, source);
+  } catch (error) {
+    errors.push(error instanceof Error ? error.message : String(error));
+  }
+  const scenario = {
+    ...raw,
+    version: raw.version,
+    userPrompt,
+    run: readRunDefaults(raw),
+  } as RuhrohScenario;
+  try {
+    errors.push(...validateRuhrohScenario(scenario));
+  } catch (error) {
+    errors.push(`scenario shape is invalid: ${error instanceof Error ? error.message : String(error)}`);
+  }
+  errors.push(...validateDeclaredAssets(raw.assets, source));
+  if (scenario.requires?.network === true) {
+    warnings.push("requires.network=true will generate Harbor tasks with public network access");
+  }
+  return {
+    source,
+    ...(errors.length === 0 ? { scenario } : {}),
+    errors,
+    warnings,
+  };
 }
 
 export function generateHarborDataset(input: GenerateHarborDatasetInput): GenerateHarborDatasetResult {
@@ -181,6 +234,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function renderTaskToml(input: GenerateHarborTaskInput): string {
   const artifacts = input.artifacts ?? RUHROH_ARTIFACTS;
+  const networkMode = input.scenario.requires.network ? "public" : "none";
   return [
     'schema_version = "1.3"',
     "artifacts = [",
@@ -206,7 +260,7 @@ function renderTaskToml(input: GenerateHarborTaskInput): string {
     `timeout_sec = ${input.scenario.run.timeoutSeconds.toFixed(1)}`,
     "",
     "[environment]",
-    'network_mode = "public"',
+    `network_mode = ${tomlString(networkMode)}`,
     "build_timeout_sec = 600.0",
     'os = "linux"',
     "mcp_servers = []",
@@ -216,6 +270,31 @@ function renderTaskToml(input: GenerateHarborTaskInput): string {
     "[solution.env]",
     "",
   ].join("\n");
+}
+
+function validateDeclaredAssets(value: unknown, source: RuhrohScenarioSource): string[] {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value)) {
+    return ["assets must be an array of relative paths"];
+  }
+  const errors: string[] = [];
+  for (const asset of value) {
+    if (typeof asset !== "string" || asset.trim().length === 0) {
+      errors.push("assets entries must be non-empty relative paths");
+      continue;
+    }
+    if (path.isAbsolute(asset) || asset.split(/[\\/]+/u).includes("..")) {
+      errors.push(`asset path must stay inside the scenario directory: ${asset}`);
+      continue;
+    }
+    const assetPath = path.resolve(source.scenarioDir, asset);
+    if (!existsSync(assetPath)) {
+      errors.push(`declared asset does not exist: ${asset}`);
+    }
+  }
+  return errors;
 }
 
 function renderGenericVerifier(): string {

@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.6.0-beta.0
+
+- Added `ruhroh validate`, `ruhroh report`, and `ruhroh compare`.
+- Added scenario-source validation for prompts, declared assets, rubric shape, and network policy.
+- Made generated Harbor tasks respect `requires.network`.
+- Added enriched eval-result fields for per-criterion evidence, subscores, and judge metadata while preserving binary Harbor reward compatibility.
+- Added run summary and repeated-run aggregation helpers.
+- Wrote and preserved `ruhroh-loop-eval-input.json` for stable evaluator inputs.
+- Updated docs for the author-run-evaluate-review workflow.
+
 ## 0.5.0-beta.2
 
 - Fixed hosted logo and badge image URLs for the npm README.

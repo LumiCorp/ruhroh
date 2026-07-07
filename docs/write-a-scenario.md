@@ -58,8 +58,19 @@ at runtime with `--adapter`.
 Use the rubric to describe outcome quality. The generated Harbor verifier stays
 generic; it should not become a scenario-specific file or source-code checker.
 
-Validate by generating the task:
+Validate the scenario before generating the task:
+
+```bash
+pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario my-task
+pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario my-task --json
+```
+
+Then generate the task:
 
 ```bash
 pnpm exec ruhroh --scenario-dir ruhroh/scenarios --scenario my-task --generate-only
 ```
+
+Set `requires.network` deliberately. `false` produces Harbor
+`network_mode = "none"`; `true` produces `network_mode = "public"` and should be
+reserved for scenarios whose user goal genuinely needs external network access.
