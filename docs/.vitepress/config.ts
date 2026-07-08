@@ -5,9 +5,23 @@ export default defineConfig({
   description: "Real-User Harness for Repair-Oriented Harbor",
   base: "/ruhroh/",
   cleanUrls: true,
-  head: [["link", { rel: "icon", href: "/ruhroh/ruhroh-badge.png" }]],
+  head: [
+    ["link", { rel: "icon", href: "/ruhroh/ruhroh-badge.png" }],
+    [
+      "link",
+      {
+        rel: "icon",
+        href: "/ruhroh/ruhroh-badge-dark.png",
+        media: "(prefers-color-scheme: dark)",
+      },
+    ],
+  ],
   themeConfig: {
-    logo: "/ruhroh-badge.png",
+    logo: {
+      light: "/ruhroh-badge.png",
+      dark: "/ruhroh-badge-dark.png",
+      alt: "Ruhroh",
+    },
     nav: [
       { text: "Guide", link: "/getting-started" },
       { text: "Reference", link: "/architecture" },
