@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/eval-calibration-report-v1.schema.json",
+  "title": "Ruhroh Evaluator Calibration Report v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "source",
+    "ok",
+    "scenarioCount",
+    "caseCount",
+    "matchedCount",
+    "mismatchCount",
+    "infraFailedCount",
+    "warnings",
+    "nextActions",
+    "results"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_eval_calibration_report_v1" },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scenarioDir", "generatedDir", "evaluatorCommand", "reportPath"],
+      "properties": {
+        "scenarioDir": { "type": "string", "minLength": 1 },
+        "generatedDir": { "type": "string", "minLength": 1 },
+        "evaluatorCommand": { "type": "string", "minLength": 1 },
+        "reportPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "ok": { "type": "boolean" },
+    "scenarioCount": { "type": "number", "minimum": 0 },
+    "caseCount": { "type": "number", "minimum": 0 },
+    "matchedCount": { "type": "number", "minimum": 0 },
+    "mismatchCount": { "type": "number", "minimum": 0 },
+    "infraFailedCount": { "type": "number", "minimum": 0 },
+    "warnings": { "$ref": "#/$defs/stringArray" },
+    "nextActions": { "$ref": "#/$defs/stringArray" },
+    "results": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/calibrationCaseResult" }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "calibrationStatus": {
+      "enum": ["passed", "failed", "review", "infra_failed"]
+    },
+    "calibrationCaseResult": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "scenarioId",
+        "caseId",
+        "expectedStatus",
+        "matched",
+        "outputPath",
+        "inputPath",
+        "workspacePath",
+        "details"
+      ],
+      "properties": {
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "caseId": { "type": "string", "minLength": 1 },
+        "expectedStatus": { "$ref": "#/$defs/calibrationStatus" },
+        "actualStatus": { "$ref": "#/$defs/calibrationStatus" },
+        "matched": { "type": "boolean" },
+        "exitCode": { "type": "number" },
+        "outputPath": { "type": "string", "minLength": 1 },
+        "inputPath": { "type": "string", "minLength": 1 },
+        "workspacePath": { "type": "string", "minLength": 1 },
+        "details": { "type": "string" },
+        "stdout": { "type": "string" },
+        "stderr": { "type": "string" }
+      }
+    }
+  }
+}

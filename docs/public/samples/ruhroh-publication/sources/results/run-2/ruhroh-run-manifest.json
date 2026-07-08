@@ -1,0 +1,73 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/run-manifest-v1.schema.json",
+  "version": "ruhroh_run_manifest_v1",
+  "runId": "sample-newsletter-agent-a-2",
+  "scenario": {
+    "id": "simple-newsletter",
+    "scenarioVersion": "1.0.0"
+  },
+  "benchmark": {
+    "dataset": "ruhroh-docs-sample",
+    "adapter": "ruhroh-harbor",
+    "harborAgent": "ruhroh-harbor"
+  },
+  "timing": {
+    "startedAt": "2026-07-08T12:00:00Z",
+    "endedAt": "2026-07-08T12:01:00Z",
+    "durationMs": 60000
+  },
+  "loop": {
+    "maxIterations": 3,
+    "implementationIterationsUsed": 1,
+    "stoppedReason": "goal_satisfied"
+  },
+  "sample": {
+    "id": "simple-newsletter/agent-a/2-of-2",
+    "index": 2,
+    "count": 2,
+    "seed": "docs-seed-two"
+  },
+  "runAgent": {
+    "adapterId": "agent-a",
+    "adapterVersion": "docs-sample-v1",
+    "continuityLevel": "workspace_only",
+    "sessionHandle": "sample-newsletter-agent-a-2",
+    "runIds": [
+      "sample-newsletter-agent-a-2"
+    ],
+    "model": {
+      "provider": "docs",
+      "model": "sample-agent",
+      "version": "2026-07-08",
+      "promptVersion": "docs-v1"
+    }
+  },
+  "evaluator": {
+    "model": {
+      "provider": "docs",
+      "model": "docs-fixture-evaluator",
+      "version": "2026-07-08",
+      "promptVersion": "docs-eval-v1"
+    },
+    "inputSummary": {
+      "scenarioId": "simple-newsletter",
+      "rubricSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "privateAssetsSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    },
+    "judge": {
+      "kind": "hybrid",
+      "model": "docs-fixture-evaluator",
+      "version": "2026-07-08"
+    }
+  },
+  "environment": {
+    "fingerprint": {
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "source": "docs sample"
+    }
+  },
+  "usage": {
+    "costUsd": 0.02,
+    "totalTokens": 700
+  }
+}

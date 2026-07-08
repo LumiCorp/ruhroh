@@ -50,6 +50,15 @@ Repeat `--adapter` to collect the same sample plan for multiple agents in one
 matrix. `ruhroh compare` still groups by scenario id and adapter id, so each
 agent's repeated samples remain separate in aggregate reporting.
 
+Use `--shard <index>/<total>` when a repeated suite is too expensive for one
+worker. Shards are selected from the deterministic scenario/adapter/sample
+matrix after the full plan is built. A sample produced by `--runs 20 --shard
+3/4` still carries a `RUHROH_SAMPLE_ID` ending in `-of-20` and a
+`RUHROH_RUN_COUNT` of `20`; the shard only decides which samples this worker
+executes. Keep the same scenario, suite, adapter, and `--runs` flags for every
+worker, preserve all result artifacts, and compare the merged result root
+against the intended run plan with `compare --run-plan`.
+
 `ruhroh compare` reports pass rate, Wilson 95% confidence intervals, pass@k,
 mean score with a deterministic bootstrap percentile 95% interval, failure
 buckets, cohort metadata, eval-quality warnings, optional cost/token summaries,
@@ -95,6 +104,10 @@ private evaluator path is explicit in the manifest. Bump
 `scenarioVersion` when prompts, assets, rubrics, calibration cases, or expected
 outcomes change in a way that could affect results. Mark scenarios
 `deprecated` or `retired` instead of silently removing or replacing them.
+`inspect-pack` reports `riskReview` warnings when scenario contamination notes
+or suite contamination/reward-hacking reviews are missing or left as
+placeholders, so public packs can catch leakage-review gaps before run
+collection starts.
 
 Suites freeze scenario membership under a `suiteVersion`. Bump `suiteVersion`
 when membership, locked scenario versions, acceptance criteria, or methodology
@@ -115,7 +128,10 @@ Published scenarios should include `evaluation.calibrationCases`: short
 pass/fail/review anchors with a rationale for the expected judgment. Calibration
 cases do not score the live run directly; they give model-backed and
 human-assisted evaluators scenario-specific examples before judging the actual
-workspace.
+workspace. `ruhroh validate` reports a `calibration` summary for each scenario,
+including expected-status counts and missing pass/fail/review anchors, so pack
+maintainers can see whether the evaluator has enough judgment coverage before
+collecting runs.
 
 Use `evaluation.privateAssets` for held-out expected outputs, evaluator-only
 fixtures, or reviewer checklists that should not be included in the public
@@ -127,15 +143,22 @@ without exposing held-out materials.
 
 `ruhroh validate` warns when scenario rubrics look too generic or underspecified.
 JSON validation output includes structured evaluator lint `warningDetails` with
-stable codes, categories, and field paths. Use those diagnostics as benchmark
-pack governance inputs instead of scraping warning prose. `ruhroh report` and
+stable codes, categories, and field paths, plus the per-scenario `calibration`
+summary. Use those diagnostics as benchmark pack governance inputs instead of
+scraping warning prose. Run `ruhroh calibrate-evaluator` and preserve a passing
+calibration report before repeated run planning; `ruhroh workflow` treats that
+report as a required evaluator-quality gate. `ruhroh report` and
 `ruhroh compare` warn when evaluator output lacks evidence, criteria results,
 judge metadata, or enough summary detail. These warnings do not change the
 binary Harbor score, but they should block public benchmark claims until
-reviewed. Both commands expose a `reviewQueue` in JSON and HTML so maintainers
+reviewed. Both commands expose a
+`reviewQueue` in JSON and HTML so maintainers
 can inspect non-passing runs, explicit `review` judgments, evaluator
 infrastructure failures, and weak evaluator evidence with transcript and
-event-log pointers.
+event-log pointers. Use `ruhroh review ./results --json` or `--html` to extract
+that queue as a standalone adjudication packet. Reviewers should record the
+decision, reviewer identity, rationale, and accepted limitations before rerunning
+`ruhroh publish-check`.
 
 Model-backed evaluators should record provider, model, model version, and prompt
 version in the run manifest. For higher-stakes benchmark packs, include
@@ -204,6 +227,16 @@ source-file hashes and, for suite-selected runs, the suite manifest version and
 hash. Suite comparisons warn when the run plan was generated from a different
 suite manifest than the one being used for publication, so reviewers can catch
 benchmark-pack drift before reading individual run artifacts.
+
+If infrastructure prevents a planned sample from producing artifacts, record it
+in a `ruhroh_rerun_ledger_v1` file and pass `--rerun-ledger <path>` with the
+same `--run-plan`. Ruhroh accepts only sample-level `decision: "exclude"`
+entries with `reasonKind: "infrastructure"` as explanations for missing planned
+samples. Operator errors, invalid artifacts, unknown sample ids, and other
+exclusions remain warnings and block publishability. Benchmark claims include
+the ledger path and SHA-256 so the exclusion record can be re-verified with
+`validate-claim --verify-sources`. The ledger contract is shipped as
+`schemas/rerun-ledger-v1.schema.json`.
 
 A credible Ruhroh result should name:
 

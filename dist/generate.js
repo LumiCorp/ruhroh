@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { RUHROH_ARTIFACTS, RUHROH_HARBOR_AGENT_IMPORT_PATH } from "./harbor.js";
-import { lintRuhrohScenarioEvaluationDetailed, validateRuhrohScenario, } from "./scenarios.js";
+import { lintRuhrohScenarioEvaluationDetailed, summarizeRuhrohScenarioCalibration, validateRuhrohScenario, } from "./scenarios.js";
 export function discoverRuhrohScenarios(scenarioRoot) {
     const root = path.resolve(scenarioRoot);
     if (!existsSync(root)) {
@@ -66,6 +66,7 @@ export function validateRuhrohScenarioSource(input) {
         userPrompt,
         run: readRunDefaults(raw),
     };
+    const calibration = summarizeRuhrohScenarioCalibration(scenario);
     try {
         errors.push(...validateRuhrohScenario(scenario));
     }
@@ -74,8 +75,10 @@ export function validateRuhrohScenarioSource(input) {
     }
     warningDetails.push(...lintRuhrohScenarioEvaluationDetailed(scenario));
     warnings.push(...warningDetails.map((diagnostic) => diagnostic.message));
+    warnings.push(...scenarioGovernanceWarnings(scenario));
     errors.push(...validateDeclaredAssets(raw.assets, source));
     errors.push(...validateDeclaredAssetPaths(readEvaluationPrivateAssets(raw.evaluation), source, "evaluation.privateAssets"));
+    errors.push(...validatePrivateAssetExposure(raw.assets, readEvaluationPrivateAssets(raw.evaluation), source));
     if (scenario.requires?.network === true) {
         warnings.push("requires.network=true will generate Harbor tasks with public network access");
     }
@@ -85,7 +88,21 @@ export function validateRuhrohScenarioSource(input) {
         errors,
         warnings,
         warningDetails,
+        calibration,
     };
+}
+function scenarioGovernanceWarnings(scenario) {
+    const warnings = [];
+    const scenarioVersion = scenario.metadata?.scenarioVersion;
+    const changelog = scenario.metadata?.changelog;
+    if (typeof scenarioVersion === "string"
+        && scenarioVersion.trim().length > 0
+        && Array.isArray(changelog)
+        && changelog.length > 0
+        && !changelog.some((entry) => typeof entry === "string" && entry.includes(scenarioVersion))) {
+        warnings.push(`metadata.changelog should mention current scenarioVersion ${scenarioVersion}`);
+    }
+    return warnings;
 }
 export function generateHarborDataset(input) {
     const tasks = input.scenarios.map((loaded) => generateHarborTask({
@@ -117,12 +134,7 @@ export function generateHarborTask(input) {
     writeText("tests/test.sh", renderGenericVerifier(), 0o755);
     writeText("environment/Dockerfile", renderDockerfile());
     writeText("solution/solve.sh", renderSolveScript(), 0o755);
-    const assetsDir = path.join(input.scenarioDir, "assets");
-    if (existsSync(assetsDir) && statSync(assetsDir).isDirectory()) {
-        const targetAssetsDir = path.join(taskDir, "assets");
-        cpSync(assetsDir, targetAssetsDir, { recursive: true, force: true });
-        filesWritten.push(...listFiles(targetAssetsDir));
-    }
+    filesWritten.push(...copyPublicAssets(input.scenario, input.scenarioDir, taskDir));
     filesWritten.push(...copyPrivateEvaluationAssets(input.scenario, input.scenarioDir, taskDir));
     return { scenarioId: input.scenario.id, taskDir, filesWritten: [...new Set(filesWritten)].sort() };
 }
@@ -171,9 +183,15 @@ function readJsonRecord(filePath) {
 function isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
+function readStringArray(value) {
+    if (!Array.isArray(value)) {
+        return [];
+    }
+    return value.filter((entry) => typeof entry === "string");
+}
 function renderTaskToml(input) {
     const artifacts = input.artifacts ?? RUHROH_ARTIFACTS;
-    const networkMode = input.scenario.requires.network ? "public" : "none";
+    const networkMode = input.scenario.requires.network ? "public" : "no-network";
     return [
         'schema_version = "1.3"',
         "artifacts = [",
@@ -272,6 +290,40 @@ function validateDeclaredAssetPaths(value, source, field) {
         }
     }
     return errors;
+}
+function validatePrivateAssetExposure(publicValue, privateValue, source) {
+    const publicAssets = readStringArray(publicValue).filter(isSafeRelativePath);
+    const privateAssets = readStringArray(privateValue).filter(isSafeRelativePath);
+    const errors = [];
+    for (const publicAsset of publicAssets) {
+        const publicPath = path.resolve(source.scenarioDir, publicAsset);
+        for (const privateAsset of privateAssets) {
+            const privatePath = path.resolve(source.scenarioDir, privateAsset);
+            if (pathsOverlap(publicPath, privatePath)) {
+                errors.push(`evaluation.privateAssets must not overlap public assets: ${privateAsset} is exposed by assets entry ${publicAsset}`);
+            }
+        }
+    }
+    return errors;
+}
+function isSafeRelativePath(value) {
+    return value.trim().length > 0 && !path.isAbsolute(value) && !value.split(/[\\/]+/u).includes("..");
+}
+function pathsOverlap(left, right) {
+    return pathContainsOrEquals(left, right) || pathContainsOrEquals(right, left);
+}
+function pathContainsOrEquals(parent, child) {
+    const relativePath = path.relative(parent, child);
+    return relativePath === "" || (!relativePath.startsWith("..") && !path.isAbsolute(relativePath));
+}
+function copyPublicAssets(scenario, scenarioDir, taskDir) {
+    return (scenario.assets ?? []).flatMap((asset) => {
+        const sourcePath = path.resolve(scenarioDir, asset);
+        const targetPath = path.join(taskDir, asset);
+        mkdirSync(path.dirname(targetPath), { recursive: true });
+        cpSync(sourcePath, targetPath, { recursive: true, force: true });
+        return statSync(targetPath).isDirectory() ? listFiles(targetPath) : [targetPath];
+    });
 }
 function copyPrivateEvaluationAssets(scenario, scenarioDir, taskDir) {
     return (scenario.evaluation.privateAssets ?? []).flatMap((asset) => {

@@ -44,24 +44,42 @@ PROMPT
   "$gemini_bin" -p "$(cat "$prompt_path")"
 ) >"$transcript_path" 2>&1
 
-if [[ -n "$result_path" ]]; then
-  mkdir -p "$(dirname "$result_path")"
-  cat > "$result_path" <<JSON
-{
-  "version": "ruhroh_run_agent_result_v1",
-  "status": "goal_satisfied",
-  "adapterVersion": "$gemini_adapter_version",
-  "model": {
-    "provider": "google",
-    "model": "$gemini_model"
-  },
-  "summary": "Gemini CLI completed the Ruhroh turn.",
-  "artifacts": {
-    "prompt": "$prompt_path",
-    "transcript": "$transcript_path"
-  }
-}
-JSON
-fi
+RESULT_PATH="$result_path" \
+ADAPTER_VERSION="$gemini_adapter_version" \
+MODEL_PROVIDER="google" \
+MODEL_NAME="$gemini_model" \
+SUMMARY="Gemini CLI completed the Ruhroh turn." \
+PROMPT_PATH="$prompt_path" \
+TRANSCRIPT_PATH="$transcript_path" \
+node --input-type=module <<'NODE'
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 
-printf '{"status":"goal_satisfied","summary":"Gemini CLI completed the Ruhroh turn.","artifacts":{"prompt":"%s","transcript":"%s"}}\n' "$prompt_path" "$transcript_path"
+const artifacts = {
+  prompt: process.env.PROMPT_PATH,
+  transcript: process.env.TRANSCRIPT_PATH,
+};
+const summary = process.env.SUMMARY ?? "Gemini CLI completed the Ruhroh turn.";
+const resultPath = process.env.RESULT_PATH;
+
+if (resultPath !== undefined && resultPath.length > 0) {
+  mkdirSync(path.dirname(resultPath), { recursive: true });
+  writeFileSync(resultPath, `${JSON.stringify({
+    version: "ruhroh_run_agent_result_v1",
+    status: "goal_satisfied",
+    adapterVersion: process.env.ADAPTER_VERSION,
+    model: {
+      provider: process.env.MODEL_PROVIDER,
+      model: process.env.MODEL_NAME,
+    },
+    summary,
+    artifacts,
+  }, null, 2)}\n`);
+}
+
+console.log(JSON.stringify({
+  status: "goal_satisfied",
+  summary,
+  artifacts,
+}));
+NODE

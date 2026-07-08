@@ -1,0 +1,232 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json",
+  "version": "ruhroh_publish_bundle_v1",
+  "createdAt": "2026-07-08T12:00:00.000Z",
+  "source": {
+    "resultsPath": "sources/results",
+    "bundlePath": ".",
+    "suiteId": "ruhroh-sample",
+    "runPlanPath": "sources/ruhroh-run-plan.json",
+    "evaluatorCalibrationReportPath": "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json"
+  },
+  "publishable": false,
+  "blockerCount": 7,
+  "advisoryCount": 4,
+  "files": [
+    {
+      "role": "manifest",
+      "path": "manifest.json",
+      "description": "Versioned inventory for this publication bundle."
+    },
+    {
+      "role": "publish-check",
+      "path": "publish-check.json",
+      "description": "Publishability verdict, blockers, remediation, compare output, and optional source verification."
+    },
+    {
+      "role": "compare-html",
+      "path": "ruhroh-compare.html",
+      "description": "Static aggregate report for human inspection."
+    },
+    {
+      "role": "benchmark-claim",
+      "path": "benchmark-claim.json",
+      "description": "Compact benchmark claim JSON for archival and downstream publication."
+    },
+    {
+      "role": "benchmark-summary",
+      "path": "benchmark-summary.json",
+      "description": "Row-oriented benchmark summary JSON for reports or leaderboard ingestion."
+    },
+    {
+      "role": "review-json",
+      "path": "ruhroh-review.json",
+      "description": "Human adjudication queue derived from the claim's result artifacts."
+    },
+    {
+      "role": "review-html",
+      "path": "ruhroh-review.html",
+      "description": "Static human review queue for audit before citation."
+    },
+    {
+      "role": "eval-quality",
+      "path": "ruhroh-eval-quality.json",
+      "description": "Evaluator evidence quality report for the claim's result artifacts."
+    },
+    {
+      "role": "eval-quality-html",
+      "path": "ruhroh-eval-quality.html",
+      "description": "Static evaluator evidence quality packet for audit before citation."
+    },
+    {
+      "role": "readme",
+      "path": "README.md",
+      "description": "Human-readable bundle summary."
+    },
+    {
+      "role": "source-suite",
+      "path": "sources/suite/suite.json",
+      "description": "Suite manifest hashed by this claim."
+    },
+    {
+      "role": "source-run-plan",
+      "path": "sources/ruhroh-run-plan.json",
+      "description": "Run plan hashed by this claim."
+    },
+    {
+      "role": "evaluator-calibration-complete-newsletter-pass-input",
+      "path": "sources/evaluator-calibration/complete-newsletter-pass/ruhroh-eval-calibration-input.json",
+      "description": "Evaluator calibration input for complete-newsletter-pass."
+    },
+    {
+      "role": "evaluator-calibration-complete-newsletter-pass-output",
+      "path": "sources/evaluator-calibration/complete-newsletter-pass/ruhroh-loop-eval.json",
+      "description": "Evaluator calibration output for complete-newsletter-pass."
+    },
+    {
+      "role": "evaluator-calibration-missing-page-failure-input",
+      "path": "sources/evaluator-calibration/missing-page-failure/ruhroh-eval-calibration-input.json",
+      "description": "Evaluator calibration input for missing-page-failure."
+    },
+    {
+      "role": "evaluator-calibration-missing-page-failure-output",
+      "path": "sources/evaluator-calibration/missing-page-failure/ruhroh-loop-eval.json",
+      "description": "Evaluator calibration output for missing-page-failure."
+    },
+    {
+      "role": "evaluator-calibration-partial-signup-review-input",
+      "path": "sources/evaluator-calibration/partial-signup-review/ruhroh-eval-calibration-input.json",
+      "description": "Evaluator calibration input for partial-signup-review."
+    },
+    {
+      "role": "evaluator-calibration-partial-signup-review-output",
+      "path": "sources/evaluator-calibration/partial-signup-review/ruhroh-loop-eval.json",
+      "description": "Evaluator calibration output for partial-signup-review."
+    },
+    {
+      "role": "evaluator-calibration-report",
+      "path": "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
+      "description": "Evaluator calibration report hashed by this claim."
+    },
+    {
+      "role": "source-result-1",
+      "path": "sources/results/run-1/ruhroh-loop-result.json",
+      "description": "Result artifact 1 hashed by this claim."
+    },
+    {
+      "role": "source-result-1-evalinput-1",
+      "path": "sources/results/run-1/ruhroh-loop-eval-input.json",
+      "description": "Run artifact evalInput for result 1."
+    },
+    {
+      "role": "source-result-1-evalresult-2",
+      "path": "sources/results/run-1/ruhroh-loop-eval.json",
+      "description": "Run artifact evalResult for result 1."
+    },
+    {
+      "role": "source-result-1-events-3",
+      "path": "sources/results/run-1/events.jsonl",
+      "description": "Run artifact events for result 1."
+    },
+    {
+      "role": "source-result-1-eventstarball-4",
+      "path": "sources/results/run-1/ruhroh-loop-events.tar.gz",
+      "description": "Run artifact eventsTarball for result 1."
+    },
+    {
+      "role": "source-result-1-implementationruns-5",
+      "path": "sources/results/run-1/ruhroh-loop-iterations.jsonl",
+      "description": "Run artifact implementationRuns for result 1."
+    },
+    {
+      "role": "source-result-1-journey-6",
+      "path": "sources/results/run-1/ruhroh-loop-journey.json",
+      "description": "Run artifact journey for result 1."
+    },
+    {
+      "role": "source-result-1-runmanifest-8",
+      "path": "sources/results/run-1/ruhroh-run-manifest.json",
+      "description": "Run artifact runManifest for result 1."
+    },
+    {
+      "role": "source-result-1-transcript-9",
+      "path": "sources/results/run-1/transcript.log",
+      "description": "Run artifact transcript for result 1."
+    },
+    {
+      "role": "source-result-1-transcriptstarball-10",
+      "path": "sources/results/run-1/ruhroh-loop-transcripts.tar.gz",
+      "description": "Run artifact transcriptsTarball for result 1."
+    },
+    {
+      "role": "source-result-1-workspacesummary-11",
+      "path": "sources/results/run-1/ruhroh-workspace-summary.json",
+      "description": "Run artifact workspaceSummary for result 1."
+    },
+    {
+      "role": "source-result-1-workspacetarball-12",
+      "path": "sources/results/run-1/ruhroh-workspace.tar.gz",
+      "description": "Run artifact workspaceTarball for result 1."
+    },
+    {
+      "role": "source-result-2",
+      "path": "sources/results/run-2/ruhroh-loop-result.json",
+      "description": "Result artifact 2 hashed by this claim."
+    },
+    {
+      "role": "source-result-2-evalinput-1",
+      "path": "sources/results/run-2/ruhroh-loop-eval-input.json",
+      "description": "Run artifact evalInput for result 2."
+    },
+    {
+      "role": "source-result-2-evalresult-2",
+      "path": "sources/results/run-2/ruhroh-loop-eval.json",
+      "description": "Run artifact evalResult for result 2."
+    },
+    {
+      "role": "source-result-2-events-3",
+      "path": "sources/results/run-2/events.jsonl",
+      "description": "Run artifact events for result 2."
+    },
+    {
+      "role": "source-result-2-eventstarball-4",
+      "path": "sources/results/run-2/ruhroh-loop-events.tar.gz",
+      "description": "Run artifact eventsTarball for result 2."
+    },
+    {
+      "role": "source-result-2-implementationruns-5",
+      "path": "sources/results/run-2/ruhroh-loop-iterations.jsonl",
+      "description": "Run artifact implementationRuns for result 2."
+    },
+    {
+      "role": "source-result-2-journey-6",
+      "path": "sources/results/run-2/ruhroh-loop-journey.json",
+      "description": "Run artifact journey for result 2."
+    },
+    {
+      "role": "source-result-2-runmanifest-8",
+      "path": "sources/results/run-2/ruhroh-run-manifest.json",
+      "description": "Run artifact runManifest for result 2."
+    },
+    {
+      "role": "source-result-2-transcript-9",
+      "path": "sources/results/run-2/transcript.log",
+      "description": "Run artifact transcript for result 2."
+    },
+    {
+      "role": "source-result-2-transcriptstarball-10",
+      "path": "sources/results/run-2/ruhroh-loop-transcripts.tar.gz",
+      "description": "Run artifact transcriptsTarball for result 2."
+    },
+    {
+      "role": "source-result-2-workspacesummary-11",
+      "path": "sources/results/run-2/ruhroh-workspace-summary.json",
+      "description": "Run artifact workspaceSummary for result 2."
+    },
+    {
+      "role": "source-result-2-workspacetarball-12",
+      "path": "sources/results/run-2/ruhroh-workspace.tar.gz",
+      "description": "Run artifact workspaceTarball for result 2."
+    }
+  ]
+}

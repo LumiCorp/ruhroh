@@ -1,0 +1,189 @@
+name: Ruhroh Sharded Collection
+
+on:
+  workflow_dispatch:
+    inputs:
+      suite_id:
+        description: "Suite id to collect and publish."
+        required: true
+        default: "local-smoke"
+      runs:
+        description: "Repeated samples per scenario/adapter."
+        required: true
+        default: "20"
+      adapter:
+        description: "Adapter id or command path available in the checked-out repo."
+        required: true
+        default: "./ruhroh/adapters/local-agent/run.sh"
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate benchmark pack
+        run: |
+          pnpm exec ruhroh validate \
+            --scenario-dir ruhroh/scenarios \
+            --suite-dir ruhroh/suites \
+            --suite "${{ inputs.suite_id }}" \
+            --json
+
+      - name: Write canonical run plan
+        run: |
+          pnpm exec ruhroh plan \
+            --scenario-dir ruhroh/scenarios \
+            --suite-dir ruhroh/suites \
+            --suite "${{ inputs.suite_id }}" \
+            --adapter "${{ inputs.adapter }}" \
+            --runs "${{ inputs.runs }}" \
+            --json
+
+      - name: Upload run plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruhroh-run-plan
+          path: .generated/ruhroh/ruhroh-run-plan.json
+
+  collect:
+    needs: plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+        total_shards: [4]
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run shard
+        run: |
+          pnpm exec ruhroh run \
+            --scenario-dir ruhroh/scenarios \
+            --suite-dir ruhroh/suites \
+            --suite "${{ inputs.suite_id }}" \
+            --adapter "${{ inputs.adapter }}" \
+            --runs "${{ inputs.runs }}" \
+            --shard "${{ matrix.shard }}/${{ matrix.total_shards }}"
+
+      - name: Stage shard result artifacts
+        if: always()
+        run: |
+          mkdir -p "results/ruhroh/shard-${{ matrix.shard }}"
+          count=0
+          while IFS= read -r result_path; do
+            run_dir="$(dirname "$result_path")"
+            count=$((count + 1))
+            mkdir -p "results/ruhroh/shard-${{ matrix.shard }}/run-$count"
+            cp -R "$run_dir"/. "results/ruhroh/shard-${{ matrix.shard }}/run-$count/"
+          done < <(find . -name ruhroh-loop-result.json -not -path './results/*' -print)
+          test "$count" -gt 0
+
+      - name: Upload shard result artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruhroh-results-shard-${{ matrix.shard }}
+          path: results/ruhroh/shard-${{ matrix.shard }}/
+          if-no-files-found: warn
+
+  publish:
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    if: always()
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Download run plan
+        uses: actions/download-artifact@v4
+        with:
+          name: ruhroh-run-plan
+          path: .generated/ruhroh
+
+      - name: Download shard artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ruhroh-results-shard-*
+          path: results/ruhroh
+          merge-multiple: true
+
+      - name: Validate merged result artifacts
+        run: |
+          pnpm exec ruhroh validate-artifacts results/ruhroh --json
+
+      - name: Compare against run plan
+        run: |
+          pnpm exec ruhroh compare results/ruhroh \
+            --scenario-dir ruhroh/scenarios \
+            --suite-dir ruhroh/suites \
+            --suite "${{ inputs.suite_id }}" \
+            --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+            --html ruhroh-compare.html \
+            --json
+
+      - name: Publish-check bundle
+        run: |
+          pnpm exec ruhroh publish-check results/ruhroh \
+            --scenario-dir ruhroh/scenarios \
+            --suite-dir ruhroh/suites \
+            --suite "${{ inputs.suite_id }}" \
+            --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+            --bundle "ruhroh-publication/${{ inputs.suite_id }}" \
+            --summary-md "$GITHUB_STEP_SUMMARY" \
+            --verify-sources \
+            --json
+
+      - name: Upload publication artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruhroh-publication
+          path: |
+            ruhroh-compare.html
+            ruhroh-publication/

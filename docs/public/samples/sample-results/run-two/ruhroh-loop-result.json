@@ -1,0 +1,244 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/loop-result-v1.schema.json",
+  "version": "ruhroh_loop_result_v1",
+  "runId": "sample-newsletter-agent-a-2",
+  "adapter": "ruhroh-harbor",
+  "dataset": "ruhroh-docs-sample",
+  "scenarioId": "simple-newsletter",
+  "task_id": "simple-newsletter",
+  "status": "failed",
+  "failure_kind": "goal_mismatch",
+  "failureBucket": "goal_mismatch",
+  "score": 0,
+  "iterationsUsed": 1,
+  "implementationIterationsUsed": 1,
+  "implementationStoppedReason": "goal_satisfied",
+  "stoppedReason": "goal_satisfied",
+  "duration_ms": 60000,
+  "runAgent": {
+    "adapterId": "agent-a",
+    "adapterVersion": "docs-sample-v1",
+    "continuityLevel": "workspace_only",
+    "sessionHandle": "sample-newsletter-agent-a-2",
+    "runIds": [
+      "sample-newsletter-agent-a-2"
+    ],
+    "transcriptPaths": [
+      "./sample-results/run-two/transcript.log"
+    ],
+    "eventLogPaths": [
+      "./sample-results/run-two/events.jsonl"
+    ],
+    "artifactPaths": {}
+  },
+  "runAgentAdapterId": "agent-a",
+  "continuityLevel": "workspace_only",
+  "sessionHandle": "sample-newsletter-agent-a-2",
+  "runIds": [
+    "sample-newsletter-agent-a-2"
+  ],
+  "implementationRuns": [
+    {
+      "iteration": 1,
+      "adapterId": "agent-a",
+      "status": "failed",
+      "failureKind": "goal_mismatch",
+      "completionStatus": {
+        "state": "done",
+        "reason": "goal_satisfied"
+      },
+      "stopReason": "goal_satisfied",
+      "runId": "sample-newsletter-agent-a-2",
+      "transcriptPath": "./sample-results/run-two/transcript.log",
+      "eventLogPath": "./sample-results/run-two/events.jsonl",
+      "notes": "Created a partial newsletter page but missed required story content."
+    }
+  ],
+  "evalResult": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+    "version": "ruhroh_eval_result_v1",
+    "status": "failed",
+    "goalMet": false,
+    "confidence": "high",
+    "reasons": [
+      "The workspace has a page, but it only includes one article."
+    ],
+    "unmetCriteria": [
+      "Newsletter must include three sample stories."
+    ],
+    "evidenceRefs": [
+      {
+        "kind": "file",
+        "ref": "index.html",
+        "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+      },
+      {
+        "kind": "command",
+        "ref": "fixture article-count",
+        "summary": "status=failed"
+      }
+    ],
+    "commandsRun": [
+      {
+        "command": "fixture article-count",
+        "exitCode": 1,
+        "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+      }
+    ],
+    "artifacts": {
+      "workspacePath": "/docs/sample/workspace"
+    },
+    "finalSummary": "The sample workspace is incomplete and does not satisfy the user outcome.",
+    "criteriaResults": [
+      {
+        "id": "newsletter-outcome",
+        "description": "The delivered workspace contains a newsletter page with three stories.",
+        "status": "failed",
+        "score": 0,
+        "evidenceRefs": [
+          {
+            "kind": "file",
+            "ref": "index.html",
+            "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+          }
+        ]
+      }
+    ],
+    "subscores": {
+      "functionality": 0,
+      "workflow": 0,
+      "buildRun": 1,
+      "persistence": 0,
+      "constraintCompliance": 0,
+      "evidenceQuality": 1
+    },
+    "judge": {
+      "kind": "hybrid",
+      "model": "docs-fixture-evaluator",
+      "version": "2026-07-08"
+    },
+    "judgeVotes": [
+      {
+        "judge": {
+          "kind": "command",
+          "model": "docs-fixture-evaluator",
+          "version": "2026-07-08"
+        },
+        "status": "failed",
+        "confidence": "high",
+        "rationale": "The sample workspace is incomplete and does not satisfy the user outcome.",
+        "evidenceRefs": [
+          {
+            "kind": "file",
+            "ref": "index.html",
+            "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+          }
+        ]
+      },
+      {
+        "judge": {
+          "kind": "model",
+          "model": "docs-arbiter",
+          "version": "2026-07-08"
+        },
+        "status": "failed",
+        "confidence": "high",
+        "rationale": "The sample workspace is incomplete and does not satisfy the user outcome.",
+        "evidenceRefs": [
+          {
+            "kind": "command",
+            "ref": "fixture article-count",
+            "summary": "status=failed"
+          }
+        ]
+      }
+    ]
+  },
+  "runManifest": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/run-manifest-v1.schema.json",
+    "version": "ruhroh_run_manifest_v1",
+    "runId": "sample-newsletter-agent-a-2",
+    "scenario": {
+      "id": "simple-newsletter",
+      "scenarioVersion": "1.0.0"
+    },
+    "benchmark": {
+      "dataset": "ruhroh-docs-sample",
+      "adapter": "ruhroh-harbor",
+      "harborAgent": "ruhroh-harbor"
+    },
+    "timing": {
+      "startedAt": "2026-07-08T12:00:00Z",
+      "endedAt": "2026-07-08T12:01:00Z",
+      "durationMs": 60000
+    },
+    "loop": {
+      "maxIterations": 3,
+      "implementationIterationsUsed": 1,
+      "stoppedReason": "goal_satisfied"
+    },
+    "sample": {
+      "id": "simple-newsletter/agent-a/2-of-2",
+      "index": 2,
+      "count": 2,
+      "seed": "docs-seed-two"
+    },
+    "runAgent": {
+      "adapterId": "agent-a",
+      "adapterVersion": "docs-sample-v1",
+      "continuityLevel": "workspace_only",
+      "sessionHandle": "sample-newsletter-agent-a-2",
+      "runIds": [
+        "sample-newsletter-agent-a-2"
+      ],
+      "model": {
+        "provider": "docs",
+        "model": "sample-agent",
+        "version": "2026-07-08",
+        "promptVersion": "docs-v1"
+      }
+    },
+    "evaluator": {
+      "model": {
+        "provider": "docs",
+        "model": "docs-fixture-evaluator",
+        "version": "2026-07-08",
+        "promptVersion": "docs-eval-v1"
+      },
+      "inputSummary": {
+        "scenarioId": "simple-newsletter",
+        "rubricSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "privateAssetsSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "judge": {
+        "kind": "hybrid",
+        "model": "docs-fixture-evaluator",
+        "version": "2026-07-08"
+      }
+    },
+    "environment": {
+      "fingerprint": {
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "source": "docs sample"
+      }
+    },
+    "usage": {
+      "costUsd": 0.02,
+      "totalTokens": 700
+    }
+  },
+  "artifactPaths": {
+    "result": "./sample-results/run-two/ruhroh-loop-result.json",
+    "runManifest": "./sample-results/run-two/ruhroh-run-manifest.json",
+    "evalResult": "./sample-results/run-two/ruhroh-loop-eval.json",
+    "workspaceSummary": "./sample-results/run-two/ruhroh-workspace-summary.json",
+    "implementationRuns": "./sample-results/run-two/ruhroh-loop-iterations.jsonl",
+    "journey": "./sample-results/run-two/ruhroh-loop-journey.json",
+    "evalInput": "./sample-results/run-two/ruhroh-loop-eval-input.json",
+    "transcript": "./sample-results/run-two/transcript.log",
+    "events": "./sample-results/run-two/events.jsonl",
+    "workspaceTarball": "./sample-results/run-two/ruhroh-workspace.tar.gz",
+    "eventsTarball": "./sample-results/run-two/ruhroh-loop-events.tar.gz",
+    "transcriptsTarball": "./sample-results/run-two/ruhroh-loop-transcripts.tar.gz"
+  }
+}

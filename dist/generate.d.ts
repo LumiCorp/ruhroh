@@ -1,4 +1,4 @@
-import { type RuhrohScenario, type RuhrohScenarioEvaluationLintDiagnostic, type RuhrohScenarioSource } from "./scenarios.js";
+import { type RuhrohScenario, type RuhrohScenarioEvaluationCalibrationSummary, type RuhrohScenarioEvaluationLintDiagnostic, type RuhrohScenarioSource } from "./scenarios.js";
 export interface LoadedRuhrohScenario {
     scenario: RuhrohScenario;
     source: RuhrohScenarioSource;
@@ -31,6 +31,7 @@ export interface ValidateRuhrohScenarioSourceResult {
     errors: string[];
     warnings: string[];
     warningDetails: RuhrohScenarioEvaluationLintDiagnostic[];
+    calibration?: RuhrohScenarioEvaluationCalibrationSummary | undefined;
 }
 export declare function discoverRuhrohScenarios(scenarioRoot: string): RuhrohScenarioSource[];
 export declare function loadRuhrohScenario(input: string | RuhrohScenarioSource): LoadedRuhrohScenario;

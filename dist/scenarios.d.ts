@@ -77,6 +77,13 @@ export interface RuhrohScenarioEvaluationCalibrationCase {
     expectedStatus: RuhrohScenarioCalibrationExpectedStatus;
     rationale: string;
 }
+export interface RuhrohScenarioEvaluationCalibrationSummary {
+    total: number;
+    byExpectedStatus: Record<RuhrohScenarioCalibrationExpectedStatus, number>;
+    coveredStatuses: RuhrohScenarioCalibrationExpectedStatus[];
+    missingStatuses: RuhrohScenarioCalibrationExpectedStatus[];
+    warnings: string[];
+}
 export interface ValidateRuhrohScenarioOptions {
     adapters?: Record<string, RuhrohRunAgentAdapterCapabilities> | undefined;
 }
@@ -97,6 +104,7 @@ export interface RuhrohScenarioSource {
 }
 export declare function validateRuhrohScenario(scenario: RuhrohScenario, options?: ValidateRuhrohScenarioOptions): string[];
 export declare function lintRuhrohScenarioEvaluation(scenario: RuhrohScenario): string[];
+export declare function summarizeRuhrohScenarioCalibration(scenario: RuhrohScenario): RuhrohScenarioEvaluationCalibrationSummary;
 export declare function lintRuhrohScenarioEvaluationDetailed(scenario: RuhrohScenario): RuhrohScenarioEvaluationLintDiagnostic[];
 export declare function getRuhrohScenarioById<TScenario extends {
     id: string;

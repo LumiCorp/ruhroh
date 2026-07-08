@@ -19,4 +19,6 @@ General rules are documented in [`docs/security.md`](docs/security.md):
 - treat prompts and assets as untrusted input;
 - run agents only in benchmark workspaces;
 - keep secrets behind explicit environment allowlists;
-- keep live credentialed agent runs out of default CI.
+- keep live credentialed agent runs out of default CI;
+- review transcripts, workspace archives, copied `sources/`, publication
+  bundles, and claim indexes before sharing them publicly.

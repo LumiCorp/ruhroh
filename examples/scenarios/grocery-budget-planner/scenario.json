@@ -61,10 +61,22 @@
     ],
     "calibrationCases": [
       {
+        "id": "complete-budget-planner-pass",
+        "inputSummary": "The workspace provides a locally usable grocery budget planner that loads starter CSV items, supports item edits, status changes, totals, and persists local state.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered app satisfies the realistic budget-planning workflow and can be inspected locally."
+      },
+      {
         "id": "csv-unused-failure",
         "inputSummary": "The planner works only with blank manual entry and never loads or represents the provided CSV starter data.",
         "expectedStatus": "failed",
         "rationale": "The example scenario requires using the supplied grocery data as starter state."
+      },
+      {
+        "id": "persistence-unclear-review",
+        "inputSummary": "The planner loads the starter data and supports edits, but the available artifacts do not show whether local persistence works.",
+        "expectedStatus": "review",
+        "rationale": "The evaluator should escalate ambiguous evidence for a core workflow requirement instead of forcing a pass or fail."
       }
     ]
   }

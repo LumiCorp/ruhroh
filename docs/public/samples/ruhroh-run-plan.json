@@ -1,0 +1,77 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/run-plan-v1.schema.json",
+  "version": "ruhroh_run_plan_v1",
+  "createdAt": "2026-07-08T12:00:00.000Z",
+  "selection": {
+    "scenarioDir": "./ruhroh/scenarios",
+    "suiteDir": "./ruhroh/suites",
+    "suiteId": "ruhroh-sample",
+    "runs": 2,
+    "adapters": [
+      "agent-a"
+    ]
+  },
+  "suite": {
+    "id": "ruhroh-sample",
+    "title": "Ruhroh Sample Evidence Pack",
+    "suiteVersion": "0.1.0",
+    "scenarioIds": [
+      "simple-newsletter"
+    ],
+    "scenarioVersions": {
+      "simple-newsletter": "1.0.0"
+    },
+    "source": {
+      "suitePath": "./ruhroh/suites/ruhroh-sample/suite.json",
+      "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014"
+    }
+  },
+  "generated": {
+    "generatedDir": "./.generated/ruhroh",
+    "datasetPath": "./.generated/ruhroh/harbor"
+  },
+  "scenarios": [
+    {
+      "id": "simple-newsletter",
+      "title": "Simple Newsletter",
+      "tier": "smoke",
+      "scenarioVersion": "1.0.0"
+    }
+  ],
+  "samples": [
+    {
+      "label": "agent-a:simple-newsletter#1/2",
+      "scenarioId": "simple-newsletter",
+      "adapter": "agent-a",
+      "sampleId": "simple-newsletter/agent-a/1-of-2",
+      "sampleSeed": "docs-seed-one",
+      "runIndex": 1,
+      "runCount": 2,
+      "forwardedEnvKeys": [
+        "RUHROH_SAMPLE_ID"
+      ],
+      "harborCommand": {
+        "bin": "harbor",
+        "args": [],
+        "display": "harbor run ..."
+      }
+    },
+    {
+      "label": "agent-a:simple-newsletter#2/2",
+      "scenarioId": "simple-newsletter",
+      "adapter": "agent-a",
+      "sampleId": "simple-newsletter/agent-a/2-of-2",
+      "sampleSeed": "docs-seed-two",
+      "runIndex": 2,
+      "runCount": 2,
+      "forwardedEnvKeys": [
+        "RUHROH_SAMPLE_ID"
+      ],
+      "harborCommand": {
+        "bin": "harbor",
+        "args": [],
+        "display": "harbor run ..."
+      }
+    }
+  ]
+}

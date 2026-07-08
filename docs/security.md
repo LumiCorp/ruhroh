@@ -30,6 +30,19 @@ Rules:
   as `;`, `&&`, pipes, or redirects that will be treated as literal arguments.
 - Generated Harbor verifiers do not perform app-goal checks.
 - Public agent examples must not require live credentials in default CI.
+- Publication bundles, claim indexes, report galleries, and issue attachments
+  should be treated as disclosure artifacts. Review transcripts, event logs,
+  workspace archives, screenshots, evaluator outputs, and copied `sources/`
+  files before making them public.
+- Keep private evaluator assets separate from public scenario `assets` entries.
+  `ruhroh validate` rejects obvious overlap, and `inspect-pack` records public
+  asset and private evaluator asset fingerprints for registry review.
+- Prefer redacted or synthetic sample artifacts for public documentation.
+  `docs/public/samples` is generated from fixture data and should not be
+  replaced with live-agent traces, customer data, or private workspace archives.
+- When sharing a publication bundle, include enough evidence for independent
+  review while removing credentials, personal data, proprietary source files,
+  private prompts, and unrelated workspace material.
 
 When using public coding agents, install them from official sources and review
 their command execution permissions before running on untrusted scenarios.

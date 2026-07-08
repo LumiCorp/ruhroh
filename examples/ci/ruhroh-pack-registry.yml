@@ -1,0 +1,178 @@
+name: Ruhroh Benchmark Pack Registry
+
+on:
+  pull_request:
+    paths:
+      - "ruhroh/scenarios/**"
+      - "ruhroh/suites/**"
+      - "scenarios/**"
+      - "suites/**"
+      - "schemas/**"
+  workflow_dispatch:
+    inputs:
+      scenario_dir:
+        description: "Scenario directory to inspect."
+        required: true
+        default: "ruhroh/scenarios"
+      suite_dir:
+        description: "Suite directory to inspect."
+        required: true
+        default: "ruhroh/suites"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  inspect-pack:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Resolve pack paths
+        id: paths
+        run: |
+          scenario_dir="${{ github.event.inputs.scenario_dir || 'ruhroh/scenarios' }}"
+          suite_dir="${{ github.event.inputs.suite_dir || 'ruhroh/suites' }}"
+          if [ ! -d "$scenario_dir" ] && [ -d "scenarios" ]; then
+            scenario_dir="scenarios"
+          fi
+          if [ ! -d "$suite_dir" ] && [ -d "suites" ]; then
+            suite_dir="suites"
+          fi
+          echo "scenario_dir=$scenario_dir" >> "$GITHUB_OUTPUT"
+          echo "suite_dir=$suite_dir" >> "$GITHUB_OUTPUT"
+
+      - name: Validate benchmark pack
+        run: |
+          pnpm exec ruhroh validate \
+            --scenario-dir "${{ steps.paths.outputs.scenario_dir }}" \
+            --suite-dir "${{ steps.paths.outputs.suite_dir }}" \
+            --json
+
+      - name: Inspect benchmark pack
+        run: |
+          pnpm exec ruhroh inspect-pack \
+            --scenario-dir "${{ steps.paths.outputs.scenario_dir }}" \
+            --suite-dir "${{ steps.paths.outputs.suite_dir }}" \
+            --require-calibrated \
+            --require-risk-reviewed \
+            --html ruhroh-pack-inspection.html \
+            --json > ruhroh-pack-inspection.json
+
+      - name: Write benchmark pack summary
+        if: always()
+        run: |
+          node --input-type=module <<'NODE'
+          import { existsSync, readFileSync, writeFileSync, appendFileSync } from "node:fs";
+
+          const marker = "<!-- ruhroh-pack-inspection-summary -->";
+          const summaryPath = "ruhroh-pack-inspection-summary.md";
+          const jsonPath = "ruhroh-pack-inspection.json";
+          const lines = [marker, "## Ruhroh benchmark pack inspection", ""];
+
+          if (!existsSync(jsonPath)) {
+            lines.push("- Status: unavailable");
+            lines.push("- Details: `inspect-pack` did not produce `ruhroh-pack-inspection.json`.");
+          } else {
+            const report = JSON.parse(readFileSync(jsonPath, "utf8"));
+            const summary = report.summary ?? {};
+            const blockers = Array.isArray(report.blockers) ? report.blockers : [];
+            const warnings = Array.isArray(report.warnings) ? report.warnings : [];
+            lines.push(`- Status: ${report.ready ? "ready" : "blocked"}`);
+            lines.push(`- Scenarios: ${summary.scenarioCount ?? "unknown"}`);
+            lines.push(`- Suites: ${summary.suiteCount ?? "unknown"}`);
+            lines.push(`- Required gates: calibration=${report.requirements?.requireFullCalibration ? "yes" : "no"}, risk review=${report.requirements?.requireRiskReviewed ? "yes" : "no"}`);
+            lines.push(`- Validation blockers: ${blockers.length}`);
+            lines.push(`- Warnings: ${warnings.length}`);
+            lines.push(`- Calibration warnings: ${summary.calibrationWarningCount ?? "unknown"}`);
+            lines.push(`- Risk-review warnings: ${summary.riskReviewWarningCount ?? "unknown"}`);
+            if (blockers.length > 0) {
+              lines.push("", "### Blockers");
+              for (const blocker of blockers.slice(0, 10)) {
+                lines.push(`- ${blocker}`);
+              }
+              if (blockers.length > 10) {
+                lines.push(`- ...and ${blockers.length - 10} more`);
+              }
+            }
+            if (warnings.length > 0) {
+              lines.push("", "### Warnings");
+              for (const warning of warnings.slice(0, 10)) {
+                lines.push(`- ${warning}`);
+              }
+              if (warnings.length > 10) {
+                lines.push(`- ...and ${warnings.length - 10} more`);
+              }
+            }
+            lines.push("", "Open the `ruhroh-pack-inspection` artifact for the full JSON and HTML review packet.");
+          }
+
+          const markdown = `${lines.join("\n")}\n`;
+          writeFileSync(summaryPath, markdown, "utf8");
+          if (process.env.GITHUB_STEP_SUMMARY) {
+            appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${markdown}\n`, "utf8");
+          }
+          NODE
+
+      - name: Comment benchmark pack summary
+        if: always() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("node:fs");
+            const marker = "<!-- ruhroh-pack-inspection-summary -->";
+            const body = fs.existsSync("ruhroh-pack-inspection-summary.md")
+              ? fs.readFileSync("ruhroh-pack-inspection-summary.md", "utf8")
+              : `${marker}\n## Ruhroh benchmark pack inspection\n\nInspection summary was not generated.\n`;
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+              per_page: 100,
+            });
+            const existing = comments.find((comment) =>
+              comment.user.type === "Bot" && comment.body.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number,
+                body,
+              });
+            }
+
+      - name: Upload inspection artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruhroh-pack-inspection
+          path: |
+            ruhroh-pack-inspection.json
+            ruhroh-pack-inspection.html
+            ruhroh-pack-inspection-summary.md

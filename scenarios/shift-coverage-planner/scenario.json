@@ -69,10 +69,22 @@
     ],
     "calibrationCases": [
       {
+        "id": "complete-coverage-workflow-pass",
+        "inputSummary": "The app uses the supplied employee, time-off, requirements, and existing-schedule assets; identifies coverage gaps and conflicts; suggests constrained replacements; and provides review or export of the repaired schedule.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered app satisfies the data-backed shift coverage workflow with audit and repair behavior."
+      },
+      {
         "id": "asset-ignored-failure",
         "inputSummary": "The app shows a generic schedule grid but does not use the provided employee, time-off, requirement, or existing-schedule assets.",
         "expectedStatus": "failed",
         "rationale": "Using the supplied shift-coverage data is required to judge coverage gaps and conflicts."
+      },
+      {
+        "id": "gap-detection-without-repair-review",
+        "inputSummary": "The app loads the supplied assets and identifies coverage gaps, but replacement assignment constraints and export or audit review are incomplete.",
+        "expectedStatus": "review",
+        "rationale": "The app shows meaningful domain work, but missing repair and audit behavior should be adjudicated rather than automatically passed."
       }
     ]
   }

@@ -1,0 +1,11 @@
+{
+  "version": "ruhroh_eval_calibration_input_v1",
+  "scenarioId": "simple-newsletter",
+  "calibrationCase": {
+    "id": "missing-page-failure",
+    "inputSummary": "The workspace only contains notes about the newsletter and no runnable or openable page.",
+    "expectedStatus": "failed",
+    "rationale": "The scenario requires a delivered local page."
+  },
+  "workspacePath": "./.generated/ruhroh/evaluator-calibration/missing-page-failure/workspace"
+}

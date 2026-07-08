@@ -1,0 +1,570 @@
+{
+  "version": "ruhroh_publish_bundle_validation_report_v1",
+  "source": {
+    "bundlePath": "./ruhroh-publication"
+  },
+  "valid": true,
+  "publishable": false,
+  "checks": [
+    {
+      "name": "manifest",
+      "status": "ok",
+      "path": "./ruhroh-publication/manifest.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.manifest",
+      "status": "ok",
+      "path": "./ruhroh-publication/manifest.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.publish-check",
+      "status": "ok",
+      "path": "./ruhroh-publication/publish-check.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.compare-html",
+      "status": "ok",
+      "path": "./ruhroh-publication/ruhroh-compare.html",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.benchmark-claim",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-claim.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.benchmark-summary",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-summary.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.review-json",
+      "status": "ok",
+      "path": "./ruhroh-publication/ruhroh-review.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.review-html",
+      "status": "ok",
+      "path": "./ruhroh-publication/ruhroh-review.html",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.eval-quality",
+      "status": "ok",
+      "path": "./ruhroh-publication/ruhroh-eval-quality.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.eval-quality-html",
+      "status": "ok",
+      "path": "./ruhroh-publication/ruhroh-eval-quality.html",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.readme",
+      "status": "ok",
+      "path": "./ruhroh-publication/README.md",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-suite",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/suite/suite.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-run-plan",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/ruhroh-run-plan.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.evaluator-calibration-complete-newsletter-pass-input",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/complete-newsletter-pass/ruhroh-eval-calibration-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.evaluator-calibration-complete-newsletter-pass-output",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/complete-newsletter-pass/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.evaluator-calibration-missing-page-failure-input",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/missing-page-failure/ruhroh-eval-calibration-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.evaluator-calibration-missing-page-failure-output",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/missing-page-failure/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.evaluator-calibration-partial-signup-review-input",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/partial-signup-review/ruhroh-eval-calibration-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.evaluator-calibration-partial-signup-review-output",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/partial-signup-review/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.evaluator-calibration-report",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-loop-result.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-evalinput-1",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-loop-eval-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-evalresult-2",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-events-3",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/events.jsonl",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-eventstarball-4",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-loop-events.tar.gz",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-implementationruns-5",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-loop-iterations.jsonl",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-journey-6",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-loop-journey.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-runmanifest-8",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-run-manifest.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-transcript-9",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/transcript.log",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-transcriptstarball-10",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-loop-transcripts.tar.gz",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-workspacesummary-11",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-workspace-summary.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-1-workspacetarball-12",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-1/ruhroh-workspace.tar.gz",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-loop-result.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-evalinput-1",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-loop-eval-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-evalresult-2",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-events-3",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/events.jsonl",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-eventstarball-4",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-loop-events.tar.gz",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-implementationruns-5",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-loop-iterations.jsonl",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-journey-6",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-loop-journey.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-runmanifest-8",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-run-manifest.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-transcript-9",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/transcript.log",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-transcriptstarball-10",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-loop-transcripts.tar.gz",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-workspacesummary-11",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-workspace-summary.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.source-result-2-workspacetarball-12",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/results/run-2/ruhroh-workspace.tar.gz",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "manifest.$schema",
+      "status": "ok",
+      "path": "./ruhroh-publication/manifest.json",
+      "details": "$schema=https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json"
+    },
+    {
+      "name": "manifest.version",
+      "status": "ok",
+      "path": "./ruhroh-publication/manifest.json",
+      "details": "version=ruhroh_publish_bundle_v1"
+    },
+    {
+      "name": "publish-check.version",
+      "status": "ok",
+      "path": "./ruhroh-publication/publish-check.json",
+      "details": "version=ruhroh_publish_check_v1"
+    },
+    {
+      "name": "benchmark-claim.version",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-claim.json",
+      "details": "version=ruhroh_benchmark_claim_v1"
+    },
+    {
+      "name": "benchmark-claim.validation",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-claim.json",
+      "details": "benchmark claim validation passed"
+    },
+    {
+      "name": "benchmark-claim.source.suite",
+      "status": "ok",
+      "path": "sources/suite/suite.json",
+      "details": "source.suitePath hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.runPlan",
+      "status": "ok",
+      "path": "sources/ruhroh-run-plan.json",
+      "details": "source.runPlanPath hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.evaluatorCalibrationReport",
+      "status": "ok",
+      "path": "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
+      "details": "source.evaluatorCalibrationReportPath hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-result.json",
+      "details": "source.resultArtifacts[0].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[0]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-eval-input.json",
+      "details": "source.resultArtifacts[0].artifactInventory[0].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[1]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-eval.json",
+      "details": "source.resultArtifacts[0].artifactInventory[1].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[2]",
+      "status": "ok",
+      "path": "sources/results/run-1/events.jsonl",
+      "details": "source.resultArtifacts[0].artifactInventory[2].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[3]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-events.tar.gz",
+      "details": "source.resultArtifacts[0].artifactInventory[3].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[4]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-iterations.jsonl",
+      "details": "source.resultArtifacts[0].artifactInventory[4].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[5]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-journey.json",
+      "details": "source.resultArtifacts[0].artifactInventory[5].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[6]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-result.json",
+      "details": "source.resultArtifacts[0].artifactInventory[6].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[7]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-run-manifest.json",
+      "details": "source.resultArtifacts[0].artifactInventory[7].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[8]",
+      "status": "ok",
+      "path": "sources/results/run-1/transcript.log",
+      "details": "source.resultArtifacts[0].artifactInventory[8].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[9]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-loop-transcripts.tar.gz",
+      "details": "source.resultArtifacts[0].artifactInventory[9].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[10]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-workspace-summary.json",
+      "details": "source.resultArtifacts[0].artifactInventory[10].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[0].artifactInventory[11]",
+      "status": "ok",
+      "path": "sources/results/run-1/ruhroh-workspace.tar.gz",
+      "details": "source.resultArtifacts[0].artifactInventory[11].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-result.json",
+      "details": "source.resultArtifacts[1].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[0]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-eval-input.json",
+      "details": "source.resultArtifacts[1].artifactInventory[0].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[1]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-eval.json",
+      "details": "source.resultArtifacts[1].artifactInventory[1].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[2]",
+      "status": "ok",
+      "path": "sources/results/run-2/events.jsonl",
+      "details": "source.resultArtifacts[1].artifactInventory[2].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[3]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-events.tar.gz",
+      "details": "source.resultArtifacts[1].artifactInventory[3].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[4]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-iterations.jsonl",
+      "details": "source.resultArtifacts[1].artifactInventory[4].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[5]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-journey.json",
+      "details": "source.resultArtifacts[1].artifactInventory[5].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[6]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-result.json",
+      "details": "source.resultArtifacts[1].artifactInventory[6].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[7]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-run-manifest.json",
+      "details": "source.resultArtifacts[1].artifactInventory[7].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[8]",
+      "status": "ok",
+      "path": "sources/results/run-2/transcript.log",
+      "details": "source.resultArtifacts[1].artifactInventory[8].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[9]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-loop-transcripts.tar.gz",
+      "details": "source.resultArtifacts[1].artifactInventory[9].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[10]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-workspace-summary.json",
+      "details": "source.resultArtifacts[1].artifactInventory[10].path hash matches"
+    },
+    {
+      "name": "benchmark-claim.source.resultArtifacts[1].artifactInventory[11]",
+      "status": "ok",
+      "path": "sources/results/run-2/ruhroh-workspace.tar.gz",
+      "details": "source.resultArtifacts[1].artifactInventory[11].path hash matches"
+    },
+    {
+      "name": "benchmark-summary.version",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-summary.json",
+      "details": "version=ruhroh_benchmark_summary_v1"
+    },
+    {
+      "name": "benchmark-summary.validation",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-summary.json",
+      "details": "benchmark summary validation passed"
+    },
+    {
+      "name": "evaluator-calibration-report.version",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
+      "details": "version=ruhroh_eval_calibration_report_v1"
+    },
+    {
+      "name": "evaluator-calibration-report.source.reportPath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
+      "details": "reportPath matches the bundle manifest role"
+    },
+    {
+      "name": "evaluator-calibration-report.results[0].inputPath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/complete-newsletter-pass/ruhroh-eval-calibration-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[0].outputPath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/complete-newsletter-pass/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[0].workspacePath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/complete-newsletter-pass/workspace",
+      "details": "bundle directory is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[1].inputPath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/missing-page-failure/ruhroh-eval-calibration-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[1].outputPath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/missing-page-failure/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[1].workspacePath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/missing-page-failure/workspace",
+      "details": "bundle directory is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[2].inputPath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/partial-signup-review/ruhroh-eval-calibration-input.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[2].outputPath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/partial-signup-review/ruhroh-loop-eval.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "evaluator-calibration-report.results[2].workspacePath",
+      "status": "ok",
+      "path": "./ruhroh-publication/sources/evaluator-calibration/partial-signup-review/workspace",
+      "details": "bundle directory is present"
+    },
+    {
+      "name": "benchmark-claim.cross-reference",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-claim.json",
+      "details": "benchmark claim matches publish-check compare output"
+    },
+    {
+      "name": "benchmark-summary.cross-reference",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-summary.json",
+      "details": "benchmark summary matches publish-check compare output"
+    }
+  ],
+  "errors": [],
+  "warnings": []
+}

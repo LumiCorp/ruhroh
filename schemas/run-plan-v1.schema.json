@@ -27,6 +27,15 @@
         "suiteId": { "type": "string", "minLength": 1 },
         "tier": { "enum": ["smoke", "standard", "extended"] },
         "runs": { "type": "number", "minimum": 1 },
+        "shard": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["index", "total"],
+          "properties": {
+            "index": { "type": "number", "minimum": 1 },
+            "total": { "type": "number", "minimum": 1 }
+          }
+        },
         "adapters": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }

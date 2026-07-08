@@ -66,10 +66,22 @@
     ],
     "calibrationCases": [
       {
+        "id": "complete-budget-planner-pass",
+        "inputSummary": "The app starts locally, includes starter grocery data, supports adding and purchasing items by category, updates purchased/unpurchased totals and remaining budget, and persists changes after reload.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered app satisfies the requested grocery budget workflow with the required state and totals behavior."
+      },
+      {
         "id": "totals-missing-failure",
         "inputSummary": "The app lists grocery items but never updates purchased, unpurchased, or remaining budget totals.",
         "expectedStatus": "failed",
         "rationale": "Dynamic budget totals are central to the requested planner workflow."
+      },
+      {
+        "id": "persistence-ambiguous-review",
+        "inputSummary": "The app supports adding items and updating totals during one session, but persistence after reload is missing or cannot be verified from the preserved artifacts.",
+        "expectedStatus": "review",
+        "rationale": "The core workflow exists, but persistence is a stated requirement and ambiguous evidence should trigger reviewer adjudication."
       }
     ]
   }

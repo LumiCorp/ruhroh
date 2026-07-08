@@ -1,0 +1,55 @@
+{
+  "version": "ruhroh_review_queue_v1",
+  "source": {
+    "resultsPath": "./sample-results",
+    "resultCount": 2
+  },
+  "itemCount": 1,
+  "requiredCount": 0,
+  "recommendedCount": 1,
+  "reviewQueue": [
+    {
+      "scenarioId": "simple-newsletter",
+      "adapter": "agent-a",
+      "runId": "sample-newsletter-agent-a-2",
+      "status": "failed",
+      "evalStatus": "failed",
+      "score": 0,
+      "failureBucket": "goal_mismatch",
+      "priority": "recommended",
+      "reasons": [
+        "non-passing run: goal_mismatch",
+        "eval command evidence includes non-zero exit codes",
+        "unmet criterion: Newsletter must include three sample stories."
+      ],
+      "evalQualityWarnings": [
+        "eval command evidence includes non-zero exit codes"
+      ],
+      "artifactCompletenessWarnings": [],
+      "unmetCriteria": [
+        "Newsletter must include three sample stories."
+      ],
+      "finalSummary": "The sample workspace is incomplete and does not satisfy the user outcome.",
+      "artifactPaths": {
+        "result": "./sample-results/run-two/ruhroh-loop-result.json",
+        "runManifest": "./sample-results/run-two/ruhroh-run-manifest.json",
+        "evalResult": "./sample-results/run-two/ruhroh-loop-eval.json",
+        "workspaceSummary": "./sample-results/run-two/ruhroh-workspace-summary.json",
+        "implementationRuns": "./sample-results/run-two/ruhroh-loop-iterations.jsonl",
+        "journey": "./sample-results/run-two/ruhroh-loop-journey.json",
+        "evalInput": "./sample-results/run-two/ruhroh-loop-eval-input.json",
+        "transcript": "./sample-results/run-two/transcript.log",
+        "events": "./sample-results/run-two/events.jsonl",
+        "workspaceTarball": "./sample-results/run-two/ruhroh-workspace.tar.gz",
+        "eventsTarball": "./sample-results/run-two/ruhroh-loop-events.tar.gz",
+        "transcriptsTarball": "./sample-results/run-two/ruhroh-loop-transcripts.tar.gz"
+      },
+      "transcriptPaths": [
+        "./sample-results/run-two/transcript.log"
+      ],
+      "eventLogPaths": [
+        "./sample-results/run-two/events.jsonl"
+      ]
+    }
+  ]
+}

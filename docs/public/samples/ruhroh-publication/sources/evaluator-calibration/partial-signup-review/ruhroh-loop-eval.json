@@ -1,0 +1,45 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+  "version": "ruhroh_eval_result_v1",
+  "status": "review",
+  "goalMet": false,
+  "confidence": "high",
+  "reasons": [
+    "Docs sample calibration case partial-signup-review matched review."
+  ],
+  "unmetCriteria": [
+    "Partial delivery with ambiguous evidence should be reviewed before assigning a pass or fail."
+  ],
+  "evidenceRefs": [
+    {
+      "kind": "file",
+      "ref": "CALIBRATION.md",
+      "summary": "The workspace contains a local newsletter page, but the signup state evidence is missing or unclear."
+    }
+  ],
+  "commandsRun": [],
+  "artifacts": {
+    "workspacePath": "./.generated/ruhroh/evaluator-calibration/partial-signup-review/workspace"
+  },
+  "finalSummary": "Partial delivery with ambiguous evidence should be reviewed before assigning a pass or fail.",
+  "criteriaResults": [
+    {
+      "id": "calibration-anchor",
+      "description": "Evaluator calibration anchor.",
+      "status": "review",
+      "score": 0,
+      "evidenceRefs": [
+        {
+          "kind": "file",
+          "ref": "CALIBRATION.md",
+          "summary": "Partial delivery with ambiguous evidence should be reviewed before assigning a pass or fail."
+        }
+      ]
+    }
+  ],
+  "judge": {
+    "kind": "command",
+    "model": "docs-fixture-evaluator",
+    "version": "2026-07-08"
+  }
+}

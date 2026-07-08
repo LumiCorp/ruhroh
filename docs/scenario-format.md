@@ -43,9 +43,9 @@ Core fields:
   `evaluation.evidenceGuidance`, optional `evaluation.calibrationCases`, and
   optional `evaluation.privateAssets`
 
-Assets are copied into the generated Harbor task under `assets/`. Scenario
-prompts and assets are untrusted input; run them only inside benchmark
-workspaces.
+Declared assets are copied into the generated Harbor task at their declared
+relative paths. Scenario prompts and assets are untrusted input; run them only
+inside benchmark workspaces.
 
 Private evaluator assets are copied separately under `private-eval-assets/` in
 the generated task and are forwarded to the eval-agent as paths in
@@ -65,13 +65,13 @@ so results can be tied back to a scenario version and provenance.
 Generate tasks with:
 
 ```bash
-pnpm exec ruhroh --scenario simple-newsletter --generate-only
+pnpm exec ruhroh generate --scenario simple-newsletter
 ```
 
 Adapter selection is runtime configuration, for example:
 
 ```bash
-pnpm exec ruhroh --scenario simple-newsletter --adapter ./adapters/my-agent
+pnpm exec ruhroh run --scenario simple-newsletter --adapter ./adapters/my-agent
 ```
 
 Validate scenarios before generating Harbor tasks:
@@ -194,6 +194,8 @@ or private review process lives.
 changelogs. `metadata.lifecycle.status` may be `active`, `deprecated`, or
 `retired`; deprecated or retired scenarios may also name a safe
 `replacementId`, `reason`, and `sunsetAt`.
+For version bump rules and examples, see
+[Scenario Evolution](./scenario-evolution.md).
 
 `userPromptPath` points to the real-user prompt. The loaded scenario stores the
 prompt content as `userPrompt`.
@@ -204,14 +206,18 @@ as `scenario.runMode`, so reports can distinguish delivery-style tasks from
 planning or chat-style scenarios.
 
 `assets` is an optional array of relative paths that must stay inside the
-scenario directory. The generator copies the scenario `assets/` directory into
-the Harbor task.
+scenario directory. Treat it as an allowlist: the generator copies only the
+declared files or directories into the Harbor task. Prefer declarations such as
+`assets/prompt-assets/my-fixture` instead of broad paths such as `assets` when
+the scenario directory also contains evaluator-only material.
 
 `evaluation.privateAssets` is an optional array of relative paths that must stay
 inside the scenario directory. These files are copied under
 `private-eval-assets/` and listed in the eval input as `privateAssets`. They are
 for evaluator-only evidence and held-out checks, not for user prompt material or
-agent-visible workspace assets.
+agent-visible workspace assets. Validation fails if a private evaluator asset
+overlaps a declared public asset path, because that would expose held-out
+judgment material to the run-agent.
 
 `evaluation.calibrationCases` is an optional array of expected judgment anchors.
 Each entry must include:
@@ -223,7 +229,7 @@ Each entry must include:
 
 `requires.network` controls generated Harbor networking:
 
-- `false` generates `network_mode = "none"`.
+- `false` generates `network_mode = "no-network"`.
 - `true` generates `network_mode = "public"`.
 
 `evaluation.scenarioContext`, `evaluation.goalRubric`, and

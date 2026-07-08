@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import type { RuhrohScenarioTier } from "./scenarios.js";
+type RuhrohEvaluatorTemplate = "review" | "deterministic" | "model" | "hybrid";
+type RuhrohAdapterTemplate = "generic" | "codex-cli" | "claude-code" | "gemini-cli" | "aider" | "fixture";
 interface RuntimeDeps {
     spawn: typeof spawnSync;
     env: NodeJS.ProcessEnv;
@@ -9,13 +11,16 @@ interface RuntimeDeps {
     stderr: Pick<NodeJS.WriteStream, "write">;
 }
 export interface RuhrohCliOptions {
-    command: "run" | "generate" | "validate" | "validate-artifacts" | "validate-claim" | "validate-summary" | "report" | "compare" | "doctor" | "init" | "new-scenario" | "new-suite" | "new-adapter";
+    command: "run" | "generate" | "list" | "list-suites" | "plan" | "validate" | "inspect-pack" | "validate-artifacts" | "validate-claim" | "validate-summary" | "validate-bundle" | "claim-index" | "report" | "compare" | "review" | "eval-quality" | "publish-check" | "explain" | "examples" | "first-run" | "workflow" | "doctor" | "init" | "new-scenario" | "new-suite" | "new-adapter" | "new-evaluator" | "calibrate-evaluator";
     list: boolean;
     listSuites: boolean;
     dryRun: boolean;
     generateOnly: boolean;
     json: boolean;
+    allowDryRun: boolean;
     requirePublishable: boolean;
+    requireCalibrated: boolean;
+    requireRiskReviewed: boolean;
     verifySources: boolean;
     harborBin: string;
     scenarioDir: string;
@@ -24,18 +29,31 @@ export interface RuhrohCliOptions {
     suiteDirExplicit: boolean;
     generatedDir: string;
     runs: number;
+    shard?: RuhrohRunShard | undefined;
     inputPath?: string | undefined;
+    explainCode?: string | undefined;
     scenarioId?: string | undefined;
     suiteScenarioIds: string[];
     suiteId?: string | undefined;
     tier?: RuhrohScenarioTier | undefined;
     iterations?: number | undefined;
     adapter?: string | undefined;
+    evaluator?: string | undefined;
+    evaluatorTemplate: RuhrohEvaluatorTemplate;
+    adapterTemplate: RuhrohAdapterTemplate;
+    templateExplicit: boolean;
     adapters: string[];
     htmlPath?: string | undefined;
+    summaryMarkdownPath?: string | undefined;
     runPlanPath?: string | undefined;
+    rerunLedgerPath?: string | undefined;
     benchmarkClaimPath?: string | undefined;
     benchmarkSummaryPath?: string | undefined;
+    bundlePath?: string | undefined;
+}
+interface RuhrohRunShard {
+    index: number;
+    total: number;
 }
 export declare function parseRuhrohCliArgs(argv: string[], cwd?: string): RuhrohCliOptions;
 export declare function runRuhrohCli(argv: string[], deps: RuntimeDeps): Promise<number>;

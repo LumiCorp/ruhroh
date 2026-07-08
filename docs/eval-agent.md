@@ -13,6 +13,18 @@ depends_on:
 The eval-agent is terminal-only in V1. It runs after the implementation loop,
 not after every run-agent turn.
 
+Start from a command-backed scaffold when creating a local evaluator:
+
+```bash
+pnpm exec ruhroh new-evaluator local-evaluator
+$EDITOR ruhroh/evaluators/local-evaluator/run.sh
+export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/local-evaluator/run.sh"
+```
+
+The scaffold returns `review` until edited, which keeps unfinished evaluators
+from creating false passing runs. See [Write an Evaluator](./write-an-evaluator.md)
+for the authoring workflow.
+
 Inputs include:
 
 - original task;
@@ -44,6 +56,13 @@ contains `calibrationCases`, an array of expected judgment anchors with
 `id`, `inputSummary`, `expectedStatus`, and `rationale`. Use these anchors to
 keep model-backed and human-assisted evaluators consistent about what should
 pass, fail, or require review for that scenario.
+Run `ruhroh calibrate-evaluator` to execute the configured evaluator against
+those anchors before collecting benchmark runs. During calibration, Ruhroh also
+sets `RUHROH_EVAL_ACTIVE_CALIBRATION_CASE_JSON` and writes an eval input whose
+`calibrationCase` field is the active anchor. Calibration workspaces and
+evaluator outputs are written under `.generated/ruhroh/evaluator-calibration`.
+`ruhroh workflow` treats a missing, malformed, or failing calibration report as
+an evaluator-quality blocker before repeated run planning.
 
 Evaluator launch scripts may set `RUHROH_EVAL_PROVIDER`,
 `RUHROH_EVAL_MODEL`, `RUHROH_EVAL_MODEL_VERSION`, and
@@ -173,10 +192,21 @@ validator lints `evaluation.scenarioContext`, `evaluation.calibrationCases`,
 rubrics so evaluator quality issues are caught before runs are collected.
 In JSON output, evaluator lint findings are also emitted as structured
 `warningDetails` with stable codes, categories, field paths, severity, and
-messages. Use those details for CI gates and pack review checklists.
-After runs are collected, `ruhroh report` and `ruhroh compare` emit a
-`reviewQueue` for explicit `review` judgments, evaluator infrastructure
-failures, non-passing runs, and eval-quality audit warnings.
+messages. Each scenario result also includes a `calibration` summary that counts
+expected pass/fail/review anchors and lists missing expected statuses. Use those
+details for CI gates and pack review checklists.
+After runs are collected, run
+`ruhroh eval-quality ./path/to/results --html ruhroh-eval-quality.html --json`
+to inspect evaluator evidence as a standalone gate. It returns exit code `2`
+when valid runs have evaluator-quality warnings or human-review requirements,
+emits `ruhroh_eval_quality_v1` JSON, and writes a static reviewer report with
+warning counts, per-run evidence counts, judge metadata, next actions, and
+result links. `ruhroh report` and `ruhroh compare` also emit a `reviewQueue`
+for explicit `review` judgments, evaluator
+infrastructure failures, non-passing runs, and eval-quality audit warnings.
+`ruhroh review` extracts the same queue as a focused adjudication packet for
+humans deciding whether the evaluator judgment is acceptable, should be rerun,
+or requires a rubric/evaluator fix.
 
 Ruhroh normalizes legacy and enriched eval results before deriving the final
 verdict. The binary mapping remains unchanged: only top-level

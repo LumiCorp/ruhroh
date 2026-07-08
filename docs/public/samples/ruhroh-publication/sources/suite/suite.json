@@ -1,0 +1,37 @@
+{
+  "version": "ruhroh_suite_v1",
+  "id": "ruhroh-sample",
+  "title": "Ruhroh Sample Evidence Pack",
+  "suiteVersion": "0.1.0",
+  "description": "Small docs sample that demonstrates compare, claim readiness, and artifact links.",
+  "scenarioIds": [
+    "simple-newsletter"
+  ],
+  "scenarioVersions": {
+    "simple-newsletter": "1.0.0"
+  },
+  "methodology": {
+    "minRuns": 5,
+    "aggregationUnit": "scenario_adapter",
+    "reportPolicy": "pass_rate_ci_pass_at_k",
+    "confidenceLevel": 0.95,
+    "retryPolicy": "Docs sample only; real claims should collect the full planned run set."
+  },
+  "governance": {
+    "owner": "ruhroh-maintainers",
+    "createdAt": "2026-07-08",
+    "updatedAt": "2026-07-08",
+    "changelog": [
+      "0.1.0: Initial docs sample."
+    ],
+    "acceptanceCriteria": [
+      "Demonstrate artifact-backed compare output."
+    ],
+    "contaminationReview": "Docs sample uses synthetic fixture artifacts.",
+    "rewardHackingReview": "Docs sample is not a publishable benchmark claim.",
+    "reviewChecklist": [
+      "Inspect report links, claim readiness, and remediation output."
+    ],
+    "deprecationPolicy": "Regenerate with scripts/generate-docs-samples.mjs when report contracts change."
+  }
+}

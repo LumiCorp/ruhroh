@@ -3,7 +3,7 @@ id: ruhroh-benchmark-suites
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-07-07
+last_verified_at: 2026-07-08
 depends_on:
   - src/suites.ts
   - suites/
@@ -18,8 +18,8 @@ reported against something more stable than an ad hoc tier filter.
 List bundled suites:
 
 ```bash
-pnpm exec ruhroh --list-suites
-pnpm exec ruhroh --list-suites --json
+pnpm exec ruhroh list-suites
+pnpm exec ruhroh list-suites --json
 ```
 
 Programmatic consumers can load the bundled pack manifests from the public API:
@@ -44,13 +44,13 @@ const suitesCoveringNewsletter = getBuiltinRuhrohSuitesByScenarioId(
 Generate a suite:
 
 ```bash
-pnpm exec ruhroh --suite ruhroh-smoke --generate-only
+pnpm exec ruhroh generate --suite ruhroh-smoke
 ```
 
 Run or dry-run a suite with an adapter:
 
 ```bash
-pnpm exec ruhroh --suite ruhroh-productivity --adapter ./path/to/agent-wrapper.sh --dry-run
+pnpm exec ruhroh run --suite ruhroh-productivity --adapter ./path/to/agent-wrapper.sh --dry-run
 ```
 
 Validate suite membership and referenced scenarios:
@@ -128,6 +128,44 @@ contamination review, reward-hacking review, review checklist, and deprecation
 policy fields so a benchmark pack cannot be published without recording its
 adversarial-review and lifecycle controls.
 
+## Suite Evolution
+
+Treat `suiteVersion` as the benchmark-pack methodology version. It is the
+version a claim cites when it says "these runs were collected against this
+suite."
+
+Bump `suiteVersion` when you:
+
+- add, remove, reorder, or replace suite scenarios;
+- move a suite lock to a new `metadata.scenarioVersion`;
+- change `methodology.minRuns`, retry policy, aggregation unit, or report
+  policy;
+- change acceptance criteria, contamination review, reward-hacking review,
+  review checklist, or deprecation policy in a way that affects publication
+  readiness;
+- change private evaluator assets or calibration expectations for scenarios in
+  the suite.
+
+You do not need a suite bump for typo fixes, owner/contact updates, or
+non-semantic wording changes that do not affect scenario locks, methodology,
+or governance decisions. Still add a changelog note when the suite is public so
+reviewers can distinguish harmless metadata maintenance from benchmark drift.
+
+Before publishing results for a changed suite:
+
+1. Update `suiteVersion` and the suite changelog.
+2. Re-run `ruhroh validate --scenario-dir <dir> --suite-dir <dir> --suite <id>`.
+3. Re-run `ruhroh inspect-pack --require-calibrated --require-risk-reviewed`.
+4. Generate a new run plan for the changed suite version.
+5. Collect a fresh cohort; do not mix results from old and new suite versions in
+   one published claim.
+6. Run `ruhroh publish-check --suite <id> --run-plan <plan> --bundle <dir>
+   --verify-sources` and archive the bundle.
+
+Old claims remain inspectable if their bundle keeps the old suite manifest,
+scenario version locks, run plan, source hashes, and result artifacts. They
+should not be silently reinterpreted as results for the newer suite.
+
 ## Methodology
 
 Ruhroh compares runs by scenario and adapter. A suite should define the minimum
@@ -150,6 +188,8 @@ suite option filters the result set to suite scenarios, reports suite metadata,
 warns when member scenarios are missing, applies `methodology.minRuns`, and
 checks aggregate scenario-version cohorts against the suite's `scenarioVersions`
 locks.
+See [Scenario Evolution](./scenario-evolution.md) before moving a suite to a
+new scenario version.
 
 Suite compares include an adapter-level rollup in `suiteAdapterSummaries`. Use
 that rollup for high-level suite claims, but keep the per-scenario groups in the

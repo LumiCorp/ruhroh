@@ -17,6 +17,32 @@ artifacts.
 New JSON artifacts include a root `$schema` URL that points at the matching
 schema shipped under `schemas/`, so artifact archives remain self-describing.
 
+## Reviewer Path
+
+Start with the result, then walk backward through the evidence. A useful review
+usually follows this order:
+
+1. Open `ruhroh-loop-result.json` or run `ruhroh report` to see the final
+   Harbor-facing verdict, evaluator status, unmet criteria, failure bucket, and
+   review queue.
+2. Open `ruhroh-run-manifest.json` to confirm the scenario version, sample,
+   adapter identity, evaluator identity, environment fingerprint, command
+   hashes, usage metadata, and forwarded environment key names for the run.
+3. Read `ruhroh-loop-journey.json`, `ruhroh-loop-iterations.jsonl`,
+   transcripts, and event logs to understand what the agent actually attempted
+   before it stopped.
+4. Compare `ruhroh-loop-eval-input.json` with `ruhroh-loop-eval.json` to verify
+   that the evaluator judged the final workspace against the scenario rubric and
+   preserved concrete evidence for its decision.
+5. Inspect `ruhroh-workspace-summary.json` and, when needed,
+   `ruhroh-workspace.tar.gz` to check the delivered workspace state rather than
+   relying on the score alone.
+
+Artifacts prove inspectability, not automatic publishability. Before making a
+benchmark claim, run `validate-artifacts`, `eval-quality`, `review`, `compare`,
+and then `publish-check` so missing evidence, weak evaluator support, run-plan
+gaps, and claim-readiness blockers are visible as operational gates.
+
 Before an actual `ruhroh run` execution starts, the CLI writes
 `.generated/ruhroh/ruhroh-run-plan.json`. This local plan records the selected
 scenarios, resolved adapter ids, sample ids/seeds, forwarded environment key
@@ -56,6 +82,7 @@ pnpm exec ruhroh report ./ruhroh-loop-result.json
 pnpm exec ruhroh report ./run-artifacts --json
 pnpm exec ruhroh report ./run-artifacts --html ruhroh-report.html
 pnpm exec ruhroh validate-artifacts ./run-artifacts --json
+pnpm exec ruhroh review ./results --html ruhroh-review.html
 ```
 
 `validate-artifacts` is the CI-friendly pre-publication gate for one preserved
@@ -77,6 +104,9 @@ evaluator results, and run plans.
 review. Dynamic content from evaluator output is escaped. Artifact, transcript,
 and event-log path cells link to the local files relative to the HTML report
 path so a reviewer can open preserved evidence without copying paths by hand.
+`eval-quality --html` writes the evaluator evidence gate as a separate static
+report with warning counts, next actions, per-run evidence counts, judge
+metadata, and result artifact links.
 
 Report output includes `summary.artifactInventory`, a sorted inventory of named
 run artifacts from `artifactPaths`. Each entry records the path, availability,
@@ -90,7 +120,9 @@ adapter, run id, score, eval status, failure bucket, reasons, unmet criteria,
 artifact paths, transcript paths, and event-log paths. `priority: "required"`
 is used for explicit evaluator review or evaluator infrastructure failure;
 `priority: "recommended"` is used for non-passing runs and eval-quality audit
-findings.
+findings. Use `ruhroh review` when you want only that queue, either as
+`ruhroh_review_queue_v1` JSON for CI or as a static HTML adjudication packet for
+reviewers.
 
 The implementation timeline is derived from `ruhroh-loop-iterations.jsonl` data
 embedded in the final result. Each entry includes the run-agent turn status,
@@ -118,11 +150,15 @@ pnpm exec ruhroh compare ./results --run-plan .generated/ruhroh/ruhroh-run-plan.
 pnpm exec ruhroh compare ./results --html ruhroh-compare.html
 ```
 
-Comparison groups runs by scenario and adapter, then reports pass rate, Wilson
-95% confidence interval, pass@k estimates, mean score with deterministic
-bootstrap percentile 95% confidence interval, mean subscores, median duration,
-iteration distribution, failure bucket counts, review-required count,
-eval-quality warning counts, optional usage totals, and low-sample warnings.
+Comparison groups runs by scenario and adapter, then reports a compact
+scenario-by-adapter matrix before the detailed metrics. Each matrix cell shows
+pass rate, run count, confidence interval, review count, and warning count so
+readers can scan where each agent delivered before drilling into evidence.
+Detailed compare output includes pass rate, Wilson 95% confidence interval,
+pass@k estimates, mean score with deterministic bootstrap percentile 95%
+confidence interval, mean subscores, median duration, iteration distribution,
+failure bucket counts, review-required count, eval-quality warning counts,
+optional usage totals, and low-sample warnings.
 When multiple adapters have runs for the same scenario, compare reports
 pairwise adapter pass-rate deltas with approximate 95% confidence intervals and
 warnings when the interval includes zero or either side has too few runs.
@@ -163,7 +199,13 @@ reported through `runsWithUsage`; usage never changes the pass/fail score.
 Use `compare --html` when publishing or archiving aggregate benchmark results.
 The generated page includes the same pass-rate, confidence interval, pass@k,
 warning, failure-bucket, suite coverage, claim-readiness, review queue, and
-usage fields as the text report. It also includes a result-artifacts table with
-links to each included `ruhroh-loop-result.json` and its named artifact
-inventory, so aggregate numbers can be traced back to the preserved journey and
-manifest files from the report.
+usage fields as the text report. It leads with a publication/evidence overview,
+then shows a scenario-by-adapter comparison matrix, a failure-triage table for
+non-passing or warning-heavy groups, and a cost/efficiency table when usage
+metadata is present. It also includes a result-artifacts table with links to
+each included `ruhroh-loop-result.json` and its named artifact inventory, so
+aggregate numbers can be traced back to the preserved journey and manifest
+files from the report.
+
+See the [Report Gallery](./report-gallery.md) for checked-in sample HTML and
+JSON outputs generated by Ruhroh's own CLI.

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ruhroh claim index</title>
+    <style>
+      :root { color-scheme: light; --border: #d8dee4; --muted: #57606a; --bg: #f6f8fa; --bad: #b42318; --ok: #1f7a3f; }
+      body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2328; background: #fff; }
+      main { max-width: 1280px; margin: 0 auto; padding: 32px 20px 48px; }
+      header { border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 16px; }
+      h1 { font-size: 28px; margin: 0 0 8px; }
+      table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+      th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+      th { background: var(--bg); }
+      .packet-links a { display: block; margin: 0 0 4px; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+      .metric { border: 1px solid var(--border); padding: 12px; background: var(--bg); }
+      .metric strong { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+      .pass { color: var(--ok); font-weight: 700; }
+      .fail { color: var(--bad); font-weight: 700; }
+      .muted { color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ruhroh claim index</h1>
+        <p class="muted"><a href="./ruhroh-publication">./ruhroh-publication</a></p>
+      </header>
+      <section class="grid" aria-label="Claim index overview">
+        <div class="metric"><strong>Claims</strong><span>1</span></div>
+        <div class="metric"><strong>Publishable</strong><span>0</span></div>
+        <div class="metric"><strong>Blocked</strong><span class="fail">1</span></div>
+        <div class="metric"><strong>Invalid</strong><span class="pass">0</span></div>
+        <div class="metric"><strong>Registry ready</strong><span class="fail">no</span></div>
+        <div class="metric"><strong>Suites</strong><span>1</span></div>
+        <div class="metric"><strong>Adapters</strong><span>1</span></div>
+        <div class="metric"><strong>Total runs</strong><span>2</span></div>
+      </section>
+      <section><h2>Registry Blockers</h2><ul><li>blocked claim ./ruhroh-publication: agent-a: suite minimum runs or scenario coverage not satisfied</li></ul></section>
+      <section><h2>Claims</h2><table><thead><tr><th>Status</th><th>Suite</th><th>Scope</th><th>Adapters</th><th>Runs</th><th>Pass rate</th><th>Review</th><th>Evidence</th><th>Claim</th><th>Bundle</th><th>Review Packet</th><th>Blockers</th></tr></thead><tbody><tr><td>blocked</td><td>ruhroh-sample@0.1.0</td><td>suite</td><td>agent-a</td><td>2</td><td>50%</td><td>1</td><td>runPlan=yes; artifactErrors=0; artifactWarnings=0; requiredReview=0</td><td><a href="./ruhroh-publication/benchmark-claim.json">./ruhroh-publication/benchmark-claim.json</a></td><td><a href="./ruhroh-publication">./ruhroh-publication</a></td><td><div class="packet-links"><a href="./ruhroh-publication/README.md">README</a><a href="./ruhroh-publication/ruhroh-compare.html">compare</a><a href="./ruhroh-publication/ruhroh-eval-quality.html">eval-quality</a><a href="./ruhroh-publication/ruhroh-review.html">review</a><a href="./ruhroh-publication/manifest.json">manifest</a><a href="./ruhroh-publication/sources">sources</a></div></td><td>agent-a: suite minimum runs or scenario coverage not satisfied; simple-newsletter/agent-a: fewer than 5 runs; treat pass rate and pass@k as directional; simple-newsletter/agent-a: eval-quality warnings present; claim is not marked publishable; suite minimum runs or scenario coverage not satisfied; agent-a: simple-newsletter has 2/5 required runs; agent-a: scenario-level warnings present</td></tr></tbody></table></section>
+    </main>
+  </body>
+</html>

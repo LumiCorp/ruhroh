@@ -1,0 +1,141 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json",
+  "title": "Ruhroh Claim Index v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "generatedAt",
+    "source",
+    "registryReady",
+    "registryBlockers",
+    "claimCount",
+    "publishableCount",
+    "blockedCount",
+    "invalidCount",
+    "suiteCount",
+    "adapterCount",
+    "totalRuns",
+    "claims"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_claim_index_v1" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["inputPath"],
+      "properties": {
+        "inputPath": { "type": "string", "minLength": 1 },
+        "htmlPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "registryReady": { "type": "boolean" },
+    "registryBlockers": { "$ref": "#/$defs/stringArray" },
+    "claimCount": { "type": "number", "minimum": 0 },
+    "publishableCount": { "type": "number", "minimum": 0 },
+    "blockedCount": { "type": "number", "minimum": 0 },
+    "invalidCount": { "type": "number", "minimum": 0 },
+    "suiteCount": { "type": "number", "minimum": 0 },
+    "adapterCount": { "type": "number", "minimum": 0 },
+    "totalRuns": { "type": "number", "minimum": 0 },
+    "claims": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/claimIndexEntry" }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "claimIndexEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "claimPath",
+        "valid",
+        "publishable",
+        "adapters",
+        "summary",
+        "evidence",
+        "sourcePaths",
+        "blockers",
+        "advisories",
+        "validationErrors",
+        "validationWarnings"
+      ],
+      "properties": {
+        "claimPath": { "type": "string", "minLength": 1 },
+        "bundlePath": { "type": "string", "minLength": 1 },
+        "valid": { "type": "boolean" },
+        "publishable": { "type": "boolean" },
+        "scope": { "enum": ["suite", "ad_hoc_compare"] },
+        "createdAt": { "type": "string", "minLength": 1 },
+        "suite": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["id"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "title": { "type": "string", "minLength": 1 },
+            "suiteVersion": { "type": "string", "minLength": 1 }
+          }
+        },
+        "adapters": { "$ref": "#/$defs/stringArray" },
+        "summary": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "scenarioCount",
+            "adapterCount",
+            "totalRuns",
+            "totalPasses",
+            "runWeightedPassRate",
+            "reviewRecommended"
+          ],
+          "properties": {
+            "scenarioCount": { "type": "number", "minimum": 0 },
+            "adapterCount": { "type": "number", "minimum": 0 },
+            "totalRuns": { "type": "number", "minimum": 0 },
+            "totalPasses": { "type": "number", "minimum": 0 },
+            "runWeightedPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "reviewRecommended": { "type": "number", "minimum": 0 }
+          }
+        },
+        "evidence": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "runPlanPresent",
+            "artifactValidationErrors",
+            "artifactCompletenessWarnings",
+            "requiredReviewItems"
+          ],
+          "properties": {
+            "runPlanPresent": { "type": "boolean" },
+            "artifactValidationErrors": { "type": "number", "minimum": 0 },
+            "artifactCompletenessWarnings": { "type": "number", "minimum": 0 },
+            "requiredReviewItems": { "type": "number", "minimum": 0 }
+          }
+        },
+        "sourcePaths": {
+          "type": "object",
+          "additionalProperties": true,
+          "properties": {
+            "resultsPath": { "type": "string", "minLength": 1 },
+            "runPlanPath": { "type": "string", "minLength": 1 },
+            "rerunLedgerPath": { "type": "string", "minLength": 1 },
+            "suitePath": { "type": "string", "minLength": 1 }
+          }
+        },
+        "blockers": { "$ref": "#/$defs/stringArray" },
+        "advisories": { "$ref": "#/$defs/stringArray" },
+        "validationErrors": { "$ref": "#/$defs/stringArray" },
+        "validationWarnings": { "$ref": "#/$defs/stringArray" }
+      }
+    }
+  }
+}

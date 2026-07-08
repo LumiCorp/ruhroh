@@ -1,0 +1,242 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/loop-result-v1.schema.json",
+  "version": "ruhroh_loop_result_v1",
+  "runId": "sample-newsletter-agent-a-1",
+  "adapter": "ruhroh-harbor",
+  "dataset": "ruhroh-docs-sample",
+  "scenarioId": "simple-newsletter",
+  "task_id": "simple-newsletter",
+  "status": "completed",
+  "failure_kind": "none",
+  "failureBucket": "none",
+  "score": 1,
+  "iterationsUsed": 1,
+  "implementationIterationsUsed": 1,
+  "implementationStoppedReason": "goal_satisfied",
+  "stoppedReason": "goal_satisfied",
+  "duration_ms": 60000,
+  "runAgent": {
+    "adapterId": "agent-a",
+    "adapterVersion": "docs-sample-v1",
+    "continuityLevel": "workspace_only",
+    "sessionHandle": "sample-newsletter-agent-a-1",
+    "runIds": [
+      "sample-newsletter-agent-a-1"
+    ],
+    "transcriptPaths": [
+      "./sample-results/run-one/transcript.log"
+    ],
+    "eventLogPaths": [
+      "./sample-results/run-one/events.jsonl"
+    ],
+    "artifactPaths": {}
+  },
+  "runAgentAdapterId": "agent-a",
+  "continuityLevel": "workspace_only",
+  "sessionHandle": "sample-newsletter-agent-a-1",
+  "runIds": [
+    "sample-newsletter-agent-a-1"
+  ],
+  "implementationRuns": [
+    {
+      "iteration": 1,
+      "adapterId": "agent-a",
+      "status": "completed",
+      "failureKind": "none",
+      "completionStatus": {
+        "state": "done",
+        "reason": "goal_satisfied"
+      },
+      "stopReason": "goal_satisfied",
+      "runId": "sample-newsletter-agent-a-1",
+      "transcriptPath": "./sample-results/run-one/transcript.log",
+      "eventLogPath": "./sample-results/run-one/events.jsonl",
+      "notes": "Implemented a static newsletter page and verified the article count."
+    }
+  ],
+  "evalResult": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+    "version": "ruhroh_eval_result_v1",
+    "status": "passed",
+    "goalMet": true,
+    "confidence": "high",
+    "reasons": [
+      "The workspace contains a newsletter page with three articles."
+    ],
+    "unmetCriteria": [],
+    "evidenceRefs": [
+      {
+        "kind": "file",
+        "ref": "index.html",
+        "summary": "The sample workspace satisfies the newsletter scenario."
+      },
+      {
+        "kind": "command",
+        "ref": "fixture article-count",
+        "summary": "status=passed"
+      }
+    ],
+    "commandsRun": [
+      {
+        "command": "fixture article-count",
+        "exitCode": 0,
+        "summary": "The sample workspace satisfies the newsletter scenario."
+      }
+    ],
+    "artifacts": {
+      "workspacePath": "/docs/sample/workspace"
+    },
+    "finalSummary": "The sample workspace satisfies the newsletter scenario.",
+    "criteriaResults": [
+      {
+        "id": "newsletter-outcome",
+        "description": "The delivered workspace contains a newsletter page with three stories.",
+        "status": "passed",
+        "score": 1,
+        "evidenceRefs": [
+          {
+            "kind": "file",
+            "ref": "index.html",
+            "summary": "The sample workspace satisfies the newsletter scenario."
+          }
+        ]
+      }
+    ],
+    "subscores": {
+      "functionality": 1,
+      "workflow": 1,
+      "buildRun": 1,
+      "persistence": 0,
+      "constraintCompliance": 1,
+      "evidenceQuality": 1
+    },
+    "judge": {
+      "kind": "hybrid",
+      "model": "docs-fixture-evaluator",
+      "version": "2026-07-08"
+    },
+    "judgeVotes": [
+      {
+        "judge": {
+          "kind": "command",
+          "model": "docs-fixture-evaluator",
+          "version": "2026-07-08"
+        },
+        "status": "passed",
+        "confidence": "high",
+        "rationale": "The sample workspace satisfies the newsletter scenario.",
+        "evidenceRefs": [
+          {
+            "kind": "file",
+            "ref": "index.html",
+            "summary": "The sample workspace satisfies the newsletter scenario."
+          }
+        ]
+      },
+      {
+        "judge": {
+          "kind": "model",
+          "model": "docs-arbiter",
+          "version": "2026-07-08"
+        },
+        "status": "passed",
+        "confidence": "high",
+        "rationale": "The sample workspace satisfies the newsletter scenario.",
+        "evidenceRefs": [
+          {
+            "kind": "command",
+            "ref": "fixture article-count",
+            "summary": "status=passed"
+          }
+        ]
+      }
+    ]
+  },
+  "runManifest": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/run-manifest-v1.schema.json",
+    "version": "ruhroh_run_manifest_v1",
+    "runId": "sample-newsletter-agent-a-1",
+    "scenario": {
+      "id": "simple-newsletter",
+      "scenarioVersion": "1.0.0"
+    },
+    "benchmark": {
+      "dataset": "ruhroh-docs-sample",
+      "adapter": "ruhroh-harbor",
+      "harborAgent": "ruhroh-harbor"
+    },
+    "timing": {
+      "startedAt": "2026-07-08T12:00:00Z",
+      "endedAt": "2026-07-08T12:01:00Z",
+      "durationMs": 60000
+    },
+    "loop": {
+      "maxIterations": 3,
+      "implementationIterationsUsed": 1,
+      "stoppedReason": "goal_satisfied"
+    },
+    "sample": {
+      "id": "simple-newsletter/agent-a/1-of-2",
+      "index": 1,
+      "count": 2,
+      "seed": "docs-seed-one"
+    },
+    "runAgent": {
+      "adapterId": "agent-a",
+      "adapterVersion": "docs-sample-v1",
+      "continuityLevel": "workspace_only",
+      "sessionHandle": "sample-newsletter-agent-a-1",
+      "runIds": [
+        "sample-newsletter-agent-a-1"
+      ],
+      "model": {
+        "provider": "docs",
+        "model": "sample-agent",
+        "version": "2026-07-08",
+        "promptVersion": "docs-v1"
+      }
+    },
+    "evaluator": {
+      "model": {
+        "provider": "docs",
+        "model": "docs-fixture-evaluator",
+        "version": "2026-07-08",
+        "promptVersion": "docs-eval-v1"
+      },
+      "inputSummary": {
+        "scenarioId": "simple-newsletter",
+        "rubricSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "privateAssetsSha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "judge": {
+        "kind": "hybrid",
+        "model": "docs-fixture-evaluator",
+        "version": "2026-07-08"
+      }
+    },
+    "environment": {
+      "fingerprint": {
+        "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "source": "docs sample"
+      }
+    },
+    "usage": {
+      "costUsd": 0.03,
+      "totalTokens": 900
+    }
+  },
+  "artifactPaths": {
+    "result": "./sample-results/run-one/ruhroh-loop-result.json",
+    "runManifest": "./sample-results/run-one/ruhroh-run-manifest.json",
+    "evalResult": "./sample-results/run-one/ruhroh-loop-eval.json",
+    "workspaceSummary": "./sample-results/run-one/ruhroh-workspace-summary.json",
+    "implementationRuns": "./sample-results/run-one/ruhroh-loop-iterations.jsonl",
+    "journey": "./sample-results/run-one/ruhroh-loop-journey.json",
+    "evalInput": "./sample-results/run-one/ruhroh-loop-eval-input.json",
+    "transcript": "./sample-results/run-one/transcript.log",
+    "events": "./sample-results/run-one/events.jsonl",
+    "workspaceTarball": "./sample-results/run-one/ruhroh-workspace.tar.gz",
+    "eventsTarball": "./sample-results/run-one/ruhroh-loop-events.tar.gz",
+    "transcriptsTarball": "./sample-results/run-one/ruhroh-loop-transcripts.tar.gz"
+  }
+}

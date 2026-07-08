@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ruhroh review queue</title>
+    <style>
+      :root { color-scheme: light; --border: #d8dee4; --muted: #57606a; --bg: #f6f8fa; --bad: #b42318; --ok: #1f7a3f; }
+      body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2328; background: #fff; }
+      main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 48px; }
+      header { border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 16px; }
+      h1 { font-size: 28px; margin: 0 0 8px; }
+      h2 { font-size: 18px; margin: 28px 0 12px; }
+      table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+      th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+      th { background: var(--bg); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+      .metric { border: 1px solid var(--border); padding: 12px; background: var(--bg); }
+      .metric strong { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+      .pass { color: var(--ok); font-weight: 700; }
+      .fail { color: var(--bad); font-weight: 700; }
+      .muted { color: var(--muted); }
+      ul { padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ruhroh review queue</h1>
+        <p class="muted"><a href="../sample-results">../sample-results</a></p>
+      </header>
+      <section class="grid" aria-label="Review queue overview">
+        <div class="metric"><strong>Results</strong><span>2</span></div>
+        <div class="metric"><strong>Review items</strong><span class="fail">1</span></div>
+        <div class="metric"><strong>Required</strong><span class="pass">0</span></div>
+        <div class="metric"><strong>Recommended</strong><span>1</span></div>
+      </section>
+      <section><h2>Review Queue</h2><table><thead><tr><th>Priority</th><th>Scenario</th><th>Adapter</th><th>Run id</th><th>Score</th><th>Eval</th><th>Failure</th><th>Reasons</th><th>Transcripts</th><th>Event logs</th></tr></thead><tbody><tr><td>recommended</td><td>simple-newsletter</td><td>agent-a</td><td>sample-newsletter-agent-a-2</td><td>0</td><td>failed</td><td>goal_mismatch</td><td>non-passing run: goal_mismatch; eval command evidence includes non-zero exit codes; unmet criterion: Newsletter must include three sample stories.</td><td><a href="./sample-results/run-two/transcript.log">./sample-results/run-two/transcript.log</a></td><td><a href="./sample-results/run-two/events.jsonl">./sample-results/run-two/events.jsonl</a></td></tr></tbody></table></section>
+      <section><h2>Adjudication Checklist</h2><ul><li>Inspect each listed transcript, event log, eval output, and final workspace artifact.</li><li>Record the decision, rationale, reviewer identity, and any accepted limitations with the benchmark pack or claim review.</li><li>Rerun ruhroh publish-check before publishing the claim.</li></ul></section>
+    </main>
+  </body>
+</html>

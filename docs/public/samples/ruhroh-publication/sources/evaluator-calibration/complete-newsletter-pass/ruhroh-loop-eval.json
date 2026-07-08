@@ -1,0 +1,43 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+  "version": "ruhroh_eval_result_v1",
+  "status": "passed",
+  "goalMet": true,
+  "confidence": "high",
+  "reasons": [
+    "Docs sample calibration case complete-newsletter-pass matched passed."
+  ],
+  "unmetCriteria": [],
+  "evidenceRefs": [
+    {
+      "kind": "file",
+      "ref": "CALIBRATION.md",
+      "summary": "The workspace contains an openable local newsletter page with the requested signup states and sample issue summaries."
+    }
+  ],
+  "commandsRun": [],
+  "artifacts": {
+    "workspacePath": "./.generated/ruhroh/evaluator-calibration/complete-newsletter-pass/workspace"
+  },
+  "finalSummary": "A complete, locally inspectable newsletter experience should pass.",
+  "criteriaResults": [
+    {
+      "id": "calibration-anchor",
+      "description": "Evaluator calibration anchor.",
+      "status": "passed",
+      "score": 1,
+      "evidenceRefs": [
+        {
+          "kind": "file",
+          "ref": "CALIBRATION.md",
+          "summary": "A complete, locally inspectable newsletter experience should pass."
+        }
+      ]
+    }
+  ],
+  "judge": {
+    "kind": "command",
+    "model": "docs-fixture-evaluator",
+    "version": "2026-07-08"
+  }
+}

@@ -27,9 +27,7 @@ on:
       - "schemas/**"
       - "suites/**"
       - "tests/**"
-      - "examples/scenarios/**"
-      - "examples/adapters/**"
-      - "examples/evaluators/**"
+      - "examples/**"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/ruhroh-smoke.yml"
@@ -51,9 +49,7 @@ on:
       - "schemas/**"
       - "suites/**"
       - "tests/**"
-      - "examples/scenarios/**"
-      - "examples/adapters/**"
-      - "examples/evaluators/**"
+      - "examples/**"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/ruhroh-smoke.yml"
@@ -84,6 +80,9 @@ jobs:
 
       - name: Build Ruhroh package
         run: pnpm build
+
+      - name: Check generated docs samples
+        run: pnpm run docs:samples:check
 
       - name: Validate bundled benchmark suites
         run: |

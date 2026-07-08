@@ -1,0 +1,100 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+  "version": "ruhroh_eval_result_v1",
+  "status": "failed",
+  "goalMet": false,
+  "confidence": "high",
+  "reasons": [
+    "The workspace has a page, but it only includes one article."
+  ],
+  "unmetCriteria": [
+    "Newsletter must include three sample stories."
+  ],
+  "evidenceRefs": [
+    {
+      "kind": "file",
+      "ref": "index.html",
+      "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+    },
+    {
+      "kind": "command",
+      "ref": "fixture article-count",
+      "summary": "status=failed"
+    }
+  ],
+  "commandsRun": [
+    {
+      "command": "fixture article-count",
+      "exitCode": 1,
+      "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+    }
+  ],
+  "artifacts": {
+    "workspacePath": "/docs/sample/workspace"
+  },
+  "finalSummary": "The sample workspace is incomplete and does not satisfy the user outcome.",
+  "criteriaResults": [
+    {
+      "id": "newsletter-outcome",
+      "description": "The delivered workspace contains a newsletter page with three stories.",
+      "status": "failed",
+      "score": 0,
+      "evidenceRefs": [
+        {
+          "kind": "file",
+          "ref": "index.html",
+          "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+        }
+      ]
+    }
+  ],
+  "subscores": {
+    "functionality": 0,
+    "workflow": 0,
+    "buildRun": 1,
+    "persistence": 0,
+    "constraintCompliance": 0,
+    "evidenceQuality": 1
+  },
+  "judge": {
+    "kind": "hybrid",
+    "model": "docs-fixture-evaluator",
+    "version": "2026-07-08"
+  },
+  "judgeVotes": [
+    {
+      "judge": {
+        "kind": "command",
+        "model": "docs-fixture-evaluator",
+        "version": "2026-07-08"
+      },
+      "status": "failed",
+      "confidence": "high",
+      "rationale": "The sample workspace is incomplete and does not satisfy the user outcome.",
+      "evidenceRefs": [
+        {
+          "kind": "file",
+          "ref": "index.html",
+          "summary": "The sample workspace is incomplete and does not satisfy the user outcome."
+        }
+      ]
+    },
+    {
+      "judge": {
+        "kind": "model",
+        "model": "docs-arbiter",
+        "version": "2026-07-08"
+      },
+      "status": "failed",
+      "confidence": "high",
+      "rationale": "The sample workspace is incomplete and does not satisfy the user outcome.",
+      "evidenceRefs": [
+        {
+          "kind": "command",
+          "ref": "fixture article-count",
+          "summary": "status=failed"
+        }
+      ]
+    }
+  ]
+}

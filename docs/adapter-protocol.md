@@ -14,20 +14,19 @@ depends_on:
 Run-agent adapters own agent-specific behavior. Ruhroh core owns orchestration
 and result mapping.
 
-The TypeScript adapter contract is exported from `@kestrel-agents/ruhroh`:
+Most users should use the command-backed adapter path documented in
+[Write an Adapter](./write-an-adapter.md) and
+[Custom-Shell Adapter](./custom-shell.md). A command wrapper is easier to audit,
+works with existing agent CLIs, and already supports completion status,
+transcripts, model identity, usage, and artifact metadata through
+`RUHROH_RESULT_PATH`.
 
-- `prepare()`
-- `startSession()`
-- `runTurn()`
-- `detectCompletion()`
-- `collectArtifacts()`
-- `cleanup()`
+Use the TypeScript adapter lifecycle only for advanced integrations where a
+process wrapper cannot preserve the agent behavior you need, for example a
+native session transport, embedded SDK client, or runtime that needs custom
+artifact collection hooks.
 
-Adapters report their continuity level:
-
-- `native_session`
-- `workspace_plus_transcript`
-- `workspace_only`
+## Recommended Command Protocol
 
 For shell-based public agents, use the generic command adapter protocol. The
 current command adapter passes:
@@ -42,6 +41,10 @@ current command adapter passes:
 - `RUHROH_SCENARIO_ID`
 - `RUHROH_RUN_ROOT`
 - `RUHROH_ADAPTER_ID`
+- `RUHROH_SAMPLE_ID`
+- `RUHROH_SAMPLE_SEED`
+- `RUHROH_RUN_INDEX`
+- `RUHROH_RUN_COUNT`
 
 Wrappers should emit a final JSON line:
 
@@ -101,3 +104,20 @@ For reproducible reports, wrappers or launch scripts may set:
 
 Ruhroh writes these into `ruhroh-run-manifest.json` when present. Secret values
 are not copied into the manifest.
+
+## Advanced TypeScript Lifecycle
+
+The TypeScript adapter contract is exported from `@kestrel-agents/ruhroh`:
+
+- `prepare()`
+- `startSession()`
+- `runTurn()`
+- `detectCompletion()`
+- `collectArtifacts()`
+- `cleanup()`
+
+Adapters report their continuity level:
+
+- `native_session`
+- `workspace_plus_transcript`
+- `workspace_only`

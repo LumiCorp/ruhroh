@@ -1,0 +1,11 @@
+{
+  "version": "ruhroh_eval_calibration_input_v1",
+  "scenarioId": "simple-newsletter",
+  "calibrationCase": {
+    "id": "complete-newsletter-pass",
+    "inputSummary": "The workspace contains an openable local newsletter page with the requested signup states and sample issue summaries.",
+    "expectedStatus": "passed",
+    "rationale": "A complete, locally inspectable newsletter experience should pass."
+  },
+  "workspacePath": "./.generated/ruhroh/evaluator-calibration/complete-newsletter-pass/workspace"
+}

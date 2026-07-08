@@ -87,6 +87,14 @@ export interface RuhrohScenarioEvaluationCalibrationCase {
   rationale: string;
 }
 
+export interface RuhrohScenarioEvaluationCalibrationSummary {
+  total: number;
+  byExpectedStatus: Record<RuhrohScenarioCalibrationExpectedStatus, number>;
+  coveredStatuses: RuhrohScenarioCalibrationExpectedStatus[];
+  missingStatuses: RuhrohScenarioCalibrationExpectedStatus[];
+  warnings: string[];
+}
+
 export interface ValidateRuhrohScenarioOptions {
   adapters?: Record<string, RuhrohRunAgentAdapterCapabilities> | undefined;
 }
@@ -186,6 +194,36 @@ export function validateRuhrohScenario(
 
 export function lintRuhrohScenarioEvaluation(scenario: RuhrohScenario): string[] {
   return lintRuhrohScenarioEvaluationDetailed(scenario).map((diagnostic) => diagnostic.message);
+}
+
+export function summarizeRuhrohScenarioCalibration(
+  scenario: RuhrohScenario,
+): RuhrohScenarioEvaluationCalibrationSummary {
+  const calibrationCases = readCalibrationCases((scenario as Partial<RuhrohScenario>).evaluation?.calibrationCases);
+  const byExpectedStatus: Record<RuhrohScenarioCalibrationExpectedStatus, number> = {
+    passed: 0,
+    failed: 0,
+    review: 0,
+  };
+  for (const calibrationCase of calibrationCases) {
+    byExpectedStatus[calibrationCase.expectedStatus] += 1;
+  }
+  const statuses: RuhrohScenarioCalibrationExpectedStatus[] = ["passed", "failed", "review"];
+  const coveredStatuses = statuses.filter((status) => byExpectedStatus[status] > 0);
+  const missingStatuses = statuses.filter((status) => byExpectedStatus[status] === 0);
+  const warnings: string[] = [];
+  if (calibrationCases.length === 0) {
+    warnings.push("evaluation.calibrationCases has no expected judgment anchors");
+  } else if (missingStatuses.length > 0) {
+    warnings.push(`evaluation.calibrationCases is missing ${missingStatuses.join(", ")} expected judgment anchors`);
+  }
+  return {
+    total: calibrationCases.length,
+    byExpectedStatus,
+    coveredStatuses,
+    missingStatuses,
+    warnings,
+  };
 }
 
 export function lintRuhrohScenarioEvaluationDetailed(scenario: RuhrohScenario): RuhrohScenarioEvaluationLintDiagnostic[] {

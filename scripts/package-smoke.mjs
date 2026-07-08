@@ -30,12 +30,69 @@ try {
   run(process.execPath, [
     "--input-type=module",
     "-e",
-    "import('@kestrel-agents/ruhroh').then((m) => { if (typeof m.discoverRuhrohSuites !== 'function' || typeof m.validateRuhrohBenchmarkSummary !== 'function') process.exit(1); })",
+    [
+      "import('@kestrel-agents/ruhroh').then((m) => {",
+      "if (typeof m.discoverRuhrohSuites !== 'function' || typeof m.validateRuhrohBenchmarkSummary !== 'function' || typeof m.buildRuhrohPublishCheckReport !== 'function' || typeof m.validateRuhrohPublishBundle !== 'function' || typeof m.verifyRuhrohBenchmarkClaimSources !== 'function') process.exit(1);",
+      "const report = m.buildRuhrohPublishCheckReport({ source: { resultsPath: 'results' }, compare: { claimReadiness: { advisories: ['sample advisory'] }, benchmarkClaim: { scope: 'ad_hoc_compare', publishable: false, readiness: { publishable: false, blockers: ['no suite selected; use compare --suite for publishable benchmark claims'] }, evidence: {}, adapterSummaries: [], scenarioResults: [], pairwiseComparisons: [] } } });",
+      "if (report.version !== 'ruhroh_publish_check_v1' || report.remediation[0]?.code !== 'suite_required') process.exit(1);",
+      "})",
+    ].join(" "),
   ], { cwd: projectDir });
   run(process.execPath, [
     "-e",
     "require.resolve('@kestrel-agents/ruhroh/schemas/benchmark-summary-v1.schema.json'); require.resolve('@kestrel-agents/ruhroh/schemas/run-manifest-v1.schema.json');",
   ], { cwd: projectDir });
+
+  const installedPackageRoot = path.join(projectDir, "node_modules", "@kestrel-agents", "ruhroh");
+  for (const relativePath of [
+    "docs/.vitepress",
+    "docs/.vitepress/dist",
+    "docs/public/samples",
+  ]) {
+    if (existsSync(path.join(installedPackageRoot, relativePath))) {
+      throw new Error(`[package-smoke] installed package should not include generated docs output ${relativePath}`);
+    }
+  }
+  for (const relativePath of [
+    "CONTRIBUTING.md",
+    "SECURITY.md",
+    "docs/add-to-existing-project.md",
+    "docs/adapter-examples.md",
+    "docs/adjudication.md",
+    "docs/benchmark-pack-registry.md",
+    "docs/benchmark-pack-tutorial.md",
+    "docs/claim-registry.md",
+    "docs/concepts.md",
+    "docs/contract-evolution.md",
+    "docs/distributed-runs.md",
+    "docs/eval-agent.md",
+    "docs/benchmark-methodology.md",
+    "docs/benchmark-suites.md",
+    "docs/ci.md",
+    "docs/troubleshooting.md",
+    "docs/faq.md",
+    "docs/write-an-evaluator.md",
+    "docs/evaluator-cookbook.md",
+    "docs/publish-claims.md",
+    "docs/report-gallery.md",
+    "docs/programmatic-api.md",
+    "docs/scenario-evolution.md",
+    "docs/security.md",
+    "examples/adapters/aider/run.sh",
+    "examples/adapters/aider/README.md",
+    "examples/ci/ruhroh-pack-registry.yml",
+    "examples/ci/ruhroh-claim-publication.yml",
+    "examples/ci/ruhroh-sharded-collection.yml",
+    "schemas/claim-index-v1.schema.json",
+    "schemas/eval-calibration-report-v1.schema.json",
+    "schemas/publish-bundle-v1.schema.json",
+    "schemas/publish-check-v1.schema.json",
+    "schemas/rerun-ledger-v1.schema.json",
+  ]) {
+    if (!existsSync(path.join(installedPackageRoot, relativePath))) {
+      throw new Error(`[package-smoke] installed package missing ${relativePath}`);
+    }
+  }
 
   run(ruhrohBin, ["init", "starter", "--json"], { cwd: projectDir, expectStdout: "ruhroh_init_v1" });
   run(ruhrohBin, [

@@ -9,6 +9,7 @@ depends_on:
   - ../../examples/adapters/codex-cli/run.sh
   - ../../examples/adapters/claude-code/run.sh
   - ../../examples/adapters/gemini-cli/run.sh
+  - ../../examples/adapters/aider/run.sh
 ---
 
 # Custom-Shell Adapter
@@ -58,11 +59,18 @@ done, print a final JSON line:
 If the final JSON line is absent, Ruhroh treats the turn as incomplete and may
 continue until the iteration cap.
 
-The example Codex CLI, Claude Code, and Gemini wrappers also write the
+The example Codex CLI, Claude Code, Gemini, and Aider wrappers also write the
 `ruhroh_run_agent_result_v1` result file at `RUHROH_RESULT_PATH`. That file can
 include `adapterVersion`, `model`, `usage`, and `artifacts`; Ruhroh copies those
 fields into the run manifest so compare reports can group runs by the actual
 adapter/model identity.
+
+For repeated comparisons, treat `adapterVersion`, model identity, and transcript
+or artifact paths as required evidence. `usage` is optional but recommended
+when the agent exposes cost or token data. Run `ruhroh doctor --adapter
+custom-shell` before collecting live samples; the `adapter-metadata` check
+reports whether the wrapper is ready for repeated comparisons or still too thin
+for defensible cohort metadata.
 
 For a credential-free smoke path, pair
 `examples/adapters/fixture-newsletter/run.sh` with

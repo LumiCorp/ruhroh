@@ -3,7 +3,7 @@ id: ruhroh-write-a-scenario
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-06-23
+last_verified_at: 2026-07-08
 depends_on:
   - docs/scenario-format.md
   - src/scenarios.ts
@@ -30,8 +30,8 @@ pnpm exec ruhroh new-scenario my-task --scenario-dir ruhroh/scenarios
 ```
 
 The scaffold creates private scenario metadata, an instruction stub, rubric
-guidance, evidence guidance, and a calibration case. Edit those fields before
-publishing the scenario or adding it to a benchmark suite.
+guidance, evidence guidance, and pass/fail/review calibration anchors. Edit
+those fields before publishing the scenario or adding it to a benchmark suite.
 
 The prompt in `instruction.md` should read like a user request. It should state
 the desired outcome, useful constraints, and any domain context the agent needs.
@@ -75,19 +75,57 @@ comparability.
 Use `metadata.changelog` and `metadata.lifecycle` to make scenario changes and
 deprecations explicit. Use `metadata.visibility` to distinguish public scenarios
 from private or held-out scenarios before publishing packs or reports.
+See [Scenario Evolution](./scenario-evolution.md) for version bump rules and
+suite-lock implications.
 
 Use the rubric to describe outcome quality. The generated Harbor verifier stays
 generic; it should not become a scenario-specific file or source-code checker.
 
-Add `evaluation.calibrationCases` with at least one pass, fail, or review anchor
-that explains the expected judgment. These anchors help keep model-backed and
+Add `evaluation.calibrationCases` with pass, fail, and review anchors that
+explain the expected judgment. These anchors help keep model-backed and
 human-assisted evaluators consistent without adding brittle implementation
-checks to the Harbor verifier.
+checks to the Harbor verifier. `new-scenario` scaffolds one of each status so
+authors can replace the examples with task-specific cases instead of inventing
+the structure from scratch. `ruhroh validate` prints calibration coverage, and
+`ruhroh validate --json` includes a `calibration` object that shows which
+expected statuses are covered or missing.
 
 If the evaluator needs held-out expected outputs or private review fixtures,
 declare them in `evaluation.privateAssets`. Keep these files out of the public
 prompt and public `assets/`; Ruhroh forwards them to the eval-agent through the
 eval input.
+
+Use private evaluator assets only for material the agent should not see:
+
+- expected output files used to judge a transformation;
+- reviewer checklists that would reveal the pass/fail boundary;
+- model-judge rubrics or examples that would contaminate the task prompt;
+- fixture data used only during evaluator calibration or adjudication.
+
+Place those files under a clearly named private directory such as
+`private-eval-assets/`, list them in `evaluation.privateAssets`, and keep public
+inputs under `assets/`. Do not duplicate the same file in both places.
+Validation fails when a private evaluator asset overlaps a declared public
+asset, because that would leak held-out material into the agent-visible task.
+
+Private assets do not replace calibration cases. Calibration cases explain
+which kinds of final workspaces should pass, fail, or require review. Private
+assets are the evaluator-only evidence used to make those judgments harder to
+overfit. Before collecting runs for a public or team-shared suite, use both
+gates:
+
+```bash
+pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario my-task --json
+pnpm exec ruhroh inspect-pack --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --require-calibrated --require-risk-reviewed --json
+pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario my-task --json
+```
+
+`inspect-pack --json` fingerprints public prompts, public assets, and private
+evaluator assets separately so reviewers and registry tooling can detect drift
+without exposing held-out content in the user prompt. If the scenario is
+private or held out and cannot list concrete private assets, document the reason
+with `metadata.privateEvalRationale` so reviewers know where the evaluator-only
+boundary lives.
 
 Validate the scenario before generating the task:
 
@@ -99,9 +137,9 @@ pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario my-task --j
 Then generate the task:
 
 ```bash
-pnpm exec ruhroh --scenario-dir ruhroh/scenarios --scenario my-task --generate-only
+pnpm exec ruhroh generate --scenario-dir ruhroh/scenarios --scenario my-task
 ```
 
 Set `requires.network` deliberately. `false` produces Harbor
-`network_mode = "none"`; `true` produces `network_mode = "public"` and should be
+`network_mode = "no-network"`; `true` produces `network_mode = "public"` and should be
 reserved for scenarios whose user goal genuinely needs external network access.

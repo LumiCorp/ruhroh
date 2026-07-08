@@ -1,0 +1,53 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-calibration-report-v1.schema.json",
+  "version": "ruhroh_eval_calibration_report_v1",
+  "source": {
+    "scenarioDir": "./ruhroh/scenarios",
+    "generatedDir": "./.generated/ruhroh",
+    "evaluatorCommand": "./ruhroh/evaluators/fixture-newsletter/run.sh",
+    "reportPath": "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json"
+  },
+  "ok": true,
+  "scenarioCount": 1,
+  "caseCount": 3,
+  "matchedCount": 3,
+  "mismatchCount": 0,
+  "infraFailedCount": 0,
+  "warnings": [],
+  "nextActions": [],
+  "results": [
+    {
+      "scenarioId": "simple-newsletter",
+      "caseId": "complete-newsletter-pass",
+      "expectedStatus": "passed",
+      "actualStatus": "passed",
+      "matched": true,
+      "outputPath": "sources/evaluator-calibration/complete-newsletter-pass/ruhroh-loop-eval.json",
+      "inputPath": "sources/evaluator-calibration/complete-newsletter-pass/ruhroh-eval-calibration-input.json",
+      "workspacePath": "sources/evaluator-calibration/complete-newsletter-pass/workspace",
+      "details": "Synthetic docs sample calibration anchor complete-newsletter-pass matched passed."
+    },
+    {
+      "scenarioId": "simple-newsletter",
+      "caseId": "missing-page-failure",
+      "expectedStatus": "failed",
+      "actualStatus": "failed",
+      "matched": true,
+      "outputPath": "sources/evaluator-calibration/missing-page-failure/ruhroh-loop-eval.json",
+      "inputPath": "sources/evaluator-calibration/missing-page-failure/ruhroh-eval-calibration-input.json",
+      "workspacePath": "sources/evaluator-calibration/missing-page-failure/workspace",
+      "details": "Synthetic docs sample calibration anchor missing-page-failure matched failed."
+    },
+    {
+      "scenarioId": "simple-newsletter",
+      "caseId": "partial-signup-review",
+      "expectedStatus": "review",
+      "actualStatus": "review",
+      "matched": true,
+      "outputPath": "sources/evaluator-calibration/partial-signup-review/ruhroh-loop-eval.json",
+      "inputPath": "sources/evaluator-calibration/partial-signup-review/ruhroh-eval-calibration-input.json",
+      "workspacePath": "sources/evaluator-calibration/partial-signup-review/workspace",
+      "details": "Synthetic docs sample calibration anchor partial-signup-review matched review."
+    }
+  ]
+}

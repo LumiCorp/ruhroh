@@ -1,0 +1,11 @@
+{
+  "version": "ruhroh_eval_calibration_input_v1",
+  "scenarioId": "simple-newsletter",
+  "calibrationCase": {
+    "id": "partial-signup-review",
+    "inputSummary": "The workspace contains a local newsletter page, but the signup state evidence is missing or unclear.",
+    "expectedStatus": "review",
+    "rationale": "Partial delivery with ambiguous evidence should be reviewed before assigning a pass or fail."
+  },
+  "workspacePath": "./.generated/ruhroh/evaluator-calibration/partial-signup-review/workspace"
+}
