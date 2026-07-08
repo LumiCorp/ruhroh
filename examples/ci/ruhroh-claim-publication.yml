@@ -1,0 +1,82 @@
+name: Ruhroh Claim Publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      results_path:
+        description: "Path to collected Ruhroh result artifacts."
+        required: true
+        default: "results/ruhroh"
+      suite_id:
+        description: "Suite id used for the benchmark claim."
+        required: true
+        default: "local-smoke"
+      run_plan_path:
+        description: "Run plan generated before collection."
+        required: true
+        default: ".generated/ruhroh/ruhroh-run-plan.json"
+
+jobs:
+  publication-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate benchmark pack
+        run: |
+          pnpm exec ruhroh validate \
+            --scenario-dir ruhroh/scenarios \
+            --suite-dir ruhroh/suites \
+            --suite "${{ inputs.suite_id }}" \
+            --json
+
+      - name: Validate preserved run artifacts
+        run: |
+          pnpm exec ruhroh validate-artifacts "${{ inputs.results_path }}" --json
+
+      - name: Publish-check bundle
+        run: |
+          pnpm exec ruhroh publish-check "${{ inputs.results_path }}" \
+            --scenario-dir ruhroh/scenarios \
+            --suite-dir ruhroh/suites \
+            --suite "${{ inputs.suite_id }}" \
+            --run-plan "${{ inputs.run_plan_path }}" \
+            --bundle "ruhroh-publication/${{ inputs.suite_id }}" \
+            --summary-md "$GITHUB_STEP_SUMMARY" \
+            --verify-sources \
+            --json
+
+      - name: Validate publication bundle
+        run: |
+          pnpm exec ruhroh validate-bundle "ruhroh-publication/${{ inputs.suite_id }}" --json
+
+      - name: Gate claim registry
+        run: |
+          pnpm exec ruhroh claim-index ruhroh-publication \
+            --require-publishable \
+            --html ruhroh-claims.html \
+            --json
+
+      - name: Upload publication artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ruhroh-publication
+          path: |
+            ruhroh-publication/
+            ruhroh-claims.html

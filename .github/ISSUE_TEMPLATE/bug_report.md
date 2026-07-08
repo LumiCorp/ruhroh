@@ -9,10 +9,27 @@ labels: bug
 
 ## Expected behavior
 
-## Reproduction
+## Reproduction path
 
 ```bash
 # exact commands
+```
+
+## Readiness output
+
+Paste the relevant redacted output:
+
+```bash
+pnpm exec ruhroh first-run --json
+pnpm exec ruhroh workflow --json
+pnpm exec ruhroh doctor --scenario-dir <path> --suite-dir <path> --adapter <adapter> --json
+```
+
+If the issue is about results, reports, or publication readiness, also include:
+
+```bash
+pnpm exec ruhroh validate-artifacts <run-artifact-dir> --json
+pnpm exec ruhroh publish-check <results> --suite-dir <path> --suite <id> --run-plan <plan> --verify-sources --json
 ```
 
 ## Environment
@@ -21,8 +38,12 @@ labels: bug
 - Node version:
 - pnpm/npm version:
 - OS:
+- Harbor version or install status:
+- Agent adapter:
 
 ## Artifacts
 
-Include relevant logs, generated task paths, or redacted Ruhroh artifacts. Do
-not include secrets or private workspace data.
+Attach or link the smallest redacted evidence packet that reproduces the
+problem: generated task paths, `ruhroh-loop-result.json`, run manifest, eval
+input/output, workflow HTML, compare HTML, or publication bundle. Do not include
+secrets, credentials, or private workspace data.

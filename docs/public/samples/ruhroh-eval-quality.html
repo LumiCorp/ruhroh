@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ruhroh eval-quality</title>
+    <style>
+      :root { color-scheme: light; --border: #d8dee4; --muted: #57606a; --bg: #f6f8fa; --bad: #b42318; --ok: #1f7a3f; }
+      body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2328; background: #fff; }
+      main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 48px; }
+      header { border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 16px; }
+      h1 { font-size: 28px; margin: 0 0 8px; }
+      h2 { font-size: 18px; margin: 28px 0 12px; }
+      table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+      th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+      th { background: var(--bg); }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+      .metric { border: 1px solid var(--border); padding: 12px; background: var(--bg); }
+      .metric strong { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+      .pass { color: var(--ok); font-weight: 700; }
+      .fail { color: var(--bad); font-weight: 700; }
+      .muted { color: var(--muted); }
+      ul { padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ruhroh eval-quality</h1>
+        <p class="muted"><a href="./sample-results">./sample-results</a></p>
+      </header>
+      <section class="grid" aria-label="Eval quality overview">
+        <div class="metric"><strong>Gate</strong><span class="fail">needs attention</span></div>
+        <div class="metric"><strong>Results</strong><span>2</span></div>
+        <div class="metric"><strong>Warnings</strong><span class="fail">1</span></div>
+        <div class="metric"><strong>Human review required</strong><span class="pass">0</span></div>
+        <div class="metric"><strong>Evidence refs</strong><span>4</span></div>
+        <div class="metric"><strong>Criteria results</strong><span>2</span></div>
+        <div class="metric"><strong>Commands</strong><span>2</span></div>
+        <div class="metric"><strong>Judge votes</strong><span>4</span></div>
+      </section>
+      <section><h2>Warning Counts</h2><table><thead><tr><th>Warning</th><th>Count</th></tr></thead><tbody><tr><td>eval command evidence includes non-zero exit codes</td><td>1</td></tr></tbody></table></section>
+      <section><h2>Next Actions</h2><ul><li>Explain non-zero evaluator command evidence or fix the evaluator checks that produced it.</li></ul></section>
+      <section><h2>Evaluator Runs</h2><table><thead><tr><th>Scenario</th><th>Adapter</th><th>Run id</th><th>Eval</th><th>Score</th><th>Evidence refs</th><th>Criteria results</th><th>Commands</th><th>Judge</th><th>Judge votes</th><th>Agreement</th><th>Review</th><th>Warnings</th><th>Result</th></tr></thead><tbody><tr><td>simple-newsletter</td><td>agent-a</td><td>sample-newsletter-agent-a-1</td><td>passed</td><td>1</td><td>2</td><td>1</td><td>1</td><td>hybrid/docs-fixture-evaluator@2026-07-08</td><td>2</td><td>unanimous majority=passed</td><td></td><td></td><td><a href="./sample-results/run-one/ruhroh-loop-result.json">./sample-results/run-one/ruhroh-loop-result.json</a></td></tr><tr><td>simple-newsletter</td><td>agent-a</td><td>sample-newsletter-agent-a-2</td><td>failed</td><td>0</td><td>2</td><td>1</td><td>1</td><td>hybrid/docs-fixture-evaluator@2026-07-08</td><td>2</td><td>unanimous majority=failed</td><td></td><td>eval command evidence includes non-zero exit codes</td><td><a href="./sample-results/run-two/ruhroh-loop-result.json">./sample-results/run-two/ruhroh-loop-result.json</a></td></tr></tbody></table></section>
+    </main>
+  </body>
+</html>

@@ -68,6 +68,18 @@
     ],
     "calibrationCases": [
       {
+        "id": "complete-server-persistence-pass",
+        "inputSummary": "The Next.js app builds and runs locally, supports creating, editing, archiving, empty-state validation, and persists tasks through a local API or server route backed by workspace-local storage.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered app satisfies the full-stack task-board workflow and persistence requirements."
+      },
+      {
+        "id": "ui-only-failure",
+        "inputSummary": "The workspace contains a task-board UI mockup, but there is no working create/edit/archive flow and no local API or server persistence path.",
+        "expectedStatus": "failed",
+        "rationale": "A static UI shell does not satisfy the required full-stack task workflow."
+      },
+      {
         "id": "localstorage-review",
         "inputSummary": "The task board UI works, but persistence is only browser localStorage instead of a local API or server route.",
         "expectedStatus": "review",

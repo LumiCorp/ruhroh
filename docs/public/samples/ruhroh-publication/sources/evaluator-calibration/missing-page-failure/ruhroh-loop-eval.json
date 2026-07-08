@@ -1,0 +1,45 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+  "version": "ruhroh_eval_result_v1",
+  "status": "failed",
+  "goalMet": false,
+  "confidence": "high",
+  "reasons": [
+    "Docs sample calibration case missing-page-failure matched failed."
+  ],
+  "unmetCriteria": [
+    "The scenario requires a delivered local page."
+  ],
+  "evidenceRefs": [
+    {
+      "kind": "file",
+      "ref": "CALIBRATION.md",
+      "summary": "The workspace only contains notes about the newsletter and no runnable or openable page."
+    }
+  ],
+  "commandsRun": [],
+  "artifacts": {
+    "workspacePath": "./.generated/ruhroh/evaluator-calibration/missing-page-failure/workspace"
+  },
+  "finalSummary": "The scenario requires a delivered local page.",
+  "criteriaResults": [
+    {
+      "id": "calibration-anchor",
+      "description": "Evaluator calibration anchor.",
+      "status": "failed",
+      "score": 0,
+      "evidenceRefs": [
+        {
+          "kind": "file",
+          "ref": "CALIBRATION.md",
+          "summary": "The scenario requires a delivered local page."
+        }
+      ]
+    }
+  ],
+  "judge": {
+    "kind": "command",
+    "model": "docs-fixture-evaluator",
+    "version": "2026-07-08"
+  }
+}

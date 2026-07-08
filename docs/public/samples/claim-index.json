@@ -1,0 +1,74 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json",
+  "version": "ruhroh_claim_index_v1",
+  "generatedAt": "2026-07-08T12:00:00.000Z",
+  "source": {
+    "inputPath": "./ruhroh-publication",
+    "htmlPath": "./ruhroh-claims.html"
+  },
+  "registryReady": false,
+  "registryBlockers": [
+    "blocked claim ./ruhroh-publication: agent-a: suite minimum runs or scenario coverage not satisfied"
+  ],
+  "claimCount": 1,
+  "publishableCount": 0,
+  "blockedCount": 1,
+  "invalidCount": 0,
+  "suiteCount": 1,
+  "adapterCount": 1,
+  "totalRuns": 2,
+  "claims": [
+    {
+      "claimPath": "./ruhroh-publication/benchmark-claim.json",
+      "bundlePath": "./ruhroh-publication",
+      "valid": true,
+      "publishable": false,
+      "scope": "suite",
+      "createdAt": "2026-07-08T12:00:00.000Z",
+      "suite": {
+        "id": "ruhroh-sample",
+        "title": "Ruhroh Sample Evidence Pack",
+        "suiteVersion": "0.1.0"
+      },
+      "adapters": [
+        "agent-a"
+      ],
+      "summary": {
+        "scenarioCount": 1,
+        "adapterCount": 1,
+        "totalRuns": 2,
+        "totalPasses": 1,
+        "runWeightedPassRate": 0.5,
+        "reviewRecommended": 1
+      },
+      "evidence": {
+        "runPlanPresent": true,
+        "artifactValidationErrors": 0,
+        "artifactCompletenessWarnings": 0,
+        "requiredReviewItems": 0
+      },
+      "sourcePaths": {
+        "resultsPath": "sources/results",
+        "runPlanPath": "sources/ruhroh-run-plan.json",
+        "suitePath": "sources/suite/suite.json"
+      },
+      "blockers": [
+        "agent-a: suite minimum runs or scenario coverage not satisfied",
+        "simple-newsletter/agent-a: fewer than 5 runs; treat pass rate and pass@k as directional",
+        "simple-newsletter/agent-a: eval-quality warnings present",
+        "claim is not marked publishable",
+        "suite minimum runs or scenario coverage not satisfied",
+        "agent-a: simple-newsletter has 2/5 required runs",
+        "agent-a: scenario-level warnings present"
+      ],
+      "advisories": [
+        "agent-a: simple-newsletter has 2/5 required runs",
+        "agent-a: scenario-level warnings present",
+        "simple-newsletter/agent-a: eval command evidence includes non-zero exit codes (1)",
+        "simple-newsletter/agent-a/sample-newsletter-agent-a-2: review recommended"
+      ],
+      "validationErrors": [],
+      "validationWarnings": []
+    }
+  ]
+}

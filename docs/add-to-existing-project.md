@@ -91,75 +91,22 @@ receives `RUHROH_MESSAGE`, writes or runs inside `RUHROH_WORKSPACE`, and emits a
 completion signal when the goal appears satisfied. The evaluator remains the
 source of truth for pass or fail.
 
-Create an Aider wrapper:
+Start from Ruhroh's maintained Aider wrapper template:
 
 ```bash
-mkdir -p ruhroh/adapters/aider-cli
-cat > ruhroh/adapters/aider-cli/run.sh <<'SH'
-#!/usr/bin/env bash
-set -euo pipefail
-
-workspace="${RUHROH_WORKSPACE_PATH:-${RUHROH_WORKSPACE:-}}"
-message="${RUHROH_MESSAGE:-}"
-iteration="${RUHROH_ITERATION:-1}"
-result_path="${RUHROH_RESULT_PATH:-}"
-model="${AIDER_MODEL:-${RUHROH_AGENT_MODEL:-}}"
-
-if [[ -z "$workspace" ]]; then
-  echo "RUHROH_WORKSPACE or RUHROH_WORKSPACE_PATH is required" >&2
-  exit 2
-fi
-
-if [[ -z "$model" ]]; then
-  echo "Set AIDER_MODEL or RUHROH_AGENT_MODEL before running live benchmarks." >&2
-  exit 2
-fi
-
-mkdir -p "$workspace/.ruhroh"
-prompt_path="$workspace/.ruhroh/aider-prompt-${iteration}.md"
-transcript_path="$workspace/.ruhroh/aider-transcript-${iteration}.log"
-
-printf '%s\n' "$message" > "$prompt_path"
-
-(
-  cd "$workspace"
-  aider \
-    --model "$model" \
-    --message-file "$prompt_path" \
-    --yes \
-    --no-auto-commits \
-    --no-dirty-commits \
-    --no-stream
-) 2>&1 | tee "$transcript_path"
-
-if [[ -n "$result_path" ]]; then
-  mkdir -p "$(dirname "$result_path")"
-  cat > "$result_path" <<JSON
-{
-  "version": "ruhroh_run_agent_result_v1",
-  "status": "goal_satisfied",
-  "adapterVersion": "${AIDER_VERSION:-local}",
-  "model": {
-    "provider": "aider",
-    "model": "$model",
-    "promptVersion": "aider-cli-wrapper-v1"
-  },
-  "artifacts": {
-    "prompt": "$prompt_path",
-    "transcript": "$transcript_path"
-  }
-}
-JSON
-fi
-
-printf '{"status":"goal_satisfied"}\n'
-SH
-chmod +x ruhroh/adapters/aider-cli/run.sh
+pnpm exec ruhroh new-adapter aider-cli --template aider
+$EDITOR ruhroh/adapters/aider-cli/README.md
 ```
 
-The wrapper assumes Aider is already installed and authenticated. Follow
-Aider's [installation docs](https://aider.chat/docs/install.html) and
-model-provider docs for the current setup commands, then verify:
+The template writes prompts and transcripts under `.ruhroh/`, calls Aider with
+`--message-file`, emits `ruhroh_run_agent_result_v1`, and records
+`adapterVersion`, model identity, and artifact paths for repeated comparisons.
+Review the generated README before editing the wrapper so local model/provider
+choices are captured intentionally.
+
+The wrapper assumes Aider is already installed and authenticated. Follow Aider's
+[installation docs](https://aider.chat/docs/install.html) and model-provider
+docs for the current setup commands, then verify:
 
 ```bash
 aider --help
@@ -209,10 +156,18 @@ Evaluators receive path-oriented environment variables:
 - `RUHROH_EVAL_JOURNEY_PATH`: run journey and iteration artifacts.
 - `RUHROH_EVAL_CALIBRATION_CASES_JSON`: scenario calibration anchors.
 
-A minimal command evaluator writes `ruhroh_eval_result_v1`:
+Start from the scaffold:
 
 ```bash
-mkdir -p ruhroh/evaluators/simple-newsletter
+pnpm exec ruhroh new-evaluator simple-newsletter
+$EDITOR ruhroh/evaluators/simple-newsletter/run.sh
+```
+
+The scaffold writes valid `ruhroh_eval_result_v1` JSON with `status: "review"`
+until you add scenario-specific checks. A minimal command evaluator can replace
+the generated placeholder with logic like this:
+
+```bash
 cat > ruhroh/evaluators/simple-newsletter/run.sh <<'SH'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -283,7 +238,7 @@ Use it by changing `RUHROH_EVAL_COMMAND`:
 ```bash
 export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/simple-newsletter/run.sh"
 pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter custom-shell
-pnpm exec ruhroh --scenario-dir ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
+pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
 ```
 
 For publishable evals, make the evaluator stricter than this toy example:

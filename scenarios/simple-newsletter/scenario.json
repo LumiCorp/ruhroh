@@ -62,10 +62,22 @@
     ],
     "calibrationCases": [
       {
+        "id": "complete-newsletter-pass",
+        "inputSummary": "The workspace contains an openable local page with a newsletter layout, at least three visible story items, and no obvious starter-template leftovers.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered final state is a locally inspectable newsletter experience matching the smoke-task goal."
+      },
+      {
         "id": "prose-only-failure",
         "inputSummary": "The agent only wrote a README describing a newsletter page but did not deliver an openable page.",
         "expectedStatus": "failed",
         "rationale": "The user asked for a delivered newsletter experience, not implementation notes."
+      },
+      {
+        "id": "partial-static-review",
+        "inputSummary": "The workspace contains a static page with newsletter styling, but only one story item is visible and the local run path is unclear.",
+        "expectedStatus": "review",
+        "rationale": "The final state may contain useful delivered work, but the evaluator should not automatically pass an incomplete or hard-to-run newsletter."
       }
     ]
   }

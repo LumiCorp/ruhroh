@@ -1,0 +1,59 @@
+{
+  "version": "ruhroh_eval_quality_v1",
+  "source": {
+    "resultsPath": "./sample-results",
+    "resultCount": 2
+  },
+  "ok": false,
+  "warningCount": 1,
+  "warningCounts": {
+    "eval command evidence includes non-zero exit codes": 1
+  },
+  "humanReviewRequiredCount": 0,
+  "runs": [
+    {
+      "resultPath": "./sample-results/run-one/ruhroh-loop-result.json",
+      "scenarioId": "simple-newsletter",
+      "adapter": "agent-a",
+      "runId": "sample-newsletter-agent-a-1",
+      "evalStatus": "passed",
+      "score": 1,
+      "evidenceRefCount": 2,
+      "criteriaResultCount": 1,
+      "commandCount": 1,
+      "judge": "hybrid/docs-fixture-evaluator@2026-07-08",
+      "judgeVoteCount": 2,
+      "judgeAgreement": {
+        "unanimous": true,
+        "majorityStatus": "passed"
+      },
+      "evalQualityWarnings": [],
+      "humanReviewRequired": false
+    },
+    {
+      "resultPath": "./sample-results/run-two/ruhroh-loop-result.json",
+      "scenarioId": "simple-newsletter",
+      "adapter": "agent-a",
+      "runId": "sample-newsletter-agent-a-2",
+      "evalStatus": "failed",
+      "score": 0,
+      "evidenceRefCount": 2,
+      "criteriaResultCount": 1,
+      "commandCount": 1,
+      "judge": "hybrid/docs-fixture-evaluator@2026-07-08",
+      "judgeVoteCount": 2,
+      "judgeAgreement": {
+        "unanimous": true,
+        "majorityStatus": "failed"
+      },
+      "evalQualityWarnings": [
+        "eval command evidence includes non-zero exit codes"
+      ],
+      "humanReviewRequired": false
+    }
+  ],
+  "nextActions": [
+    "Explain non-zero evaluator command evidence or fix the evaluator checks that produced it."
+  ],
+  "htmlPath": "./ruhroh-eval-quality.html"
+}

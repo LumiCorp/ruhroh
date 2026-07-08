@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Ruhroh workflow guide</title>
+    <style>
+      body { font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #f7f7f2; color: #1f2933; }
+      main { max-width: 1120px; margin: 0 auto; padding: 40px 24px 64px; }
+      header { margin-bottom: 24px; }
+      h1 { margin: 0 0 8px; font-size: 32px; line-height: 1.15; }
+      h2 { margin-top: 0; font-size: 18px; }
+      h3 { margin: 0 0 8px; font-size: 16px; }
+      section { background: #fff; border: 1px solid #d9ded7; border-radius: 8px; padding: 20px; margin: 16px 0; }
+      .muted { color: #5f6b6d; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; background: transparent; border: 0; padding: 0; }
+      .metric { background: #fff; border: 1px solid #d9ded7; border-radius: 8px; padding: 14px; }
+      .metric strong { display: block; color: #5f6b6d; font-size: 12px; text-transform: uppercase; margin-bottom: 6px; }
+      .metric span { display: block; font-size: 18px; font-weight: 700; }
+      .pass { color: #0f766e; }
+      .fail { color: #b42318; }
+      .stage { border-left: 6px solid #aeb8b2; }
+      .stage.ready { border-left-color: #0f766e; }
+      .stage.needs_action, .stage.blocked { border-left-color: #b42318; }
+      table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 14px; }
+      th, td { border-bottom: 1px solid #e5e8e3; padding: 8px; text-align: left; vertical-align: top; }
+      th { color: #5f6b6d; font-size: 12px; text-transform: uppercase; }
+      code { background: #eef1ec; border-radius: 4px; padding: 2px 5px; }
+      a { color: #265c83; }
+      ul { margin: 10px 0 0; padding-left: 20px; }
+      li { margin: 6px 0; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ruhroh workflow guide</h1>
+        <p class="muted">A read-only path from first local fixture run to artifact-backed comparison and audit-ready publication.</p>
+      </header>
+      <section class="grid" aria-label="Workflow overview">
+        <div class="metric"><strong>Current stage</strong><span>Publish an audit-ready claim</span></div>
+        <div class="metric"><strong>Next action</strong><span class="fail">Publish an audit-ready claim</span></div>
+        <div class="metric"><strong>Ready stages</strong><span>6/7</span></div>
+        <div class="metric"><strong>Root</strong><span>.</span></div>
+      </section>
+      <section><h2>Next Action</h2><p>Publish an audit-ready claim: bundle-validation: Publication bundle is structurally valid but embedded publish-check or claim readiness is blocked.</p><p><code>pnpm exec ruhroh publish-check sample-results --suite-dir ruhroh/suites --suite ruhroh-sample --run-plan ruhroh-run-plan.json --bundle ruhroh-publication --verify-sources</code></p><p class="muted">Docs: publish-claims, claim-registry, result-json-reference, benchmark-methodology</p></section>
+      <section><h2>Project Paths</h2><table><thead><tr><th>Name</th><th>Path</th></tr></thead><tbody><tr><td>Scenario directory</td><td><a href="./ruhroh/scenarios">./ruhroh/scenarios</a></td></tr><tr><td>Suite directory</td><td><a href="./ruhroh/suites">./ruhroh/suites</a></td></tr><tr><td>Generated directory</td><td><a href=".generated/ruhroh">.generated/ruhroh</a></td></tr></tbody></table></section>
+      <section class="stage ready">
+        <h2>First local fixture loop</h2>
+        <p><strong>Status:</strong> <span class="pass">ready</span></p>
+        <p>A local fixture result artifact exists and can be inspected before authoring or publishing benchmarks.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>fixture-result</td><td><span class="pass">ok</span></td><td>2 ruhroh-loop-result.json file(s) found for first-loop inspection</td></tr></tbody></table>
+        <h3>Commands</h3>
+        <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh report sample-results/run-one/ruhroh-loop-result.json --html ruhroh-report.html</code></td></tr></tbody></table>
+        <p class="muted">Docs: getting-started, local-fixture-run, troubleshooting, artifacts, report-gallery</p>
+      </section><section class="stage ready">
+        <h2>Author scenario and suite</h2>
+        <p><strong>Status:</strong> <span class="pass">ready</span></p>
+        <p>A versioned scenario and suite are present for local benchmark authoring.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>scenario-dir</td><td><span class="pass">ok</span></td><td>./ruhroh/scenarios exists</td></tr><tr><td>suite-dir</td><td><span class="pass">ok</span></td><td>./ruhroh/suites exists</td></tr><tr><td>selected-scenario</td><td><span class="pass">ok</span></td><td>./ruhroh/scenarios/simple-newsletter exists</td></tr><tr><td>selected-suite</td><td><span class="pass">ok</span></td><td>./ruhroh/suites/ruhroh-sample exists</td></tr></tbody></table>
+        <h3>Commands</h3>
+        <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh new-scenario my-task --scenario-dir ruhroh/scenarios</code></td></tr><tr><td><code>pnpm exec ruhroh new-suite local-smoke --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --scenario my-task</code></td></tr><tr><td><code>pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-smoke</code></td></tr></tbody></table>
+        <p class="muted">Docs: concepts, write-a-scenario, scenario-format, benchmark-suites</p>
+      </section><section class="stage ready">
+        <h2>Make evaluator quality operational</h2>
+        <p><strong>Status:</strong> <span class="pass">ready</span></p>
+        <p>Evaluator wiring and calibration evidence are ready for repeated benchmark runs.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>evaluator-command</td><td><span class="pass">ok</span></td><td>local evaluator exists at ruhroh/evaluators/fixture-newsletter/run.sh</td></tr><tr><td>calibration-cases</td><td><span class="pass">ok</span></td><td>3 evaluator calibration case(s) are defined for simple-newsletter</td></tr><tr><td>calibration-report</td><td><span class="pass">ok</span></td><td>Calibration report passed 3 case(s).</td></tr></tbody></table>
+        <h3>Commands</h3>
+        <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario simple-newsletter --generated-dir .generated/ruhroh --json</code></td></tr><tr><td><code>pnpm exec ruhroh new-evaluator local-evaluator --template hybrid</code></td></tr><tr><td><code>export RUHROH_EVAL_COMMAND=&quot;$PWD/ruhroh/evaluators/local-evaluator/run.sh&quot;</code></td></tr></tbody></table>
+        <p class="muted">Docs: write-an-evaluator, evaluator-cookbook, adjudication</p>
+      </section><section class="stage ready">
+        <h2>Preflight benchmark pack credibility</h2>
+        <p><strong>Status:</strong> <span class="pass">ready</span></p>
+        <p>Scenario versions, calibration coverage, contamination review, and reward-hacking review are ready for collection.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>strict-pack-inspection</td><td><span class="pass">ok</span></td><td>Pack inspection passed: 1 scenario(s), 1 suite(s), calibration and risk-review gates satisfied.</td></tr></tbody></table>
+        <h3>Commands</h3>
+        <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh inspect-pack --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --require-calibrated --require-risk-reviewed --html ruhroh-pack-inspection.html --json</code></td></tr></tbody></table>
+        <p class="muted">Docs: benchmark-pack-registry, benchmark-methodology, scenario-evolution, evaluator-cookbook</p>
+      </section><section class="stage ready">
+        <h2>Plan repeated agent runs</h2>
+        <p><strong>Status:</strong> <span class="pass">ready</span></p>
+        <p>A run plan exists for repeatable adapter and scenario coverage.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>run-plan</td><td><span class="pass">ok</span></td><td>./ruhroh-run-plan.json exists</td></tr></tbody></table>
+        <h3>Commands</h3>
+        <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh plan --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite ruhroh-sample --adapter custom-shell --runs 5 --json</code></td></tr></tbody></table>
+        <p class="muted">Docs: benchmark-methodology, benchmark-suites, cli-reference</p>
+      </section><section class="stage ready">
+        <h2>Compare agents with evidence</h2>
+        <p><strong>Status:</strong> <span class="pass">ready</span></p>
+        <p>Run results and a plan are available for artifact-backed comparison.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>run-results</td><td><span class="pass">ok</span></td><td>2 ruhroh-loop-result.json file(s) found</td></tr><tr><td>run-plan</td><td><span class="pass">ok</span></td><td>./ruhroh-run-plan.json exists</td></tr></tbody></table>
+        <h3>Commands</h3>
+        <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh compare sample-results --suite-dir ruhroh/suites --suite ruhroh-sample --run-plan ruhroh-run-plan.json --html ruhroh-compare.html</code></td></tr><tr><td><code>pnpm exec ruhroh review sample-results --json</code></td></tr><tr><td><code>pnpm exec ruhroh eval-quality sample-results --html ruhroh-eval-quality.html --json</code></td></tr></tbody></table>
+        <p class="muted">Docs: artifacts, report-gallery, benchmark-methodology</p>
+      </section><section class="stage needs_action">
+        <h2>Publish an audit-ready claim</h2>
+        <p><strong>Status:</strong> <span class="fail">needs_action</span></p>
+        <p>Validate the publication bundle and registry index before making external claims.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>publish-inputs</td><td><span class="pass">ok</span></td><td>Run results and run plan are available for publish-check.</td></tr><tr><td>claim-or-bundle</td><td><span class="pass">ok</span></td><td>publication bundle manifest exists</td></tr><tr><td>bundle-validation</td><td><span class="fail">failed</span></td><td>Publication bundle is structurally valid but embedded publish-check or claim readiness is blocked.</td></tr><tr><td>registry-index</td><td><span class="fail">failed</span></td><td>claim-index.json exists but registry is blocked: blocked claim ./ruhroh-publication: agent-a: suite minimum runs or scenario coverage not satisfied</td></tr></tbody></table>
+        <h3>Commands</h3>
+        <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh publish-check sample-results --suite-dir ruhroh/suites --suite ruhroh-sample --run-plan ruhroh-run-plan.json --bundle ruhroh-publication --verify-sources</code></td></tr><tr><td><code>pnpm exec ruhroh validate-bundle ruhroh-publication --json</code></td></tr><tr><td><code>pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html --json &gt; claim-index.json</code></td></tr></tbody></table>
+        <p class="muted">Docs: publish-claims, claim-registry, result-json-reference, benchmark-methodology</p>
+      </section>
+      <section><h2>Workflow Docs</h2><ul><li>getting-started</li><li>local-fixture-run</li><li>concepts</li><li>write-a-scenario</li><li>write-an-evaluator</li><li>write-an-adapter</li><li>benchmark-suites</li><li>benchmark-pack-registry</li><li>publish-claims</li><li>claim-registry</li></ul></section>
+    </main>
+  </body>
+</html>

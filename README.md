@@ -33,6 +33,24 @@ You bring the run-agent adapter. Ruhroh owns the scenario format, benchmark
 suites, generator, CLI, result contracts, artifact preservation, and a
 package-owned Python Harbor runtime for command-backed adapters.
 
+## See The Audit Loop First
+
+Before installing anything, inspect the generated evidence packet:
+
+- [Workflow guide](https://lumicorp.github.io/ruhroh/samples/ruhroh-workflow.html):
+  the staged path from local fixture loop to publication readiness.
+- [Compare report](https://lumicorp.github.io/ruhroh/samples/ruhroh-compare.html):
+  scenario-by-adapter results, artifact links, review queues, and readiness
+  blockers.
+- [Publication bundle](https://lumicorp.github.io/ruhroh/samples/ruhroh-publication/manifest.json):
+  a relocatable claim packet with copied source evidence and hashes.
+- [Claim index](https://lumicorp.github.io/ruhroh/samples/ruhroh-claims.html):
+  the registry view over one or more benchmark claims.
+
+The sample is intentionally blocked for publication because it has only two
+synthetic runs. That is the point: Ruhroh should make unsupported claims obvious
+while keeping every source artifact inspectable.
+
 ## Install
 
 ```bash
@@ -40,202 +58,177 @@ pnpm add -D @kestrel-agents/ruhroh
 pnpm exec ruhroh init
 ```
 
-## Quickstart: Inspect and Generate Tasks
+## Quickstart
 
-Ruhroh ships bundled scenarios so you can inspect the package before wiring a
-live agent:
+Start with the credential-free fixture loop before wiring a live coding agent.
+The first milestone is not a published benchmark claim; it is proving that the
+scenario, adapter, evaluator, artifact, and report path works locally.
 
 ```bash
-pnpm exec ruhroh --list
-pnpm exec ruhroh --list-suites
-pnpm exec ruhroh validate
-pnpm exec ruhroh doctor --adapter ./path/to/agent-wrapper.sh
-pnpm exec ruhroh --scenario simple-newsletter --generate-only
+pnpm exec ruhroh init
+pnpm exec ruhroh first-run
+export RUHROH_RUN_AGENT_COMMAND="$PWD/ruhroh/adapters/fixture-newsletter/run.sh"
+export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/fixture-newsletter/run.sh"
+pnpm exec ruhroh first-run
+pnpm exec ruhroh workflow --html ruhroh-workflow.html
 ```
 
-By default, the CLI uses the scenarios and suites bundled with the installed
-package. Use `--scenario-dir` and `--suite-dir` only when pointing Ruhroh at
-project-local authoring trees.
+`first-run` is the read-only onboarding gate. The first call shows what is
+missing; after the exports it prints the next stage-specific commands for
+`doctor`, `validate`, dry-run, and the full fixture run. The dry-run command is
+only a Harbor command preview, so it never counts as a completed loop. When
+Harbor is not installed yet, `pnpm exec ruhroh first-run --allow-dry-run --json`
+can still exit `0` once the scaffold and exported commands are ready for dry-run
+preview. When Harbor is installed, run the full fixture command to preserve a
+real `ruhroh-loop-result.json`:
 
-For a credential-free full-loop smoke path, use the fixture adapter and
-evaluator in `examples/`; see the
-[local fixture run guide](https://lumicorp.github.io/ruhroh/local-fixture-run).
-To add Ruhroh to an existing repo and wire a real command adapter plus local
-evals, see
-[Add Ruhroh to an Existing Project](https://lumicorp.github.io/ruhroh/add-to-existing-project).
-For a project-local starter with the same fixture pieces plus a local
-`ruhroh-smoke` suite, run `pnpm exec ruhroh init`.
+```bash
+pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell
+pnpm exec ruhroh workflow --html ruhroh-workflow.html
+```
 
-Create a validation-ready local scenario draft with governance metadata and
-rubric scaffolding:
+`workflow` keeps showing the next stage as your project moves from fixture
+smoke, to authoring, to repeated runs, to publication readiness, and `--html`
+writes that staged guide as a shareable artifact. By default, Ruhroh reads
+bundled scenarios and suites; use `--scenario-dir` and `--suite-dir` when you
+are working in a project-local `ruhroh/` tree.
+
+See the [local fixture run guide](https://lumicorp.github.io/ruhroh/local-fixture-run)
+for the full smoke path, or
+[Add Ruhroh to an Existing Project](https://lumicorp.github.io/ruhroh/add-to-existing-project)
+for a repo integration walkthrough.
+
+## Author A Benchmark Pack
+
+Once the fixture path works, create the three pieces that define a benchmark
+pack: scenarios, a version-locked suite, and an evaluator you can defend.
 
 ```bash
 pnpm exec ruhroh new-scenario csv-cleanup --scenario-dir ruhroh/scenarios
-pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario csv-cleanup
 pnpm exec ruhroh new-suite local-data --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --scenario csv-cleanup --runs 10
+pnpm exec ruhroh new-evaluator deterministic-evaluator --template deterministic
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-data
-pnpm exec ruhroh new-adapter local-agent
-pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapters/local-agent/run.sh
+pnpm exec ruhroh inspect-pack --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites
+export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/deterministic-evaluator/run.sh"
+pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario csv-cleanup
 ```
 
-In this repository, build first and use the local CLI output:
+Scenario prompts should read like realistic user requests. Suites freeze
+scenario versions and methodology. Evaluators inspect the final delivered
+workspace and must cite evidence; fresh evaluator scaffolds return `review`
+until you replace the placeholder checks. Add `--require-calibrated` to
+`inspect-pack` when the pack should fail CI unless every scenario has complete
+pass/fail/review calibration coverage. `inspect-pack --json` also emits
+scenario, prompt, public asset, and private evaluator asset fingerprints for
+registry preflight and contamination review. See
+[Write a Scenario](https://lumicorp.github.io/ruhroh/write-a-scenario),
+[Benchmark Suites](https://lumicorp.github.io/ruhroh/benchmark-suites), and
+[Write an Evaluator](https://lumicorp.github.io/ruhroh/write-an-evaluator).
+When you want a pack to be shared or reviewed before result collection, run the
+[Benchmark Pack Registry](https://lumicorp.github.io/ruhroh/benchmark-pack-registry)
+gate so scenario versions, suite locks, calibration coverage, evaluator
+readiness, and content fingerprints are visible in one inspection artifact.
+
+## Wire An Agent
+
+Ruhroh is adapter-neutral. Use the maintained wrapper templates as starting
+points, then run `doctor` before collecting samples.
 
 ```bash
-pnpm build
-node dist/cli.js --scenario-dir examples/scenarios --list
-node dist/cli.js --scenario-dir examples/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh examples
+pnpm exec ruhroh init --adapter codex-cli
+pnpm exec ruhroh new-adapter codex-local --template codex-cli
+pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapters/codex-local/run.sh
+pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario csv-cleanup --adapter ./ruhroh/adapters/codex-local/run.sh --dry-run
 ```
 
-Generated Harbor task directories are written under:
+Adapter templates include `generic`, `codex-cli`, `claude-code`, `gemini-cli`,
+`aider`, and `fixture`. `init --adapter <template>` puts one selected wrapper
+directly in the starter alongside the credential-free fixture path;
+`new-adapter` adds one later. The `examples` catalog also shows evaluator
+templates (`review`, `deterministic`, `model`, and `hybrid`) with scaffold and
+calibration commands, because credible scores depend on outcome judgment as
+much as agent wiring. The generic template fails fast until edited; live CLI
+templates still need the matching CLI installed and authenticated.
 
-```text
-.generated/ruhroh/harbor/tasks/<scenario-id>/
-```
+## Compare Repeated Runs
 
-Use `--dry-run` to see the Harbor command without starting a benchmark:
+Use a run plan when collecting repeated samples. The plan is the reproducibility
+contract that later proves which scenario, adapter, and sample matrix was
+intended.
 
 ```bash
-pnpm exec ruhroh --scenario simple-newsletter --adapter custom-shell --dry-run
-```
-
-After a run, inspect and aggregate artifacts:
-
-```bash
-pnpm exec ruhroh report ./path/to/ruhroh-loop-result.json
-pnpm exec ruhroh report ./path/to/run-artifacts --json
-pnpm exec ruhroh report ./path/to/run-artifacts --html ruhroh-report.html
-pnpm exec ruhroh validate-artifacts ./path/to/run-artifacts --json
+pnpm exec ruhroh plan --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-data --adapter ./ruhroh/adapters/codex-local/run.sh --runs 10
+pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-data --adapter ./ruhroh/adapters/codex-local/run.sh --runs 10
+pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-data --adapter ./ruhroh/adapters/codex-local/run.sh --runs 20 --shard 1/4
 pnpm exec ruhroh compare ./path/to/results
-pnpm exec ruhroh compare ./path/to/results --json
-pnpm exec ruhroh compare ./path/to/results --run-plan .generated/ruhroh/ruhroh-run-plan.json --json
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-smoke --json
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-smoke --require-publishable --json
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-smoke --benchmark-claim benchmark-claim.json
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-smoke --benchmark-summary benchmark-summary.json
-pnpm exec ruhroh validate-summary benchmark-summary.json --json
 pnpm exec ruhroh compare ./path/to/results --html ruhroh-compare.html
 ```
 
-`validate-artifacts` checks one preserved run directory or a result root before
-publication: loop results, run manifests, eval results, workspace summaries,
-implementation iteration logs, journey files, eval inputs, schema URLs, and
-run-id consistency.
+After a run, inspect one preserved artifact directory with `ruhroh report`,
+`ruhroh validate-artifacts`, `ruhroh eval-quality --html`, and `ruhroh review`.
+`compare` then aggregates repeated runs into pass rates, confidence intervals,
+pass@k, cost/token metadata when available, evaluator warnings, human-review
+queues, and claim-readiness blockers. `compare --html` adds a shareable matrix,
+failure triage, cost/efficiency view, and artifact links so reviewers can move
+from aggregate scores to preserved evidence.
+Use `--shard <index>/<total>` to split expensive repeated cohorts across
+workers while keeping sample ids tied to the full requested `--runs` count.
 
-`compare` includes pass rate, Wilson 95% confidence intervals, pass@k estimates,
-cohort metadata, low-sample warnings, and comparability warnings when a group is
-missing or mixing scenario versions, model identities, prompt versions,
-evaluator identity, or environment fingerprints. Compare reports also include
-`claimReadiness`, which states whether the aggregate is ready to publish and
-lists blockers or advisories. JSON compare output includes `benchmarkClaim`, a
-compact versioned export object for archiving or feeding downstream reports with
-suite methodology, adapter rollups, scenario results, pairwise deltas, readiness,
-and run-plan/artifact-validation/review evidence. Add `--require-publishable` in
-CI to return exit code 2 when those blockers make the comparison unpublishable.
-`--benchmark-summary <path>` writes a row-oriented JSON summary from the same
-claim for lightweight reports or leaderboard ingestion.
-Use `ruhroh validate-summary benchmark-summary.json --json` to check that
-standalone summary rows still match their top-level counts and readiness fields.
-Use
-`ruhroh validate-claim benchmark-claim.json --require-publishable --verify-sources --json`
-to validate a standalone claim, gate readiness, and re-hash the referenced run
-artifacts before publishing it.
-Use `compare --run-plan <path>` when you have the generated run plan; it checks
-that every planned sample produced exactly the result set being compared.
-Use `compare --suite <id>` for suite claims; it filters to suite scenarios,
-includes suite metadata, applies the suite minimum run count, and warns when
-suite scenarios are missing from the result set.
+## Publish A Claim
 
-Use `--runs <n>` to collect repeated samples for each selected scenario:
+Use `publish-check` when you want the one answer that matters before citing a
+score: is this suite-scoped comparison publishable, and can the evidence be
+independently inspected?
 
 ```bash
-pnpm exec ruhroh --suite ruhroh-smoke --adapter ./path/to/agent-wrapper.sh --runs 5
+pnpm exec ruhroh publish-check ./path/to/results \
+  --suite-dir ruhroh/suites \
+  --suite local-data \
+  --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+  --bundle ruhroh-publication \
+  --verify-sources
+pnpm exec ruhroh validate-bundle ruhroh-publication --json
+pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html
 ```
 
-Repeat `--adapter` to run the same selected scenarios across multiple agents:
+The bundle contains the claim, summary, compare report, review queue,
+eval-quality report, manifest, README, and copied `sources/` evidence referenced
+by the claim. A valid bundle can still return exit code `2` when the evidence is
+structurally sound but not yet publishable, for example because the sample count
+is too low or human review is still required. See
+[Publish Claims](https://lumicorp.github.io/ruhroh/publish-claims) and the
+[Report Gallery](https://lumicorp.github.io/ruhroh/report-gallery).
+
+## Local Development
 
 ```bash
-pnpm exec ruhroh --suite ruhroh-smoke \
-  --adapter ./adapters/codex.sh \
-  --adapter ./adapters/claude.sh \
-  --runs 5
+pnpm build
+node dist/cli.js list --scenario-dir examples/scenarios
+node dist/cli.js generate --scenario-dir examples/scenarios --scenario simple-newsletter
 ```
 
-Each sample receives `RUHROH_SAMPLE_ID`, `RUHROH_SAMPLE_SEED`,
-`RUHROH_RUN_INDEX`, and `RUHROH_RUN_COUNT`. Ruhroh preserves those fields in the
-run manifest so artifacts can be traced back to the exact sampling plan.
-Actual runs also write `.generated/ruhroh/ruhroh-run-plan.json`, a redacted
-matrix of selected scenarios, adapters, sample ids/seeds, and Harbor commands.
+Generated Harbor task directories are written under
+`.generated/ruhroh/harbor/tasks/<scenario-id>/`.
 
-## Run an Agent
+## Core Model
 
-Ruhroh selects agents at runtime. For shell-based agents, pass a command path as
-the adapter:
+The recurring nouns are deliberately few:
 
-```bash
-pnpm exec ruhroh \
-  --scenario simple-newsletter \
-  --adapter ./path/to/agent-wrapper.sh
-```
+- `scenario`: the user-like task, assets, runtime requirements, and evaluator
+  rubric;
+- `suite`: a version-locked set of scenarios and methodology for repeated
+  comparison;
+- `adapter`: the bridge from Ruhroh to the coding agent you want to test;
+- `evaluator`: the terminal reviewer that inspects the final workspace and
+  evidence;
+- `run plan`: the intended scenario, adapter, sample, and seed matrix;
+- `claim`: the aggregate result plus source evidence that can be reviewed,
+  validated, and published.
 
-When the adapter value looks like a command or path, the CLI wires it through
-`RUHROH_RUN_AGENT_COMMAND` for the package runtime. The command receives the
-workspace, goal, iteration metadata, and result path. When the goal is satisfied,
-it should exit successfully and emit the completion signal described in
-[`docs/custom-shell.md`](docs/custom-shell.md).
-
-Use `custom-shell` directly when you want to provide the command through the
-environment:
-
-```bash
-export RUHROH_RUN_AGENT_COMMAND=./path/to/agent-wrapper.sh
-export RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line
-pnpm exec ruhroh --scenario simple-newsletter --adapter custom-shell
-```
-
-Example wrappers live under `examples/adapters/` for Codex CLI, Claude Code,
-Gemini CLI, and the credential-free fixture adapter.
-
-Live agent runs require whatever credentials that agent needs. Default CI and
-package smoke tests should stay credential-free and use `--dry-run` or fixture
-evals.
-
-## Write Scenarios
-
-Create scenarios under `ruhroh/scenarios/<id>/`:
-
-```text
-ruhroh/scenarios/<id>/
-  scenario.json
-  instruction.md
-  assets/
-```
-
-The scenario JSON names the user prompt, runtime requirements, loop settings,
-and evaluation rubric. Scenario prompts should read like real user requests:
-describe the desired outcome, relevant context, and success criteria. Avoid
-encoding implementation shortcuts such as "create exactly this file" unless that
-is genuinely part of the user request.
-
-Good scenarios usually include:
-
-- a concrete user goal;
-- constraints the agent must respect;
-- assets or seed data needed by the task;
-- a rubric that tells the evaluator how to judge the final workspace;
-- evidence guidance for transcripts, logs, commands, screenshots, or generated
-  files.
-
-See the [scenario format guide](https://lumicorp.github.io/ruhroh/scenario-format)
-for the full schema.
-The npm package also ships JSON Schema files for editor and CI shape checks:
-`schemas/scenario-v2.schema.json`, `schemas/suite-v1.schema.json`,
-`schemas/loop-result-v1.schema.json`, `schemas/eval-result-v1.schema.json`,
-`schemas/run-manifest-v1.schema.json`, `schemas/run-plan-v1.schema.json`,
-`schemas/benchmark-claim-v1.schema.json`, and
-`schemas/benchmark-summary-v1.schema.json`. It also ships
-`schemas/workspace-summary-v1.schema.json` for validating the compact final
-workspace inventory emitted with run artifacts. New generated artifacts include
-a root `$schema` URL pointing at the matching shipped schema.
+See [Core Concepts](https://lumicorp.github.io/ruhroh/concepts) for the
+lifecycle and [Scenario Format](https://lumicorp.github.io/ruhroh/scenario-format)
+for the full schema set shipped with the package.
 
 ## How Judging Works
 
@@ -287,6 +280,22 @@ for machine-readable report, compare, manifest, eval, and run-plan fields.
 
 ## Public API
 
+The high-level API entry points are:
+
+- `inspectRuhrohBenchmarkPack()`
+- `buildRuhrohRunResultsReport()`
+- `buildRuhrohPublishCheckReport()`
+- `validateRuhrohPublishBundle()`
+- `verifyRuhrohBenchmarkClaimSources()`
+- `validateRuhrohRerunLedger()`
+- `loadRuhrohRerunLedger()`
+
+Use it for registry preflight, docs generation, and CI integrations that need a
+structured scenario/suite catalog, preserved-result report, or read-only
+publication evidence check without parsing terminal output. These APIs do not
+replace `publish-check`, which remains the workflow that creates publication
+bundles from actual run artifacts and claims.
+
 The public API exports:
 
 - `discoverRuhrohScenarios()`
@@ -300,6 +309,16 @@ The public API exports:
 - `loadBuiltinRuhrohSuites()`
 - `getBuiltinRuhrohSuiteById()`
 - `getBuiltinRuhrohSuitesByScenarioId()`
+- `inspectRuhrohBenchmarkPack()`
+- `discoverRuhrohRunResultPaths()`
+- `loadRuhrohRunResultArtifacts()`
+- `loadRuhrohRunResults()`
+- `buildRuhrohRunResultsReport()`
+- `buildRuhrohPublishCheckReport()`
+- `validateRuhrohPublishBundle()`
+- `verifyRuhrohBenchmarkClaimSources()`
+- `validateRuhrohRerunLedger()`
+- `loadRuhrohRerunLedger()`
 - `normalizeRuhrohEvalResult()`
 - `summarizeRuhrohRun()`
 - `summarizeRuhrohReviewQueue()`
@@ -317,15 +336,28 @@ execution substrate.
 ## Docs
 
 - Getting started: <https://lumicorp.github.io/ruhroh/getting-started>
+- Core concepts: <https://lumicorp.github.io/ruhroh/concepts>
 - Local fixture run: <https://lumicorp.github.io/ruhroh/local-fixture-run>
+- Benchmark pack tutorial: <https://lumicorp.github.io/ruhroh/benchmark-pack-tutorial>
+- Troubleshooting: <https://lumicorp.github.io/ruhroh/troubleshooting>
+- FAQ: <https://lumicorp.github.io/ruhroh/faq>
 - Write a scenario: <https://lumicorp.github.io/ruhroh/write-a-scenario>
 - Write an adapter: <https://lumicorp.github.io/ruhroh/write-an-adapter>
+- Write an evaluator: <https://lumicorp.github.io/ruhroh/write-an-evaluator>
+- Evaluator cookbook: <https://lumicorp.github.io/ruhroh/evaluator-cookbook>
 - Architecture: <https://lumicorp.github.io/ruhroh/architecture>
 - Scenario format: <https://lumicorp.github.io/ruhroh/scenario-format>
+- Scenario evolution: <https://lumicorp.github.io/ruhroh/scenario-evolution>
 - Benchmark suites: <https://lumicorp.github.io/ruhroh/benchmark-suites>
 - Benchmark methodology: <https://lumicorp.github.io/ruhroh/benchmark-methodology>
+- Benchmark pack registry: <https://lumicorp.github.io/ruhroh/benchmark-pack-registry>
+- Publish claims: <https://lumicorp.github.io/ruhroh/publish-claims>
+- Claim registry: <https://lumicorp.github.io/ruhroh/claim-registry>
+- Report gallery: <https://lumicorp.github.io/ruhroh/report-gallery>
 - CLI reference: <https://lumicorp.github.io/ruhroh/cli-reference>
+- Programmatic API: <https://lumicorp.github.io/ruhroh/programmatic-api>
 - Result JSON reference: <https://lumicorp.github.io/ruhroh/result-json-reference>
+- Contract evolution: <https://lumicorp.github.io/ruhroh/contract-evolution>
 - Adapter protocol: <https://lumicorp.github.io/ruhroh/adapter-protocol>
 - Custom-shell adapter: <https://lumicorp.github.io/ruhroh/custom-shell>
 - Harbor: <https://lumicorp.github.io/ruhroh/harbor>

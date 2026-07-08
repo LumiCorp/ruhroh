@@ -55,6 +55,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Build Ruhroh package
+        run: pnpm build
+
+      - name: Check generated docs samples
+        run: pnpm run docs:samples:check
+
       - name: Build docs
         run: pnpm docs:build
 

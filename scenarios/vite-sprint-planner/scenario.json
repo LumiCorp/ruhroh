@@ -68,10 +68,22 @@
     ],
     "calibrationCases": [
       {
+        "id": "complete-sprint-planner-pass",
+        "inputSummary": "The Vite app runs locally and includes planning board, capacity, risks or decisions, task creation/edit/movement/filtering, sprint totals, local persistence, and JSON export/import.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered app satisfies the complete sprint planning workflow with local state and portability."
+      },
+      {
         "id": "starter-template-failure",
         "inputSummary": "The workspace is still mostly the Vite starter template with no planning board, capacity, risks, decisions, or persistence workflow.",
         "expectedStatus": "failed",
         "rationale": "An untouched or lightly renamed starter template does not deliver the requested sprint planner."
+      },
+      {
+        "id": "board-no-import-export-review",
+        "inputSummary": "The app has a usable planning board with editable tasks and status movement, but capacity, risks/decisions, persistence, or export/import are incomplete.",
+        "expectedStatus": "review",
+        "rationale": "The core board may be useful, but missing adjacent planning and portability requirements should trigger review before scoring."
       }
     ]
   }

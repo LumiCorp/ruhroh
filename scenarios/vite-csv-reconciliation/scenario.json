@@ -71,10 +71,22 @@
     ],
     "calibrationCases": [
       {
+        "id": "complete-reconciliation-pass",
+        "inputSummary": "The Vite app runs locally, uses the supplied Source A and Source B CSV data, detects duplicates, missing records, and field conflicts, supports conflict resolution and filtering, updates counts, persists review state, and exports cleaned results.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered app satisfies the full CSV reconciliation workflow and evidence requirements."
+      },
+      {
         "id": "viewer-only-failure",
         "inputSummary": "The app displays both CSV files but offers no duplicate detection, conflict resolution, review state, or cleaned export.",
         "expectedStatus": "failed",
         "rationale": "Viewing data alone does not satisfy the requested reconciliation workflow."
+      },
+      {
+        "id": "detection-no-export-review",
+        "inputSummary": "The app detects likely duplicates and field conflicts, but review decisions do not persist and there is no cleaned JSON or CSV export.",
+        "expectedStatus": "review",
+        "rationale": "The app implements important reconciliation behavior but misses persistence and export requirements central to a publishable pass."
       }
     ]
   }

@@ -1,0 +1,375 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v1.schema.json",
+  "version": "ruhroh_benchmark_claim_v1",
+  "createdAt": "2026-07-08T12:00:00.000Z",
+  "tool": {
+    "name": "@kestrel-agents/ruhroh",
+    "version": "0.6.0-beta.0"
+  },
+  "source": {
+    "resultsPath": "./sample-results",
+    "suitePath": "./ruhroh/suites/ruhroh-sample/suite.json",
+    "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014",
+    "runPlanPath": "./ruhroh-run-plan.json",
+    "runPlanSha256": "845340b7f60fe5c218467f59950db59b26c331da400a59557dbff90dff177eb6",
+    "htmlPath": "./ruhroh-compare.html",
+    "benchmarkClaimPath": "./benchmark-claim.json",
+    "benchmarkSummaryPath": "./benchmark-summary.json",
+    "resultArtifacts": [
+      {
+        "path": "./sample-results/run-one/ruhroh-loop-result.json",
+        "sha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d",
+        "scenarioId": "simple-newsletter",
+        "adapter": "agent-a",
+        "runId": "sample-newsletter-agent-a-1",
+        "sampleId": "simple-newsletter/agent-a/1-of-2",
+        "scenarioVersion": "1.0.0",
+        "artifactInventory": [
+          {
+            "name": "evalInput",
+            "path": "./sample-results/run-one/ruhroh-loop-eval-input.json",
+            "available": true,
+            "sizeBytes": 122,
+            "sha256": "3763a8caaa6ef3a89cdbc9aab8335e5aab51837d717e007ac6bdb83676239c1e"
+          },
+          {
+            "name": "evalResult",
+            "path": "./sample-results/run-one/ruhroh-loop-eval.json",
+            "available": true,
+            "sizeBytes": 2465,
+            "sha256": "076c551c4114b48d017aebf98480d339dc92b72ca3a4fb164a2f4074fc6eea93"
+          },
+          {
+            "name": "events",
+            "path": "./sample-results/run-one/events.jsonl",
+            "available": true,
+            "sizeBytes": 57,
+            "sha256": "354f962620ba81e40eee8813d3ad33cddbd01e7c40f9bf10166f843d7f7c7060"
+          },
+          {
+            "name": "eventsTarball",
+            "path": "./sample-results/run-one/ruhroh-loop-events.tar.gz",
+            "available": true,
+            "sizeBytes": 53,
+            "sha256": "2002b38a24ad7ff391d9b87433e1df4e852ebc937edf13e5bd95b44798e8b1e5"
+          },
+          {
+            "name": "implementationRuns",
+            "path": "./sample-results/run-one/ruhroh-loop-iterations.jsonl",
+            "available": true,
+            "sizeBytes": 505,
+            "sha256": "346e2074c5d53e454ce31fe1d30c9574e57c5905926f508718c9f198bc089945"
+          },
+          {
+            "name": "journey",
+            "path": "./sample-results/run-one/ruhroh-loop-journey.json",
+            "available": true,
+            "sizeBytes": 179,
+            "sha256": "cd414b655de7de51f329079a8f9f8caaf6f4b417b2e99180e43acefa61d2e2f2"
+          },
+          {
+            "name": "result",
+            "path": "./sample-results/run-one/ruhroh-loop-result.json",
+            "available": true,
+            "sizeBytes": 8165,
+            "sha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d"
+          },
+          {
+            "name": "runManifest",
+            "path": "./sample-results/run-one/ruhroh-run-manifest.json",
+            "available": true,
+            "sizeBytes": 1907,
+            "sha256": "fe49f83edd35eef25880ee19f4f25662c4ca2dae1f77d417837e122eff9cb393"
+          },
+          {
+            "name": "transcript",
+            "path": "./sample-results/run-one/transcript.log",
+            "available": true,
+            "sizeBytes": 69,
+            "sha256": "b64339f315ee62b69bca610f6689b7ba7e5172c6b15147fbed0ad2c28f02139a"
+          },
+          {
+            "name": "transcriptsTarball",
+            "path": "./sample-results/run-one/ruhroh-loop-transcripts.tar.gz",
+            "available": true,
+            "sizeBytes": 58,
+            "sha256": "454c0113d5058433b39a1ae789695420ce3cf42c8706ddc22778b671e55a8146"
+          },
+          {
+            "name": "workspaceSummary",
+            "path": "./sample-results/run-one/ruhroh-workspace-summary.json",
+            "available": true,
+            "sizeBytes": 670,
+            "sha256": "ddfc18e19275262cd383cbc3d744e8048a5c9366cf2faaa5bcad065b609e6caa"
+          },
+          {
+            "name": "workspaceTarball",
+            "path": "./sample-results/run-one/ruhroh-workspace.tar.gz",
+            "available": true,
+            "sizeBytes": 57,
+            "sha256": "3c3f9efb11335aa9ef5106a20811c02a379548e6f7c7cedb4ccede370c2a1ca8"
+          }
+        ]
+      },
+      {
+        "path": "./sample-results/run-two/ruhroh-loop-result.json",
+        "sha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3",
+        "scenarioId": "simple-newsletter",
+        "adapter": "agent-a",
+        "runId": "sample-newsletter-agent-a-2",
+        "sampleId": "simple-newsletter/agent-a/2-of-2",
+        "scenarioVersion": "1.0.0",
+        "artifactInventory": [
+          {
+            "name": "evalInput",
+            "path": "./sample-results/run-two/ruhroh-loop-eval-input.json",
+            "available": true,
+            "sizeBytes": 122,
+            "sha256": "3763a8caaa6ef3a89cdbc9aab8335e5aab51837d717e007ac6bdb83676239c1e"
+          },
+          {
+            "name": "evalResult",
+            "path": "./sample-results/run-two/ruhroh-loop-eval.json",
+            "available": true,
+            "sizeBytes": 2645,
+            "sha256": "d319f036ff5f3331b31819d61f5f182b4bf8943e542523e9962b847a906e9fa8"
+          },
+          {
+            "name": "events",
+            "path": "./sample-results/run-two/events.jsonl",
+            "available": true,
+            "sizeBytes": 57,
+            "sha256": "c866b4a17696f13dbce7e7b63e649de021acbf7e9cd6a55e26b3c44240de8fc9"
+          },
+          {
+            "name": "eventsTarball",
+            "path": "./sample-results/run-two/ruhroh-loop-events.tar.gz",
+            "available": true,
+            "sizeBytes": 53,
+            "sha256": "3f5e5b3c5e59edbefa9782469149a61fc6eb18b9eebdff1f990b614013b24f37"
+          },
+          {
+            "name": "implementationRuns",
+            "path": "./sample-results/run-two/ruhroh-loop-iterations.jsonl",
+            "available": true,
+            "sizeBytes": 511,
+            "sha256": "5821c27bb0665e4120fad3e68604523fc8e11c8765ceeebe0f47540b39ad1366"
+          },
+          {
+            "name": "journey",
+            "path": "./sample-results/run-two/ruhroh-loop-journey.json",
+            "available": true,
+            "sizeBytes": 179,
+            "sha256": "ede885c0cdce22f1b632cf6ac4d2b46beaedb1a1aa745ef8b622dcc667094609"
+          },
+          {
+            "name": "result",
+            "path": "./sample-results/run-two/ruhroh-loop-result.json",
+            "available": true,
+            "sizeBytes": 8370,
+            "sha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3"
+          },
+          {
+            "name": "runManifest",
+            "path": "./sample-results/run-two/ruhroh-run-manifest.json",
+            "available": true,
+            "sizeBytes": 1907,
+            "sha256": "6677aa38e65800945a1ef35ca9bb637b3097c9248d2ebcfe040529dff378978e"
+          },
+          {
+            "name": "transcript",
+            "path": "./sample-results/run-two/transcript.log",
+            "available": true,
+            "sizeBytes": 69,
+            "sha256": "fc147d4635e80448bfd305b3aec71b5f0514de1c27b64057ab044fd3b03d3ed0"
+          },
+          {
+            "name": "transcriptsTarball",
+            "path": "./sample-results/run-two/ruhroh-loop-transcripts.tar.gz",
+            "available": true,
+            "sizeBytes": 58,
+            "sha256": "68eeb595f2849fd813675e5846e2bbb76cdf61566a8c7b6c953005fbea4aa4e2"
+          },
+          {
+            "name": "workspaceSummary",
+            "path": "./sample-results/run-two/ruhroh-workspace-summary.json",
+            "available": true,
+            "sizeBytes": 670,
+            "sha256": "ddfc18e19275262cd383cbc3d744e8048a5c9366cf2faaa5bcad065b609e6caa"
+          },
+          {
+            "name": "workspaceTarball",
+            "path": "./sample-results/run-two/ruhroh-workspace.tar.gz",
+            "available": true,
+            "sizeBytes": 57,
+            "sha256": "39f79c358adad823b4d80be383fcadb1187f09bdd8f92722d30ca8eab5e59ff9"
+          }
+        ]
+      }
+    ]
+  },
+  "scope": "suite",
+  "publishable": false,
+  "suite": {
+    "id": "ruhroh-sample",
+    "title": "Ruhroh Sample Evidence Pack",
+    "suiteVersion": "0.1.0",
+    "scenarioIds": [
+      "simple-newsletter"
+    ],
+    "scenarioVersions": {
+      "simple-newsletter": "1.0.0"
+    },
+    "minRuns": 5,
+    "retryPolicy": "Docs sample only; real claims should collect the full planned run set."
+  },
+  "methodology": {
+    "confidenceLevel": 0.95,
+    "statisticalMethods": [
+      "wilson_pass_rate_ci",
+      "normal_approximation_pass_rate_delta_ci",
+      "fisher_exact_two_sided",
+      "pass_at_k",
+      "bootstrap_mean_score_ci"
+    ],
+    "minRuns": 5,
+    "retryPolicy": "Docs sample only; real claims should collect the full planned run set."
+  },
+  "summary": {
+    "scenarioCount": 1,
+    "adapterCount": 1,
+    "totalRuns": 2,
+    "totalPasses": 1,
+    "runWeightedPassRate": 0.5,
+    "runWeightedPassRateCi95": {
+      "method": "wilson",
+      "confidenceLevel": 0.95,
+      "lower": 0.09453120573423071,
+      "upper": 0.9054687942657693
+    },
+    "reviewRequired": 0,
+    "reviewRecommended": 1,
+    "pairwiseComparisonCount": 0
+  },
+  "adapterSummaries": [
+    {
+      "adapter": "agent-a",
+      "scenarioCount": 1,
+      "runs": 2,
+      "passes": 1,
+      "runWeightedPassRate": 0.5,
+      "runWeightedPassRateCi95": {
+        "method": "wilson",
+        "confidenceLevel": 0.95,
+        "lower": 0.09453120573423071,
+        "upper": 0.9054687942657693
+      },
+      "meanScenarioPassRate": 0.5,
+      "usage": {
+        "runsWithUsage": 2,
+        "runsWithCost": 2,
+        "runsWithTokens": 2,
+        "totalCostUsd": 0.05,
+        "meanCostUsd": 0.025,
+        "costPerPass": 0.05,
+        "totalTokens": 1600,
+        "meanTotalTokens": 800,
+        "tokensPerPass": 1600
+      },
+      "minRunsSatisfied": false,
+      "warnings": [
+        "simple-newsletter has 2/5 required runs",
+        "scenario-level warnings present"
+      ]
+    }
+  ],
+  "suiteCoverage": {
+    "expectedScenarios": 1,
+    "coveredScenarios": 1,
+    "missingScenarioIds": [],
+    "minRunsSatisfied": false,
+    "adapters": [
+      {
+        "adapter": "agent-a",
+        "expectedScenarios": 1,
+        "coveredScenarios": 1,
+        "missingScenarioIds": [],
+        "scenarioRuns": {
+          "simple-newsletter": 2
+        },
+        "minRunsSatisfied": false,
+        "warnings": [
+          "simple-newsletter has 2/5 required runs",
+          "scenario-level warnings present"
+        ]
+      }
+    ]
+  },
+  "scenarioResults": [
+    {
+      "scenarioId": "simple-newsletter",
+      "adapter": "agent-a",
+      "runs": 2,
+      "passes": 1,
+      "passRate": 0.5,
+      "passRateCi95": {
+        "method": "wilson",
+        "confidenceLevel": 0.95,
+        "lower": 0.09453120573423071,
+        "upper": 0.9054687942657693
+      },
+      "passAtK": {
+        "pass@1": 0.5,
+        "pass@2": 1
+      },
+      "meanScore": 0.5,
+      "meanScoreCi95": {
+        "method": "bootstrap_percentile",
+        "confidenceLevel": 0.95,
+        "lower": 0,
+        "upper": 1
+      },
+      "usage": {
+        "runsWithUsage": 2,
+        "runsWithCost": 2,
+        "runsWithTokens": 2,
+        "totalCostUsd": 0.05,
+        "meanCostUsd": 0.025,
+        "costPerPass": 0.05,
+        "totalTokens": 1600,
+        "meanTotalTokens": 800,
+        "tokensPerPass": 1600
+      },
+      "reviewRequired": 0,
+      "statisticalWarnings": [
+        "fewer than 5 runs; treat pass rate and pass@k as directional"
+      ]
+    }
+  ],
+  "pairwiseComparisons": [],
+  "readiness": {
+    "scope": "suite",
+    "publishable": false,
+    "blockers": [
+      "agent-a: suite minimum runs or scenario coverage not satisfied",
+      "simple-newsletter/agent-a: fewer than 5 runs; treat pass rate and pass@k as directional",
+      "simple-newsletter/agent-a: eval-quality warnings present"
+    ],
+    "advisories": [
+      "agent-a: simple-newsletter has 2/5 required runs",
+      "agent-a: scenario-level warnings present",
+      "simple-newsletter/agent-a: eval command evidence includes non-zero exit codes (1)",
+      "simple-newsletter/agent-a/sample-newsletter-agent-a-2: review recommended"
+    ]
+  },
+  "evidence": {
+    "runPlanPresent": true,
+    "runPlanWarnings": [],
+    "artifactValidationErrors": 0,
+    "artifactValidationWarnings": 0,
+    "artifactCompletenessWarnings": 0,
+    "reviewQueueItems": 1,
+    "requiredReviewItems": 0,
+    "recommendedReviewItems": 1
+  }
+}

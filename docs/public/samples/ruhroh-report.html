@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ruhroh report: simple-newsletter</title>
+    <style>
+      :root { color-scheme: light; --border: #d8dee4; --muted: #57606a; --bg: #f6f8fa; --bad: #b42318; --ok: #1f7a3f; }
+      body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2328; background: #fff; }
+      main { max-width: 1120px; margin: 0 auto; padding: 32px 20px 48px; }
+      header { border-bottom: 1px solid var(--border); margin-bottom: 24px; padding-bottom: 16px; }
+      h1 { font-size: 28px; margin: 0 0 8px; }
+      h2 { font-size: 18px; margin: 28px 0 12px; }
+      table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+      th, td { border: 1px solid var(--border); padding: 8px 10px; text-align: left; vertical-align: top; }
+      th { background: var(--bg); }
+      code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+      pre { white-space: pre-wrap; background: var(--bg); border: 1px solid var(--border); padding: 12px; overflow-wrap: anywhere; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+      .metric { border: 1px solid var(--border); padding: 12px; background: var(--bg); }
+      .metric strong { display: block; font-size: 13px; color: var(--muted); font-weight: 600; margin-bottom: 4px; }
+      .pass { color: var(--ok); font-weight: 700; }
+      .fail { color: var(--bad); font-weight: 700; }
+      .muted { color: var(--muted); }
+      ul { padding-left: 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Ruhroh report: simple-newsletter</h1>
+        <p class="muted">The sample workspace satisfies the newsletter scenario.</p>
+      </header>
+      <section class="grid" aria-label="Run overview">
+        <div class="metric"><strong>Run id</strong><span>sample-newsletter-agent-a-1</span></div>
+        <div class="metric"><strong>Adapter</strong><span>agent-a</span></div>
+        <div class="metric"><strong>Status</strong><span class="pass">completed / passed</span></div>
+        <div class="metric"><strong>Score</strong><span class="pass">1</span></div>
+        <div class="metric"><strong>Failure bucket</strong><span>none</span></div>
+        <div class="metric"><strong>Iterations</strong><span>1</span></div>
+        <div class="metric"><strong>Duration</strong><span>60000ms</span></div>
+      </section>
+      <section><h2>Run Manifest</h2><table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody><tr><td>Scenario version</td><td>1.0.0</td></tr><tr><td>Dataset</td><td>ruhroh-docs-sample</td></tr><tr><td>Started</td><td>2026-07-08T12:00:00Z</td></tr><tr><td>Duration</td><td>60000ms</td></tr><tr><td>Max iterations</td><td>3</td></tr><tr><td>Sample</td><td>simple-newsletter/agent-a/1-of-2 1/2 seed=docs-seed-one</td></tr><tr><td>Run agent</td><td>agent-a@docs-sample-v1</td></tr><tr><td>Agent model</td><td>docs/sample-agent@2026-07-08</td></tr><tr><td>Eval model</td><td>docs/docs-fixture-evaluator@2026-07-08</td></tr></tbody></table></section>
+      <section><h2>Subscores</h2><table><thead><tr><th>Dimension</th><th>Score</th></tr></thead><tbody><tr><td>functionality</td><td>1</td></tr><tr><td>workflow</td><td>1</td></tr><tr><td>buildRun</td><td>1</td></tr><tr><td>persistence</td><td>0</td></tr><tr><td>constraintCompliance</td><td>1</td></tr><tr><td>evidenceQuality</td><td>1</td></tr></tbody></table></section>
+      <section><h2>Evaluator Judges</h2><table><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody><tr><td>Primary judge</td><td>hybrid/docs-fixture-evaluator@2026-07-08</td></tr></tbody></table><table><thead><tr><th>Votes</th><th>Unanimous</th><th>Majority</th><th>Counts</th><th>Dissenting judges</th></tr></thead><tbody><tr><td>2</td><td>yes</td><td>passed</td><td>passed=2</td><td></td></tr></tbody></table><table><thead><tr><th>Judge</th><th>Status</th><th>Confidence</th><th>Weight</th><th>Rationale</th><th>Evidence</th></tr></thead><tbody><tr><td>command/docs-fixture-evaluator@2026-07-08</td><td>passed</td><td>high</td><td></td><td>The sample workspace satisfies the newsletter scenario.</td><td>file:index.html</td></tr><tr><td>model/docs-arbiter@2026-07-08</td><td>passed</td><td>high</td><td></td><td>The sample workspace satisfies the newsletter scenario.</td><td>command:fixture article-count</td></tr></tbody></table></section>
+      <section><h2>Implementation Timeline</h2><table><thead><tr><th>Iteration</th><th>Status</th><th>Completion</th><th>Stop</th><th>Run id</th><th>Transcript</th><th>Event log</th><th>Notes</th></tr></thead><tbody><tr><td>1</td><td>completed</td><td>done</td><td>goal_satisfied</td><td>sample-newsletter-agent-a-1</td><td><a href="./sample-results/run-one/transcript.log">./sample-results/run-one/transcript.log</a></td><td><a href="./sample-results/run-one/events.jsonl">./sample-results/run-one/events.jsonl</a></td><td>Implemented a static newsletter page and verified the article count.</td></tr></tbody></table></section>
+      <section><h2>Criteria</h2><table><thead><tr><th>Id</th><th>Status</th><th>Score</th><th>Description</th><th>Notes</th></tr></thead><tbody><tr><td>newsletter-outcome</td><td>passed</td><td>1</td><td>The delivered workspace contains a newsletter page with three stories.</td><td></td></tr></tbody></table></section>
+      <section><h2>Evidence</h2><table><thead><tr><th>Kind</th><th>Ref</th><th>Summary</th></tr></thead><tbody><tr><td>file</td><td>index.html</td><td>The sample workspace satisfies the newsletter scenario.</td></tr><tr><td>command</td><td>fixture article-count</td><td>status=passed</td></tr></tbody></table></section>
+
+
+
+
+      <section><h2>Commands Run</h2><table><thead><tr><th>Command</th><th>Exit</th><th>Summary</th></tr></thead><tbody><tr><td>fixture article-count</td><td>0</td><td>The sample workspace satisfies the newsletter scenario.</td></tr></tbody></table></section>
+      <section><h2>Artifact Inventory</h2><table><thead><tr><th>Name</th><th>Status</th><th>Size</th><th>SHA-256</th><th>Path</th></tr></thead><tbody><tr><td>evalInput</td><td>available</td><td>122</td><td>3763a8caaa6ef3a89cdbc9aab8335e5aab51837d717e007ac6bdb83676239c1e</td><td><a href="./sample-results/run-one/ruhroh-loop-eval-input.json">./sample-results/run-one/ruhroh-loop-eval-input.json</a></td></tr><tr><td>evalResult</td><td>available</td><td>2465</td><td>076c551c4114b48d017aebf98480d339dc92b72ca3a4fb164a2f4074fc6eea93</td><td><a href="./sample-results/run-one/ruhroh-loop-eval.json">./sample-results/run-one/ruhroh-loop-eval.json</a></td></tr><tr><td>events</td><td>available</td><td>57</td><td>354f962620ba81e40eee8813d3ad33cddbd01e7c40f9bf10166f843d7f7c7060</td><td><a href="./sample-results/run-one/events.jsonl">./sample-results/run-one/events.jsonl</a></td></tr><tr><td>eventsTarball</td><td>available</td><td>53</td><td>2002b38a24ad7ff391d9b87433e1df4e852ebc937edf13e5bd95b44798e8b1e5</td><td><a href="./sample-results/run-one/ruhroh-loop-events.tar.gz">./sample-results/run-one/ruhroh-loop-events.tar.gz</a></td></tr><tr><td>implementationRuns</td><td>available</td><td>505</td><td>346e2074c5d53e454ce31fe1d30c9574e57c5905926f508718c9f198bc089945</td><td><a href="./sample-results/run-one/ruhroh-loop-iterations.jsonl">./sample-results/run-one/ruhroh-loop-iterations.jsonl</a></td></tr><tr><td>journey</td><td>available</td><td>179</td><td>cd414b655de7de51f329079a8f9f8caaf6f4b417b2e99180e43acefa61d2e2f2</td><td><a href="./sample-results/run-one/ruhroh-loop-journey.json">./sample-results/run-one/ruhroh-loop-journey.json</a></td></tr><tr><td>result</td><td>available</td><td>8165</td><td>a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d</td><td><a href="./sample-results/run-one/ruhroh-loop-result.json">./sample-results/run-one/ruhroh-loop-result.json</a></td></tr><tr><td>runManifest</td><td>available</td><td>1907</td><td>fe49f83edd35eef25880ee19f4f25662c4ca2dae1f77d417837e122eff9cb393</td><td><a href="./sample-results/run-one/ruhroh-run-manifest.json">./sample-results/run-one/ruhroh-run-manifest.json</a></td></tr><tr><td>transcript</td><td>available</td><td>69</td><td>b64339f315ee62b69bca610f6689b7ba7e5172c6b15147fbed0ad2c28f02139a</td><td><a href="./sample-results/run-one/transcript.log">./sample-results/run-one/transcript.log</a></td></tr><tr><td>transcriptsTarball</td><td>available</td><td>58</td><td>454c0113d5058433b39a1ae789695420ce3cf42c8706ddc22778b671e55a8146</td><td><a href="./sample-results/run-one/ruhroh-loop-transcripts.tar.gz">./sample-results/run-one/ruhroh-loop-transcripts.tar.gz</a></td></tr><tr><td>workspaceSummary</td><td>available</td><td>670</td><td>ddfc18e19275262cd383cbc3d744e8048a5c9366cf2faaa5bcad065b609e6caa</td><td><a href="./sample-results/run-one/ruhroh-workspace-summary.json">./sample-results/run-one/ruhroh-workspace-summary.json</a></td></tr><tr><td>workspaceTarball</td><td>available</td><td>57</td><td>3c3f9efb11335aa9ef5106a20811c02a379548e6f7c7cedb4ccede370c2a1ca8</td><td><a href="./sample-results/run-one/ruhroh-workspace.tar.gz">./sample-results/run-one/ruhroh-workspace.tar.gz</a></td></tr></tbody></table></section>
+    </main>
+  </body>
+</html>

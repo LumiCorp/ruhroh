@@ -1,0 +1,98 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+  "version": "ruhroh_eval_result_v1",
+  "status": "passed",
+  "goalMet": true,
+  "confidence": "high",
+  "reasons": [
+    "The workspace contains a newsletter page with three articles."
+  ],
+  "unmetCriteria": [],
+  "evidenceRefs": [
+    {
+      "kind": "file",
+      "ref": "index.html",
+      "summary": "The sample workspace satisfies the newsletter scenario."
+    },
+    {
+      "kind": "command",
+      "ref": "fixture article-count",
+      "summary": "status=passed"
+    }
+  ],
+  "commandsRun": [
+    {
+      "command": "fixture article-count",
+      "exitCode": 0,
+      "summary": "The sample workspace satisfies the newsletter scenario."
+    }
+  ],
+  "artifacts": {
+    "workspacePath": "/docs/sample/workspace"
+  },
+  "finalSummary": "The sample workspace satisfies the newsletter scenario.",
+  "criteriaResults": [
+    {
+      "id": "newsletter-outcome",
+      "description": "The delivered workspace contains a newsletter page with three stories.",
+      "status": "passed",
+      "score": 1,
+      "evidenceRefs": [
+        {
+          "kind": "file",
+          "ref": "index.html",
+          "summary": "The sample workspace satisfies the newsletter scenario."
+        }
+      ]
+    }
+  ],
+  "subscores": {
+    "functionality": 1,
+    "workflow": 1,
+    "buildRun": 1,
+    "persistence": 0,
+    "constraintCompliance": 1,
+    "evidenceQuality": 1
+  },
+  "judge": {
+    "kind": "hybrid",
+    "model": "docs-fixture-evaluator",
+    "version": "2026-07-08"
+  },
+  "judgeVotes": [
+    {
+      "judge": {
+        "kind": "command",
+        "model": "docs-fixture-evaluator",
+        "version": "2026-07-08"
+      },
+      "status": "passed",
+      "confidence": "high",
+      "rationale": "The sample workspace satisfies the newsletter scenario.",
+      "evidenceRefs": [
+        {
+          "kind": "file",
+          "ref": "index.html",
+          "summary": "The sample workspace satisfies the newsletter scenario."
+        }
+      ]
+    },
+    {
+      "judge": {
+        "kind": "model",
+        "model": "docs-arbiter",
+        "version": "2026-07-08"
+      },
+      "status": "passed",
+      "confidence": "high",
+      "rationale": "The sample workspace satisfies the newsletter scenario.",
+      "evidenceRefs": [
+        {
+          "kind": "command",
+          "ref": "fixture article-count",
+          "summary": "status=passed"
+        }
+      ]
+    }
+  ]
+}
