@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/suite-v1.schema.json",
+  "title": "Ruhroh Benchmark Suite v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "id",
+    "title",
+    "suiteVersion",
+    "description",
+    "scenarioIds",
+    "scenarioVersions",
+    "methodology",
+    "governance"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_suite_v1" },
+    "id": { "type": "string", "pattern": "^[a-zA-Z0-9._-]+$" },
+    "title": { "type": "string", "minLength": 1 },
+    "suiteVersion": { "type": "string", "minLength": 1 },
+    "description": { "type": "string", "minLength": 1 },
+    "scenarioIds": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^[a-zA-Z0-9._-]+$" }
+    },
+    "scenarioVersions": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": { "type": "string", "minLength": 1 }
+    },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["minRuns", "aggregationUnit", "reportPolicy", "confidenceLevel", "retryPolicy"],
+      "properties": {
+        "minRuns": { "type": "number", "exclusiveMinimum": 0 },
+        "aggregationUnit": { "const": "scenario_adapter" },
+        "reportPolicy": { "const": "pass_rate_ci_pass_at_k" },
+        "confidenceLevel": { "const": 0.95 },
+        "retryPolicy": { "type": "string", "minLength": 1 }
+      }
+    },
+    "governance": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "owner",
+        "changelog",
+        "acceptanceCriteria",
+        "contaminationReview",
+        "rewardHackingReview",
+        "reviewChecklist",
+        "deprecationPolicy"
+      ],
+      "properties": {
+        "owner": { "type": "string", "minLength": 1 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "changelog": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "acceptanceCriteria": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "contaminationReview": { "type": "string", "minLength": 1 },
+        "rewardHackingReview": { "type": "string", "minLength": 1 },
+        "reviewChecklist": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "deprecationPolicy": { "type": "string", "minLength": 1 }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyStringArray": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  }
+}

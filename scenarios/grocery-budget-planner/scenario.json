@@ -4,6 +4,30 @@
   "title": "Grocery Budget Planner",
   "tier": "nightly",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Original Ruhroh bundled scenario authored for outcome-based local-app benchmarking.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "standard",
+    "tags": [
+      "local-app",
+      "persistence",
+      "budgeting"
+    ],
+    "expectedRuntimeSeconds": 600,
+    "contaminationNotes": "Original local-app workflow with no canonical public solution.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Initial published scenario."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "run": {
     "mode": "build",
@@ -39,6 +63,14 @@
       "Inspect the final workspace and run or open the local app when practical.",
       "Exercise the user workflow: add an item, mark an item purchased, and verify totals update.",
       "Do not require a specific filename or framework unless the delivered app itself documents that as its local run path."
+    ],
+    "calibrationCases": [
+      {
+        "id": "totals-missing-failure",
+        "inputSummary": "The app lists grocery items but never updates purchased, unpurchased, or remaining budget totals.",
+        "expectedStatus": "failed",
+        "rationale": "Dynamic budget totals are central to the requested planner workflow."
+      }
     ]
   }
 }

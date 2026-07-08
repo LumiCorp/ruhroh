@@ -7,6 +7,8 @@ iteration="${RUHROH_ITERATION:-1}"
 session_handle="${RUHROH_SESSION_HANDLE:-ruhroh-custom-shell}"
 result_path="${RUHROH_RESULT_PATH:-}"
 gemini_bin="${GEMINI_CLI_BIN:-gemini}"
+gemini_model="${GEMINI_MODEL:-${RUHROH_AGENT_MODEL:-gemini-cli}}"
+gemini_adapter_version="${GEMINI_CLI_ADAPTER_VERSION:-0.1.0}"
 
 if [[ -z "$workspace" ]]; then
   echo "RUHROH_WORKSPACE or RUHROH_WORKSPACE_PATH is required" >&2
@@ -48,6 +50,11 @@ if [[ -n "$result_path" ]]; then
 {
   "version": "ruhroh_run_agent_result_v1",
   "status": "goal_satisfied",
+  "adapterVersion": "$gemini_adapter_version",
+  "model": {
+    "provider": "google",
+    "model": "$gemini_model"
+  },
   "summary": "Gemini CLI completed the Ruhroh turn.",
   "artifacts": {
     "prompt": "$prompt_path",

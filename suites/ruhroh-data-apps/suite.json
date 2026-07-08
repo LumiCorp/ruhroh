@@ -1,0 +1,43 @@
+{
+  "version": "ruhroh_suite_v1",
+  "id": "ruhroh-data-apps",
+  "title": "Ruhroh Data Apps",
+  "suiteVersion": "1.0.0",
+  "description": "Data-heavy local app tasks that evaluate CSV handling, reconciliation, scheduling, review state, and export workflows.",
+  "scenarioIds": [
+    "vite-csv-reconciliation",
+    "shift-coverage-planner"
+  ],
+  "scenarioVersions": {
+    "vite-csv-reconciliation": "1.0.0",
+    "shift-coverage-planner": "1.0.0"
+  },
+  "methodology": {
+    "minRuns": 10,
+    "aggregationUnit": "scenario_adapter",
+    "reportPolicy": "pass_rate_ci_pass_at_k",
+    "confidenceLevel": 0.95,
+    "retryPolicy": "Do not discard failed runs for parser, build, or workflow mistakes; mark only proven environment outages as infra failures."
+  },
+  "governance": {
+    "owner": "ruhroh-maintainers",
+    "createdAt": "2026-07-07",
+    "updatedAt": "2026-07-07",
+    "changelog": [
+      "1.0.0: Initial data-apps suite with CSV reconciliation and shift coverage planning."
+    ],
+    "acceptanceCriteria": [
+      "Scenario must include domain data assets or structured data constraints.",
+      "Scenario must require the delivered workspace to transform, review, or export data.",
+      "Rubric must include evidence guidance for inspecting both source data and final behavior."
+    ],
+    "contaminationReview": "Bundled data assets should be original fixtures and may be rotated in a new suiteVersion.",
+    "rewardHackingReview": "Review data tasks for answer-key leakage, hard-coded fixture totals, and workflows that pass without actually parsing or transforming the supplied data.",
+    "reviewChecklist": [
+      "Confirm source data assets are original fixtures or intentionally public fixtures.",
+      "Confirm the rubric inspects transformed or exported data, not just UI shell presence.",
+      "Confirm expected behavior cannot be satisfied by hard-coding visible sample rows only."
+    ],
+    "deprecationPolicy": "Data assets are frozen within a suiteVersion. Any asset mutation requires a suiteVersion bump."
+  }
+}

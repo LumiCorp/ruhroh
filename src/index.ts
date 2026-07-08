@@ -5,3 +5,4 @@ export * from "./generate.js";
 export * from "./harbor.js";
 export * from "./results.js";
 export * from "./scenarios.js";
+export * from "./suites.js";

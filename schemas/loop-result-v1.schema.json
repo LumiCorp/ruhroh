@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/loop-result-v1.schema.json",
+  "title": "Ruhroh Loop Result v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "adapter",
+    "dataset",
+    "scenarioId",
+    "task_id",
+    "status",
+    "failure_kind",
+    "failureBucket",
+    "score",
+    "iterationsUsed",
+    "implementationIterationsUsed",
+    "implementationStoppedReason",
+    "stoppedReason",
+    "duration_ms",
+    "runAgent",
+    "runAgentAdapterId",
+    "continuityLevel",
+    "sessionHandle",
+    "runIds",
+    "implementationRuns"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_loop_result_v1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "adapter": { "type": "string", "minLength": 1 },
+    "dataset": { "type": "string", "minLength": 1 },
+    "scenarioId": { "type": "string", "minLength": 1 },
+    "task_id": { "type": "string", "minLength": 1 },
+    "status": { "enum": ["completed", "failed"] },
+    "failure_kind": { "type": "string" },
+    "failureBucket": { "type": "string" },
+    "score": { "type": "number" },
+    "iterationsUsed": { "type": "number", "minimum": 0 },
+    "implementationIterationsUsed": { "type": "number", "minimum": 0 },
+    "implementationStoppedReason": { "type": "string", "minLength": 1 },
+    "stoppedReason": { "type": "string", "minLength": 1 },
+    "duration_ms": { "type": "number", "minimum": 0 },
+    "runAgent": { "$ref": "#/$defs/runAgent" },
+    "runAgentAdapterId": { "type": "string", "minLength": 1 },
+    "continuityLevel": {
+      "enum": ["native_session", "workspace_plus_transcript", "workspace_only"]
+    },
+    "sessionHandle": { "type": "string", "minLength": 1 },
+    "runIds": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "implementationRuns": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "runManifest": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "version": { "const": "ruhroh_run_manifest_v1" }
+      }
+    },
+    "evalResult": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "version": { "const": "ruhroh_eval_result_v1" }
+      }
+    },
+    "artifactPaths": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "failure_details": { "type": "object" }
+  },
+  "$defs": {
+    "runAgent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["adapterId", "continuityLevel", "sessionHandle", "runIds"],
+      "properties": {
+        "adapterId": { "type": "string", "minLength": 1 },
+        "adapterVersion": { "type": "string", "minLength": 1 },
+        "continuityLevel": {
+          "enum": ["native_session", "workspace_plus_transcript", "workspace_only"]
+        },
+        "sessionHandle": { "type": "string", "minLength": 1 },
+        "runIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "model": { "type": "object" },
+        "usage": { "type": "object" },
+        "command": { "type": "object" }
+      }
+    }
+  }
+}

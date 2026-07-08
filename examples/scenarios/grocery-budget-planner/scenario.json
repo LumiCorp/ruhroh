@@ -1,14 +1,38 @@
 {
-  "version": "ruhroh_scenario_v1",
+  "version": "ruhroh_scenario_v2",
   "id": "grocery-budget-planner",
   "title": "Grocery Budget Planner",
   "tier": "nightly",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Public example scenario authored for outcome-based local-app benchmarking.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "standard",
+    "tags": [
+      "local-app",
+      "persistence",
+      "budgeting"
+    ],
+    "expectedRuntimeSeconds": 600,
+    "contaminationNotes": "Original local-app workflow with no canonical public solution.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Converted public example to runtime-adapter v2 format."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "assets": ["assets/grocery-items.csv"],
-  "driver": {
-    "adapter": "custom-shell",
-    "timeoutSeconds": 900
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 600
   },
   "requires": {
     "continuity": "workspace_only",
@@ -21,15 +45,27 @@
   },
   "evaluation": {
     "mode": "agentic_goal_review",
-    "scenarioContext": ["Dependency-free local state app with provided CSV starter data."],
+    "scenarioContext": [
+      "This is a dependency-free local state app with provided CSV starter data.",
+      "The user asked for an immediately usable grocery budget planner, not a prose plan.",
+      "The user did not prescribe a framework or file layout."
+    ],
     "goalRubric": [
-      "The final workspace contains a runnable grocery budget planner.",
+      "The final workspace provides a locally usable grocery budget planner.",
       "The app supports review, add, edit, remove, status, totals, and local persistence behavior.",
       "The provided CSV is used as starter data or clearly imported into the app."
     ],
     "evidenceGuidance": [
       "Inspect the workspace and run the app when useful.",
       "Verify behavior through the app, storage, or exported state rather than source keyword checks."
+    ],
+    "calibrationCases": [
+      {
+        "id": "csv-unused-failure",
+        "inputSummary": "The planner works only with blank manual entry and never loads or represents the provided CSV starter data.",
+        "expectedStatus": "failed",
+        "rationale": "The example scenario requires using the supplied grocery data as starter state."
+      }
     ]
   }
 }

@@ -1,0 +1,185 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/run-manifest-v1.schema.json",
+  "title": "Ruhroh Run Manifest v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "runId",
+    "scenario",
+    "benchmark",
+    "timing",
+    "loop",
+    "runAgent"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_run_manifest_v1" },
+    "runId": { "type": "string", "minLength": 1 },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "scenarioVersion": { "type": "string", "minLength": 1 },
+        "runMode": { "enum": ["build", "plan", "chat"] },
+        "metadata": { "type": "object" }
+      }
+    },
+    "benchmark": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["dataset", "adapter"],
+      "properties": {
+        "dataset": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "harborAgent": { "type": "string", "minLength": 1 }
+      }
+    },
+    "timing": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["startedAt", "durationMs"],
+      "properties": {
+        "startedAt": { "type": "string", "minLength": 1 },
+        "endedAt": { "type": "string", "minLength": 1 },
+        "durationMs": { "type": "number", "minimum": 0 }
+      }
+    },
+    "loop": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["maxIterations", "implementationIterationsUsed", "stoppedReason"],
+      "properties": {
+        "maxIterations": { "type": "number", "minimum": 1 },
+        "implementationIterationsUsed": { "type": "number", "minimum": 0 },
+        "stoppedReason": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sample": { "$ref": "#/$defs/sample" },
+    "runAgent": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["adapterId", "continuityLevel", "sessionHandle", "runIds"],
+      "properties": {
+        "adapterId": { "type": "string", "minLength": 1 },
+        "adapterVersion": { "type": "string", "minLength": 1 },
+        "continuityLevel": {
+          "enum": ["native_session", "workspace_plus_transcript", "workspace_only"]
+        },
+        "sessionHandle": { "type": "string", "minLength": 1 },
+        "runIds": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "model": { "$ref": "#/$defs/model" },
+        "usage": { "$ref": "#/$defs/usage" },
+        "command": { "$ref": "#/$defs/commandManifest" }
+      }
+    },
+    "evaluator": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "command": { "$ref": "#/$defs/commandManifest" },
+        "fixtureConfigured": { "type": "boolean" },
+        "inputSummary": { "type": "object" },
+        "judge": { "type": "object" },
+        "model": { "$ref": "#/$defs/model" }
+      }
+    },
+    "environment": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "fingerprint": { "$ref": "#/$defs/fingerprint" },
+        "pythonVersion": { "type": "string", "minLength": 1 },
+        "platform": { "type": "string", "minLength": 1 },
+        "system": { "type": "string", "minLength": 1 },
+        "machine": { "type": "string", "minLength": 1 },
+        "containerImage": { "type": "string", "minLength": 1 },
+        "runIndex": { "type": "number", "minimum": 1 },
+        "runCount": { "type": "number", "minimum": 1 },
+        "workspaceRoot": { "type": "string", "minLength": 1 },
+        "evalWorkspaceRoot": { "type": "string", "minLength": 1 }
+      }
+    },
+    "env": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "forwardedKeys": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "secretKeysPresent": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "runtime": { "type": "object" }
+      }
+    },
+    "usage": { "$ref": "#/$defs/usage" },
+    "artifactPaths": {
+      "type": "object",
+      "additionalProperties": { "type": "string" }
+    },
+    "failureDetails": { "type": "object" }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sample": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "index": { "type": "number", "minimum": 1 },
+        "count": { "type": "number", "minimum": 1 },
+        "seed": { "type": "string", "minLength": 1 }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "costUsd": { "type": "number", "minimum": 0 },
+        "inputTokens": { "type": "number", "minimum": 0 },
+        "outputTokens": { "type": "number", "minimum": 0 },
+        "totalTokens": { "type": "number", "minimum": 0 }
+      }
+    },
+    "commandManifest": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "configured": { "type": "boolean" },
+        "shellEnabled": { "type": "boolean" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "fingerprint": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "components": { "type": "object" }
+      }
+    }
+  }
+}

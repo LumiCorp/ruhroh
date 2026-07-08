@@ -4,6 +4,31 @@
   "title": "Vite CSV Reconciliation",
   "tier": "nightly",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Original Ruhroh bundled scenario authored around synthetic CSV reconciliation fixtures.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "hard",
+    "tags": [
+      "vite",
+      "csv",
+      "data-workflow"
+    ],
+    "expectedRuntimeSeconds": 900,
+    "networkRationale": "Allows package installation for a Vite React TypeScript app.",
+    "contaminationNotes": "Original workflow and bundled CSV assets; no canonical public solution.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Initial published scenario."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "assets": [
     "assets/prompt-assets/csv-reconciliation-people"
@@ -43,6 +68,14 @@
       "Inspect the copied prompt assets and final workspace before judging.",
       "Run build/start commands and exercise the reconciliation workflow when practical.",
       "Prefer evidence from app behavior and exported data over source text matches."
+    ],
+    "calibrationCases": [
+      {
+        "id": "viewer-only-failure",
+        "inputSummary": "The app displays both CSV files but offers no duplicate detection, conflict resolution, review state, or cleaned export.",
+        "expectedStatus": "failed",
+        "rationale": "Viewing data alone does not satisfy the requested reconciliation workflow."
+      }
     ]
   }
 }

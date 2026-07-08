@@ -4,6 +4,31 @@
   "title": "Next.js Task Board",
   "tier": "nightly",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Ruhroh bundled scenario adapted from a task-board benchmark pattern with original outcome criteria.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "hard",
+    "tags": [
+      "nextjs",
+      "full-stack",
+      "local-api"
+    ],
+    "expectedRuntimeSeconds": 900,
+    "networkRationale": "Allows package installation for a Next.js app.",
+    "contaminationNotes": "Inspired by a task-board benchmark pattern but judged by original Ruhroh outcome criteria.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Initial published scenario."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "run": {
     "mode": "build",
@@ -40,6 +65,14 @@
       "Run install/build/start commands in the eval workspace when practical.",
       "Explore the UI/API workflow as a user: create, edit, archive, empty validation, and persistence after reload or restart.",
       "Do not require Mountaintop's historical filenames as a pass/fail condition unless the user-facing delivered app otherwise fails the workflow."
+    ],
+    "calibrationCases": [
+      {
+        "id": "localstorage-review",
+        "inputSummary": "The task board UI works, but persistence is only browser localStorage instead of a local API or server route.",
+        "expectedStatus": "review",
+        "rationale": "The scenario requires workspace-local server persistence, but a reviewer may need to decide whether the delivered workflow is otherwise strong enough to rerun or fail."
+      }
     ]
   }
 }

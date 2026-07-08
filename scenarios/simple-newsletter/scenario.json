@@ -4,6 +4,30 @@
   "title": "Simple Newsletter",
   "tier": "smoke",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Original Ruhroh bundled smoke scenario for credential-free local-app validation.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "intro",
+    "tags": [
+      "local-app",
+      "static-ui",
+      "smoke"
+    ],
+    "expectedRuntimeSeconds": 420,
+    "contaminationNotes": "Small original smoke task with no canonical public solution.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Initial published scenario."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "run": {
     "mode": "build",
@@ -35,6 +59,14 @@
     "evidenceGuidance": [
       "Inspect the final workspace and run the app or open the static page if needed.",
       "Use Kestrel transcripts and event logs only as supporting evidence; judge the final delivered state."
+    ],
+    "calibrationCases": [
+      {
+        "id": "prose-only-failure",
+        "inputSummary": "The agent only wrote a README describing a newsletter page but did not deliver an openable page.",
+        "expectedStatus": "failed",
+        "rationale": "The user asked for a delivered newsletter experience, not implementation notes."
+      }
     ]
   }
 }

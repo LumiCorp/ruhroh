@@ -1,0 +1,308 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v1.schema.json",
+  "title": "Ruhroh Benchmark Claim v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "createdAt",
+    "tool",
+    "scope",
+    "publishable",
+    "methodology",
+    "summary",
+    "adapterSummaries",
+    "scenarioResults",
+    "pairwiseComparisons",
+    "readiness",
+    "evidence"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_benchmark_claim_v1" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "tool": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "resultsPath": { "type": "string", "minLength": 1 },
+        "suitePath": { "type": "string", "minLength": 1 },
+        "suiteSha256": { "$ref": "#/$defs/sha256" },
+        "runPlanPath": { "type": "string", "minLength": 1 },
+        "runPlanSha256": { "$ref": "#/$defs/sha256" },
+        "htmlPath": { "type": "string", "minLength": 1 },
+        "benchmarkClaimPath": { "type": "string", "minLength": 1 },
+        "resultArtifacts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/resultArtifact" }
+        }
+      }
+    },
+    "scope": { "enum": ["suite", "ad_hoc_compare"] },
+    "publishable": { "type": "boolean" },
+    "suite": { "$ref": "#/$defs/suiteSummary" },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["confidenceLevel", "statisticalMethods"],
+      "properties": {
+        "confidenceLevel": { "const": 0.95 },
+        "statisticalMethods": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "enum": [
+              "wilson_pass_rate_ci",
+              "normal_approximation_pass_rate_delta_ci",
+              "fisher_exact_two_sided",
+              "pass_at_k",
+              "bootstrap_mean_score_ci"
+            ]
+          }
+        },
+        "minRuns": { "type": "number", "exclusiveMinimum": 0 },
+        "retryPolicy": { "type": "string", "minLength": 1 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "scenarioCount",
+        "adapterCount",
+        "totalRuns",
+        "totalPasses",
+        "runWeightedPassRate",
+        "runWeightedPassRateCi95",
+        "reviewRequired",
+        "reviewRecommended",
+        "pairwiseComparisonCount"
+      ],
+      "properties": {
+        "scenarioCount": { "type": "number", "minimum": 0 },
+        "adapterCount": { "type": "number", "minimum": 0 },
+        "totalRuns": { "type": "number", "minimum": 0 },
+        "totalPasses": { "type": "number", "minimum": 0 },
+        "runWeightedPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "runWeightedPassRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "reviewRequired": { "type": "number", "minimum": 0 },
+        "reviewRecommended": { "type": "number", "minimum": 0 },
+        "pairwiseComparisonCount": { "type": "number", "minimum": 0 }
+      }
+    },
+    "adapterSummaries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/adapterSummary" }
+    },
+    "suiteCoverage": { "$ref": "#/$defs/suiteCoverage" },
+    "scenarioResults": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scenarioResult" }
+    },
+    "pairwiseComparisons": {
+      "type": "array",
+      "items": { "type": "object" }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scope", "publishable", "blockers", "advisories"],
+      "properties": {
+        "scope": { "enum": ["suite", "ad_hoc_compare"] },
+        "publishable": { "type": "boolean" },
+        "blockers": { "$ref": "#/$defs/stringArray" },
+        "advisories": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "runPlanPresent",
+        "runPlanWarnings",
+        "artifactValidationErrors",
+        "artifactValidationWarnings",
+        "artifactCompletenessWarnings",
+        "reviewQueueItems",
+        "requiredReviewItems",
+        "recommendedReviewItems"
+      ],
+      "properties": {
+        "runPlanPresent": { "type": "boolean" },
+        "runPlanWarnings": { "$ref": "#/$defs/stringArray" },
+        "artifactValidationErrors": { "type": "number", "minimum": 0 },
+        "artifactValidationWarnings": { "type": "number", "minimum": 0 },
+        "artifactCompletenessWarnings": { "type": "number", "minimum": 0 },
+        "reviewQueueItems": { "type": "number", "minimum": 0 },
+        "requiredReviewItems": { "type": "number", "minimum": 0 },
+        "recommendedReviewItems": { "type": "number", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "confidenceInterval": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["method", "confidenceLevel", "lower", "upper"],
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "confidenceLevel": { "type": "number" },
+        "lower": { "type": "number" },
+        "upper": { "type": "number" }
+      }
+    },
+    "suiteSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "title", "suiteVersion", "scenarioIds", "scenarioVersions", "minRuns", "retryPolicy"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "suiteVersion": { "type": "string", "minLength": 1 },
+        "scenarioIds": { "$ref": "#/$defs/stringArray" },
+        "scenarioVersions": {
+          "type": "object",
+          "additionalProperties": { "type": "string", "minLength": 1 }
+        },
+        "minRuns": { "type": "number", "exclusiveMinimum": 0 },
+        "retryPolicy": { "type": "string", "minLength": 1 }
+      }
+    },
+    "resultArtifact": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["path", "sha256", "scenarioId", "adapter"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "runId": { "type": "string", "minLength": 1 },
+        "sampleId": { "type": "string", "minLength": 1 },
+        "scenarioVersion": { "type": "string", "minLength": 1 },
+        "artifactInventory": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/referencedArtifact" }
+        }
+      }
+    },
+    "referencedArtifact": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name", "path", "available"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "available": { "type": "boolean" },
+        "sizeBytes": { "type": "number", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "error": { "enum": ["missing", "not_file", "unreadable"] }
+      }
+    },
+    "adapterSummary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["adapter", "scenarioCount", "runs", "passes", "runWeightedPassRate", "runWeightedPassRateCi95", "meanScenarioPassRate", "usage", "warnings"],
+      "properties": {
+        "adapter": { "type": "string", "minLength": 1 },
+        "scenarioCount": { "type": "number", "minimum": 0 },
+        "runs": { "type": "number", "minimum": 0 },
+        "passes": { "type": "number", "minimum": 0 },
+        "runWeightedPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "runWeightedPassRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "meanScenarioPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "usage": { "$ref": "#/$defs/usage" },
+        "minRunsSatisfied": { "type": "boolean" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "suiteCoverage": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["expectedScenarios", "coveredScenarios", "missingScenarioIds", "minRunsSatisfied", "adapters"],
+      "properties": {
+        "expectedScenarios": { "type": "number", "minimum": 0 },
+        "coveredScenarios": { "type": "number", "minimum": 0 },
+        "missingScenarioIds": { "$ref": "#/$defs/stringArray" },
+        "minRunsSatisfied": { "type": "boolean" },
+        "adapters": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/suiteCoverageAdapter" }
+        }
+      }
+    },
+    "suiteCoverageAdapter": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["adapter", "expectedScenarios", "coveredScenarios", "missingScenarioIds", "scenarioRuns", "minRunsSatisfied", "warnings"],
+      "properties": {
+        "adapter": { "type": "string", "minLength": 1 },
+        "expectedScenarios": { "type": "number", "minimum": 0 },
+        "coveredScenarios": { "type": "number", "minimum": 0 },
+        "missingScenarioIds": { "$ref": "#/$defs/stringArray" },
+        "scenarioRuns": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0 }
+        },
+        "minRunsSatisfied": { "type": "boolean" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "scenarioResult": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scenarioId", "adapter", "runs", "passes", "passRate", "passRateCi95", "passAtK", "meanScore", "meanScoreCi95", "usage", "reviewRequired", "statisticalWarnings"],
+      "properties": {
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "runs": { "type": "number", "minimum": 0 },
+        "passes": { "type": "number", "minimum": 0 },
+        "passRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "passRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "passAtK": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "meanScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "meanScoreCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "usage": { "$ref": "#/$defs/usage" },
+        "reviewRequired": { "type": "number", "minimum": 0 },
+        "statisticalWarnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["runsWithUsage", "runsWithCost", "runsWithTokens"],
+      "properties": {
+        "runsWithUsage": { "type": "number", "minimum": 0 },
+        "runsWithCost": { "type": "number", "minimum": 0 },
+        "runsWithTokens": { "type": "number", "minimum": 0 },
+        "totalCostUsd": { "type": "number", "minimum": 0 },
+        "meanCostUsd": { "type": "number", "minimum": 0 },
+        "costPerPass": { "type": "number", "minimum": 0 },
+        "totalTokens": { "type": "number", "minimum": 0 },
+        "meanTotalTokens": { "type": "number", "minimum": 0 },
+        "tokensPerPass": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
