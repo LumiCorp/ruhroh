@@ -18,22 +18,22 @@ journeys, transcripts, and claim-readiness blockers behind it.
 
 Open the generated samples:
 
-- [Workflow guide](/ruhroh/samples/ruhroh-workflow.html)
-- [Single-run report](/ruhroh/samples/ruhroh-report.html)
-- [Eval-quality report](/ruhroh/samples/ruhroh-eval-quality.html)
-- [Eval-quality JSON](/ruhroh/samples/ruhroh-eval-quality.json)
-- [Review queue](/ruhroh/samples/ruhroh-review.html)
-- [Review queue JSON](/ruhroh/samples/ruhroh-review.json)
-- [Compare report](/ruhroh/samples/ruhroh-compare.html)
-- [Run plan JSON](/ruhroh/samples/ruhroh-run-plan.json)
-- [Benchmark claim JSON](/ruhroh/samples/benchmark-claim.json)
-- [Benchmark summary JSON](/ruhroh/samples/benchmark-summary.json)
-- [Publish-check JSON](/ruhroh/samples/publish-check.json)
-- [Publication bundle manifest](/ruhroh/samples/ruhroh-publication/manifest.json)
+- [Workflow guide](/samples/ruhroh-workflow.html)
+- [Single-run report](/samples/ruhroh-report.html)
+- [Eval-quality report](/samples/ruhroh-eval-quality.html)
+- [Eval-quality JSON](/samples/ruhroh-eval-quality.json)
+- [Review queue](/samples/ruhroh-review.html)
+- [Review queue JSON](/samples/ruhroh-review.json)
+- [Compare report](/samples/ruhroh-compare.html)
+- [Run plan JSON](/samples/ruhroh-run-plan.json)
+- [Benchmark claim JSON](/samples/benchmark-claim.json)
+- [Benchmark summary JSON](/samples/benchmark-summary.json)
+- [Publish-check JSON](/samples/publish-check.json)
+- [Publication bundle manifest](/samples/ruhroh-publication/manifest.json)
 - `samples/ruhroh-publication/README.md`: bundle-local reviewer map
-- [Publication bundle validation JSON](/ruhroh/samples/publish-bundle-validation.json)
-- [Claim index](/ruhroh/samples/ruhroh-claims.html)
-- [Claim index JSON](/ruhroh/samples/claim-index.json)
+- [Publication bundle validation JSON](/samples/publish-bundle-validation.json)
+- [Claim index](/samples/ruhroh-claims.html)
+- [Claim index JSON](/samples/claim-index.json)
 
 The workflow guide is the lightweight orientation artifact: it shows the current
 stage, next action, checks, commands, and doc pointers from first local fixture

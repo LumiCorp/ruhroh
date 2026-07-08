@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const samplePath = "docs/public/samples";
-const samplePublicPrefix = "/ruhroh/samples/";
+const samplePublicPrefix = "/samples/";
 const cliPath = path.join(repoRoot, "dist", "cli.js");
 
 if (!existsSync(cliPath)) {
@@ -49,6 +49,13 @@ function validateSampleLinks() {
   const errors = [];
   for (const markdownPath of listMarkdownFiles(path.join(repoRoot, "docs"))) {
     const text = readFileSync(markdownPath, "utf8");
+    for (const match of findDeployedSampleLinks(text)) {
+      const relativePath = path.relative(repoRoot, markdownPath);
+      errors.push([
+        `${relativePath}:${lineNumberForIndex(text, match.index)} sample link includes the deployed base path: ${match.href}`,
+        "Use `/samples/...` in docs source; VitePress adds `/ruhroh/` during build.",
+      ].join("\n"));
+    }
     for (const match of findSampleLinks(text)) {
       const targetPath = path.join(repoRoot, "docs", "public", "samples", match.href.slice(samplePublicPrefix.length));
       if (!existsSync(targetPath)) {
@@ -67,6 +74,20 @@ function validateSampleLinks() {
 }
 
 function findSampleLinks(text) {
+  const links = [];
+  const pattern = /\]\((\/samples\/[^)\s]+)\)|href="(\/samples\/[^"]+)"/gu;
+  for (const match of text.matchAll(pattern)) {
+    const rawHref = match[1] ?? match[2];
+    if (rawHref === undefined) {
+      continue;
+    }
+    const href = rawHref.split("#")[0].split("?")[0];
+    links.push({ href: decodeURIComponent(href), index: match.index ?? 0 });
+  }
+  return links;
+}
+
+function findDeployedSampleLinks(text) {
   const links = [];
   const pattern = /\]\((\/ruhroh\/samples\/[^)\s]+)\)|href="(\/ruhroh\/samples\/[^"]+)"/gu;
   for (const match of text.matchAll(pattern)) {
