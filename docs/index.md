@@ -45,12 +45,12 @@ pack and its evidence, not a Harbor task folder alone.
 
 ## See the evidence model
 
-Open the [sample workflow guide](/ruhroh/samples/ruhroh-workflow.html) before running
+Open the [sample workflow guide](/samples/ruhroh-workflow.html) before running
 anything. It shows a complete local fixture path, evaluator calibration, run
 plan, comparison inputs, publication bundle, and claim index in one staged
-artifact. Then inspect the [compare report](/ruhroh/samples/ruhroh-compare.html),
-[publication bundle manifest](/ruhroh/samples/ruhroh-publication/manifest.json), and
-[claim index](/ruhroh/samples/ruhroh-claims.html). The sample is structurally valid but
+artifact. Then inspect the [compare report](/samples/ruhroh-compare.html),
+[publication bundle manifest](/samples/ruhroh-publication/manifest.json), and
+[claim index](/samples/ruhroh-claims.html). The sample is structurally valid but
 not publishable, so the first impression is the core product behavior: every
 score is backed by evidence, and weak claims stay blocked.
 

@@ -37,7 +37,7 @@ suite, and dry-runs the fixture adapter. This is the release-readiness gate for
 `pnpm run docs:samples:check` rebuilds the checked-in report gallery artifacts
 under `docs/public/samples/` from the current `dist/cli.js`. It first fails
 with a direct `pnpm build` reminder when the built CLI is missing, then checks
-that docs links into `/ruhroh/samples/` resolve to generated artifacts, then
+that docs links into `/samples/` resolve to generated artifacts, then
 fails if tracked samples changed or new untracked sample files appeared. The
 failure message points at missing links, stale files, or untracked generated
 files. This keeps the workflow guide, report HTML, publish-check JSON,

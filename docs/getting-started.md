@@ -14,13 +14,13 @@ depends_on:
 If you want to understand Ruhroh before touching your repo, start with the
 generated sample packet:
 
-- [Workflow guide](/ruhroh/samples/ruhroh-workflow.html): the staged path from fixture
+- [Workflow guide](/samples/ruhroh-workflow.html): the staged path from fixture
   readiness to claim publication.
-- [Compare report](/ruhroh/samples/ruhroh-compare.html): aggregate outcomes with
+- [Compare report](/samples/ruhroh-compare.html): aggregate outcomes with
   source artifacts, review state, and readiness blockers.
-- [Publication bundle manifest](/ruhroh/samples/ruhroh-publication/manifest.json): the
+- [Publication bundle manifest](/samples/ruhroh-publication/manifest.json): the
   relocatable evidence packet produced by `publish-check --bundle`.
-- [Claim index](/ruhroh/samples/ruhroh-claims.html): the registry view over bundle
+- [Claim index](/samples/ruhroh-claims.html): the registry view over bundle
   claims.
 
 The sample is intentionally too small to publish. It still validates
