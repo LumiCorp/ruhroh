@@ -22,6 +22,12 @@ Rules:
 - Secrets must be passed through explicit environment allowlists.
 - Dry-run output must print placeholders such as `${OPENAI_API_KEY}`, never
   secret values.
+- Command-backed adapters and evaluators execute without a shell by default.
+  Only set `RUHROH_RUN_AGENT_COMMAND_SHELL=1` or `RUHROH_EVAL_COMMAND_SHELL=1`
+  for trusted wrappers that require shell operators.
+- `ruhroh doctor` includes a `command-safety` check that warns when shell
+  execution is enabled or when a no-shell command string contains operators such
+  as `;`, `&&`, pipes, or redirects that will be treated as literal arguments.
 - Generated Harbor verifiers do not perform app-goal checks.
 - Public agent examples must not require live credentials in default CI.
 

@@ -4,6 +4,31 @@
   "title": "Vite Sprint Planner",
   "tier": "nightly",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Original Ruhroh bundled scenario authored for stateful sprint-planning workflow evaluation.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "hard",
+    "tags": [
+      "vite",
+      "local-app",
+      "productivity"
+    ],
+    "expectedRuntimeSeconds": 900,
+    "networkRationale": "Allows package installation for a Vite app.",
+    "contaminationNotes": "Original product-workflow task with no canonical public solution.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Initial published scenario."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "run": {
     "mode": "build",
@@ -40,6 +65,14 @@
       "Run build/start commands in the eval workspace when practical.",
       "Explore the app workflow as a user: task creation, movement, filtering, risk/decision entry, export/import, and totals.",
       "Use source inspection only to understand behavior when browser exploration is unavailable or incomplete."
+    ],
+    "calibrationCases": [
+      {
+        "id": "starter-template-failure",
+        "inputSummary": "The workspace is still mostly the Vite starter template with no planning board, capacity, risks, decisions, or persistence workflow.",
+        "expectedStatus": "failed",
+        "rationale": "An untouched or lightly renamed starter template does not deliver the requested sprint planner."
+      }
     ]
   }
 }

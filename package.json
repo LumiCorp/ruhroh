@@ -1,7 +1,7 @@
 {
   "name": "@kestrel-agents/ruhroh",
   "version": "0.6.0-beta.0",
-  "description": "Real-User Harness for Repair-Oriented Harbor",
+  "description": "Realistic user-request benchmarks for coding agents",
   "license": "MIT",
   "repository": {
     "type": "git",
@@ -15,8 +15,10 @@
     "ruhroh",
     "harbor",
     "benchmark",
+    "evaluation",
     "agents",
-    "repair",
+    "coding-agents",
+    "outcomes",
     "typescript"
   ],
   "type": "module",
@@ -30,7 +32,16 @@
     "./cli": {
       "types": "./dist/cli.d.ts",
       "import": "./dist/cli.js"
-    }
+    },
+    "./schemas/benchmark-claim-v1.schema.json": "./schemas/benchmark-claim-v1.schema.json",
+    "./schemas/benchmark-summary-v1.schema.json": "./schemas/benchmark-summary-v1.schema.json",
+    "./schemas/eval-result-v1.schema.json": "./schemas/eval-result-v1.schema.json",
+    "./schemas/loop-result-v1.schema.json": "./schemas/loop-result-v1.schema.json",
+    "./schemas/run-manifest-v1.schema.json": "./schemas/run-manifest-v1.schema.json",
+    "./schemas/run-plan-v1.schema.json": "./schemas/run-plan-v1.schema.json",
+    "./schemas/scenario-v2.schema.json": "./schemas/scenario-v2.schema.json",
+    "./schemas/suite-v1.schema.json": "./schemas/suite-v1.schema.json",
+    "./schemas/workspace-summary-v1.schema.json": "./schemas/workspace-summary-v1.schema.json"
   },
   "bin": {
     "ruhroh": "./dist/cli.js"
@@ -41,6 +52,9 @@
     "python/**/*.py",
     "python/**/*.sh",
     "scenarios/**/*",
+    "schemas/**/*",
+    "suites/**/*",
+    "examples/**/*",
     "docs/**/*.md",
     "CHANGELOG.md",
     "README.md",
@@ -55,7 +69,8 @@
   },
   "scripts": {
     "clean": "node --input-type=module -e \"import { rmSync } from 'node:fs'; rmSync('dist', { recursive: true, force: true });\"",
-    "build": "pnpm run clean && tsc -p tsconfig.json",
+    "build": "pnpm run clean && tsc -p tsconfig.json && node --input-type=module -e \"import { chmodSync } from 'node:fs'; chmodSync('dist/cli.js', 0o755);\"",
+    "smoke:package": "node scripts/package-smoke.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",

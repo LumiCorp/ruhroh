@@ -54,3 +54,50 @@ Wrappers may also write `RUHROH_RESULT_PATH` with
 present and maps `goal_satisfied`, `continue`, `cannot_satisfy`,
 `policy_blocked`, `runtime_failure`, and `infra_failure` into the generic
 completion contract.
+
+The result file may include adapter-specific metadata:
+
+```json
+{
+  "version": "ruhroh_run_agent_result_v1",
+  "status": "goal_satisfied",
+  "runId": "agent-run-123",
+  "adapterVersion": "1.4.0",
+  "model": {
+    "provider": "example",
+    "model": "agent-model",
+    "version": "2026-07-07",
+    "promptVersion": "adapter-prompt-v3"
+  },
+  "usage": {
+    "costUsd": 0.42,
+    "inputTokens": 1200,
+    "outputTokens": 800,
+    "totalTokens": 2000
+  },
+  "artifacts": {
+    "transcript": "/path/to/transcript.log"
+  }
+}
+```
+
+Ruhroh copies `adapterVersion`, `model`, and `usage` from the latest command
+result into `ruhroh-run-manifest.json`. These values take precedence over env
+fallbacks for the same run.
+
+For reproducible reports, wrappers or launch scripts may set:
+
+- `RUHROH_RUN_AGENT_ADAPTER_VERSION`
+- `RUHROH_AGENT_PROVIDER`
+- `RUHROH_AGENT_MODEL`
+- `RUHROH_AGENT_MODEL_VERSION`
+- `RUHROH_AGENT_PROMPT_VERSION`
+- `RUHROH_RUN_SEED`
+- `RUHROH_RETRY_POLICY`
+- `RUHROH_COST_USD`
+- `RUHROH_INPUT_TOKENS`
+- `RUHROH_OUTPUT_TOKENS`
+- `RUHROH_TOTAL_TOKENS`
+
+Ruhroh writes these into `ruhroh-run-manifest.json` when present. Secret values
+are not copied into the manifest.

@@ -11,16 +11,17 @@ depends_on:
 
 # Ruhroh Architecture
 
-Ruhroh is the Real-User Harness for Repair-Oriented Harbor. It runs real-user
-task scenarios against coding agents through adapters, preserves the full
+Ruhroh is a focused benchmark framework for realistic user-task evaluation of
+coding agents. It runs scenarios through adapters, preserves the full
 implementation journey, and runs a terminal evaluator over the final delivered
-workspace.
+workspace. Harbor compatibility is the execution substrate, not the benchmark
+boundary.
 
 ## Components
 
-- Ruhroh core: scenario discovery, scenario validation, Harbor task generation,
-  Harbor command construction, artifact naming, result typing, and verdict
-  mapping.
+- Ruhroh core: scenario discovery, scenario and suite validation, Harbor task
+  generation, Harbor command construction, artifact naming, result typing, and
+  verdict mapping.
 - Package Harbor runtime: the installable Python controller used for portable
   custom-shell benchmarks.
 - Run-agent adapter: the agent-specific bridge that starts or continues a
@@ -30,7 +31,8 @@ workspace.
 - Eval-agent: the terminal evaluator that inspects a copied final workspace and
   journey evidence after implementation is complete.
 - Reporting layer: TypeScript helpers and CLI commands that normalize eval
-  output, summarize run artifacts, and aggregate repeated runs.
+  output, summarize run artifacts, validate artifact bundles, aggregate
+  repeated runs, and export publishability evidence.
 
 Kestrel is one reference run-agent adapter. It is not the benchmark itself.
 

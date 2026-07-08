@@ -1,7 +1,7 @@
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { RUHROH_ARTIFACTS, RUHROH_HARBOR_AGENT_IMPORT_PATH } from "./harbor.js";
-import { validateRuhrohScenario } from "./scenarios.js";
+import { lintRuhrohScenarioEvaluationDetailed, validateRuhrohScenario, } from "./scenarios.js";
 export function discoverRuhrohScenarios(scenarioRoot) {
     const root = path.resolve(scenarioRoot);
     if (!existsSync(root)) {
@@ -37,8 +37,9 @@ export function validateRuhrohScenarioSource(input) {
     const source = typeof input === "string" ? scenarioSourceFromDir(path.resolve(input)) : input;
     const errors = [];
     const warnings = [];
+    const warningDetails = [];
     if (!existsSync(source.scenarioPath)) {
-        return { source, errors: [`missing scenario.json at ${source.scenarioPath}`], warnings };
+        return { source, errors: [`missing scenario.json at ${source.scenarioPath}`], warnings, warningDetails };
     }
     let raw;
     try {
@@ -49,6 +50,7 @@ export function validateRuhrohScenarioSource(input) {
             source,
             errors: [`invalid scenario.json: ${error instanceof Error ? error.message : String(error)}`],
             warnings,
+            warningDetails,
         };
     }
     let userPrompt = "";
@@ -70,7 +72,10 @@ export function validateRuhrohScenarioSource(input) {
     catch (error) {
         errors.push(`scenario shape is invalid: ${error instanceof Error ? error.message : String(error)}`);
     }
+    warningDetails.push(...lintRuhrohScenarioEvaluationDetailed(scenario));
+    warnings.push(...warningDetails.map((diagnostic) => diagnostic.message));
     errors.push(...validateDeclaredAssets(raw.assets, source));
+    errors.push(...validateDeclaredAssetPaths(readEvaluationPrivateAssets(raw.evaluation), source, "evaluation.privateAssets"));
     if (scenario.requires?.network === true) {
         warnings.push("requires.network=true will generate Harbor tasks with public network access");
     }
@@ -79,6 +84,7 @@ export function validateRuhrohScenarioSource(input) {
         ...(errors.length === 0 ? { scenario } : {}),
         errors,
         warnings,
+        warningDetails,
     };
 }
 export function generateHarborDataset(input) {
@@ -117,6 +123,7 @@ export function generateHarborTask(input) {
         cpSync(assetsDir, targetAssetsDir, { recursive: true, force: true });
         filesWritten.push(...listFiles(targetAssetsDir));
     }
+    filesWritten.push(...copyPrivateEvaluationAssets(input.scenario, input.scenarioDir, taskDir));
     return { scenarioId: input.scenario.id, taskDir, filesWritten: [...new Set(filesWritten)].sort() };
 }
 function scenarioSourceFromDir(scenarioDir) {
@@ -181,6 +188,39 @@ function renderTaskToml(input) {
         "",
         "[metadata]",
         `scenario_id = ${tomlString(input.scenario.id)}`,
+        ...(input.scenario.metadata?.scenarioVersion === undefined
+            ? []
+            : [`scenario_version = ${tomlString(input.scenario.metadata.scenarioVersion)}`]),
+        ...(input.scenario.metadata?.difficulty === undefined
+            ? []
+            : [`difficulty = ${tomlString(input.scenario.metadata.difficulty)}`]),
+        ...(input.scenario.metadata?.createdAt === undefined
+            ? []
+            : [`created_at = ${tomlString(input.scenario.metadata.createdAt)}`]),
+        ...(input.scenario.metadata?.updatedAt === undefined
+            ? []
+            : [`updated_at = ${tomlString(input.scenario.metadata.updatedAt)}`]),
+        ...(input.scenario.metadata?.provenance === undefined
+            ? []
+            : [`provenance = ${tomlString(input.scenario.metadata.provenance)}`]),
+        ...(input.scenario.metadata?.expectedRuntimeSeconds === undefined
+            ? []
+            : [`expected_runtime_sec = ${input.scenario.metadata.expectedRuntimeSeconds.toFixed(1)}`]),
+        ...(input.scenario.metadata?.visibility === undefined
+            ? []
+            : [`visibility = ${tomlString(input.scenario.metadata.visibility)}`]),
+        ...(input.scenario.metadata?.lifecycle?.status === undefined
+            ? []
+            : [`lifecycle_status = ${tomlString(input.scenario.metadata.lifecycle.status)}`]),
+        ...(input.scenario.metadata?.lifecycle?.replacementId === undefined
+            ? []
+            : [`lifecycle_replacement_id = ${tomlString(input.scenario.metadata.lifecycle.replacementId)}`]),
+        ...(input.scenario.metadata?.tags === undefined
+            ? []
+            : [`tags = ${tomlStringArray(input.scenario.metadata.tags)}`]),
+        ...(input.scenario.run.mode === undefined
+            ? []
+            : [`run_mode = ${tomlString(input.scenario.run.mode)}`]),
         `agent_import_path = ${tomlString(input.agentImportPath ?? RUHROH_HARBOR_AGENT_IMPORT_PATH)}`,
         "",
         "[verifier]",
@@ -204,28 +244,43 @@ function renderTaskToml(input) {
     ].join("\n");
 }
 function validateDeclaredAssets(value, source) {
+    return validateDeclaredAssetPaths(value, source, "assets");
+}
+function readEvaluationPrivateAssets(value) {
+    return isRecord(value) ? value.privateAssets : undefined;
+}
+function validateDeclaredAssetPaths(value, source, field) {
     if (value === undefined) {
         return [];
     }
     if (!Array.isArray(value)) {
-        return ["assets must be an array of relative paths"];
+        return [`${field} must be an array of relative paths`];
     }
     const errors = [];
     for (const asset of value) {
         if (typeof asset !== "string" || asset.trim().length === 0) {
-            errors.push("assets entries must be non-empty relative paths");
+            errors.push(`${field} entries must be non-empty relative paths`);
             continue;
         }
         if (path.isAbsolute(asset) || asset.split(/[\\/]+/u).includes("..")) {
-            errors.push(`asset path must stay inside the scenario directory: ${asset}`);
+            errors.push(`${field} path must stay inside the scenario directory: ${asset}`);
             continue;
         }
         const assetPath = path.resolve(source.scenarioDir, asset);
         if (!existsSync(assetPath)) {
-            errors.push(`declared asset does not exist: ${asset}`);
+            errors.push(field === "assets" ? `declared asset does not exist: ${asset}` : `declared ${field} asset does not exist: ${asset}`);
         }
     }
     return errors;
+}
+function copyPrivateEvaluationAssets(scenario, scenarioDir, taskDir) {
+    return (scenario.evaluation.privateAssets ?? []).flatMap((asset) => {
+        const sourcePath = path.resolve(scenarioDir, asset);
+        const targetPath = path.join(taskDir, "private-eval-assets", asset);
+        mkdirSync(path.dirname(targetPath), { recursive: true });
+        cpSync(sourcePath, targetPath, { recursive: true, force: true });
+        return statSync(targetPath).isDirectory() ? listFiles(targetPath) : [targetPath];
+    });
 }
 function renderGenericVerifier() {
     return `#!/bin/bash

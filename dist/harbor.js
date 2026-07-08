@@ -4,11 +4,13 @@ export const DEFAULT_RUHROH_DATASET_PATH = ".generated/ruhroh/harbor";
 export const RUHROH_HARBOR_AGENT_IMPORT_PATH = "ruhroh.harbor_agent:RuhrohHarborAgent";
 export const RUHROH_ARTIFACTS = [
     "/installed-agent/ruhroh-loop-result.json",
+    "/installed-agent/ruhroh-run-manifest.json",
     "/installed-agent/ruhroh-loop-iterations.jsonl",
     "/installed-agent/ruhroh-loop-journey.json",
     "/installed-agent/ruhroh-loop-eval-input.json",
     "/installed-agent/ruhroh-loop-eval.json",
     "/installed-agent/ruhroh-loop-bridge.jsonl",
+    "/installed-agent/ruhroh-workspace-summary.json",
     "/installed-agent/ruhroh-workspace.tar.gz",
     "/installed-agent/ruhroh-loop-events.tar.gz",
     "/installed-agent/ruhroh-loop-transcripts.tar.gz",
@@ -22,6 +24,22 @@ export function buildRuhrohHarborCommand(input) {
         `RUHROH_EVAL_GOAL_RUBRIC_JSON=${JSON.stringify(input.scenario.evaluation.goalRubric)}`,
         "--agent-env",
         `RUHROH_EVAL_EVIDENCE_GUIDANCE_JSON=${JSON.stringify(input.scenario.evaluation.evidenceGuidance)}`,
+        ...(input.scenario.evaluation.calibrationCases === undefined || input.scenario.evaluation.calibrationCases.length === 0
+            ? []
+            : [
+                "--agent-env",
+                `RUHROH_EVAL_CALIBRATION_CASES_JSON=${JSON.stringify(input.scenario.evaluation.calibrationCases)}`,
+            ]),
+        ...(input.scenario.evaluation.privateAssets === undefined || input.scenario.evaluation.privateAssets.length === 0
+            ? []
+            : [
+                "--agent-env",
+                `RUHROH_EVAL_PRIVATE_ASSETS_JSON=${JSON.stringify(input.scenario.evaluation.privateAssets.map((asset) => path.join(taskPath, "private-eval-assets", asset)))}`,
+            ]),
+    ];
+    const scenarioMetadataEnv = input.scenario.metadata === undefined ? [] : [
+        "--agent-env",
+        `RUHROH_SCENARIO_METADATA_JSON=${JSON.stringify(input.scenario.metadata)}`,
     ];
     return {
         scenarioId: input.scenario.id,
@@ -37,6 +55,8 @@ export function buildRuhrohHarborCommand(input) {
             `RUHROH_MAX_ITERATIONS=${String(input.iterations ?? input.scenario.loop.defaultMaxIterations)}`,
             "--agent-env",
             `RUHROH_RUN_AGENT_ADAPTER=${input.adapter}`,
+            ...(input.scenario.run?.mode === undefined ? [] : ["--agent-env", `RUHROH_RUN_MODE=${input.scenario.run.mode}`]),
+            ...scenarioMetadataEnv,
             ...evaluationEnv,
             ...buildAgentEnvArgs(input.env ?? process.env),
             ...(input.artifacts ?? RUHROH_ARTIFACTS).flatMap((artifact) => ["--artifact", artifact]),

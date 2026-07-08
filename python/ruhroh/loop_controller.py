@@ -2,14 +2,18 @@ from __future__ import annotations
 
 import argparse
 import base64
+import hashlib
 import json
 import os
+import platform
+import shlex
 import shutil
 import subprocess
 import sys
 import tarfile
 import time
 import uuid
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -19,7 +23,14 @@ DEFAULT_DATASET = "ruhroh@local"
 DEFAULT_ADAPTER = "ruhroh-harbor"
 DEFAULT_MAX_ITERATIONS = 3
 SKIP_WORKSPACE_TAR_NAMES = {"node_modules", ".next", "dist", "build", ".git"}
+WORKSPACE_SUMMARY_MAX_FILES = 200
+WORKSPACE_SUMMARY_HASH_MAX_BYTES = 1024 * 1024
 COMPLETION_TERMINAL_FAILURE_REASONS = {"cannot_satisfy", "policy_blocked", "out_of_scope", "runtime_failure", "infra_failure"}
+SCHEMA_BASE_URL = "https://lumicorp.github.io/ruhroh/schemas"
+EVAL_RESULT_SCHEMA_URL = f"{SCHEMA_BASE_URL}/eval-result-v1.schema.json"
+LOOP_RESULT_SCHEMA_URL = f"{SCHEMA_BASE_URL}/loop-result-v1.schema.json"
+RUN_MANIFEST_SCHEMA_URL = f"{SCHEMA_BASE_URL}/run-manifest-v1.schema.json"
+WORKSPACE_SUMMARY_SCHEMA_URL = f"{SCHEMA_BASE_URL}/workspace-summary-v1.schema.json"
 
 
 def main() -> int:
@@ -52,15 +63,19 @@ def run_ruhroh_trial(
     installed_dir: Path,
 ) -> dict[str, Any]:
     started_at = time.monotonic()
+    started_at_wall = utc_now()
+    ruhroh_run_id = f"{scenario_id}-{uuid.uuid4().hex[:12]}"
     installed_dir.mkdir(parents=True, exist_ok=True)
     workspace_root.mkdir(parents=True, exist_ok=True)
     run_root = installed_dir / "ruhroh-loop"
     run_root.mkdir(parents=True, exist_ok=True)
     runs_path = installed_dir / "ruhroh-loop-iterations.jsonl"
+    manifest_path = installed_dir / "ruhroh-run-manifest.json"
     journey_path = installed_dir / "ruhroh-loop-journey.json"
     eval_result_path = installed_dir / "ruhroh-loop-eval.json"
     eval_input_path = installed_dir / "ruhroh-loop-eval-input.json"
     result_path = installed_dir / "ruhroh-loop-result.json"
+    workspace_summary_path = installed_dir / "ruhroh-workspace-summary.json"
     workspace_tarball_path = installed_dir / "ruhroh-workspace.tar.gz"
     events_tarball_path = installed_dir / "ruhroh-loop-events.tar.gz"
     transcripts_tarball_path = installed_dir / "ruhroh-loop-transcripts.tar.gz"
@@ -131,6 +146,7 @@ def run_ruhroh_trial(
             eval_input_path=eval_input_path,
             eval_output_path=eval_result_path,
         )
+        write_workspace_summary(workspace_root, workspace_summary_path)
         write_workspace_tarball(workspace_root, workspace_tarball_path)
         adapter_artifact_paths = run_agent_manifest.get("artifactPaths") if isinstance(run_agent_manifest.get("artifactPaths"), dict) else {}
         event_log_dir = Path(str(adapter_artifact_paths.get("eventLogDir") or run_root / "events"))
@@ -139,8 +155,42 @@ def run_ruhroh_trial(
         write_directory_tarball(transcript_dir, transcripts_tarball_path)
 
         verdict = derive_final_verdict(implementation_runs, eval_result)
+        duration_ms = round((time.monotonic() - started_at) * 1000)
+        artifact_paths = {
+            "result": str(result_path),
+            "runManifest": str(manifest_path),
+            "implementationRuns": str(runs_path),
+            "journey": str(journey_path),
+            "evalResult": str(eval_result_path),
+            "evalInput": str(eval_input_path),
+            "bridgeLog": str(adapter_artifact_paths.get("bridgeLogPath", "")),
+            "workspaceSummary": str(workspace_summary_path),
+            "workspaceTarball": str(workspace_tarball_path),
+            "eventsTarball": str(events_tarball_path),
+            "transcriptsTarball": str(transcripts_tarball_path),
+            "evalWorkspace": str(eval_workspace_root),
+        }
+        run_manifest = build_run_manifest(
+            ruhroh_run_id=ruhroh_run_id,
+            scenario_id=scenario_id,
+            started_at=started_at_wall,
+            duration_ms=duration_ms,
+            max_iterations=max_iterations,
+            implementation_stopped_reason=implementation_stopped_reason,
+            implementation_runs=implementation_runs,
+            run_agent_manifest=run_agent_manifest,
+            adapter=adapter,
+            session_handle=session_handle,
+            eval_result=eval_result,
+            workspace_root=workspace_root,
+            eval_workspace_root=eval_workspace_root,
+            artifact_paths=artifact_paths,
+        )
+        manifest_path.write_text(json.dumps(run_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         final_result = {
+            "$schema": LOOP_RESULT_SCHEMA_URL,
             "version": "ruhroh_loop_result_v1",
+            "runId": ruhroh_run_id,
             "adapter": result_adapter(),
             "dataset": result_dataset(),
             "scenarioId": scenario_id,
@@ -153,7 +203,8 @@ def run_ruhroh_trial(
             "implementationIterationsUsed": len(implementation_runs),
             "implementationStoppedReason": implementation_stopped_reason,
             "stoppedReason": implementation_stopped_reason,
-            "duration_ms": round((time.monotonic() - started_at) * 1000),
+            "duration_ms": duration_ms,
+            "runManifest": run_manifest,
             "runAgent": run_agent_manifest,
             "runAgentAdapterId": adapter.id,
             "continuityLevel": adapter.continuity_level,
@@ -161,25 +212,46 @@ def run_ruhroh_trial(
             "runIds": run_agent_manifest.get("runIds", []),
             "implementationRuns": implementation_runs,
             "evalResult": eval_result,
-            "artifactPaths": {
-                "result": str(result_path),
-                "implementationRuns": str(runs_path),
-                "journey": str(journey_path),
-                "evalResult": str(eval_result_path),
-                "evalInput": str(eval_input_path),
-                "bridgeLog": str(adapter_artifact_paths.get("bridgeLogPath", "")),
-                "workspaceTarball": str(workspace_tarball_path),
-                "eventsTarball": str(events_tarball_path),
-                "transcriptsTarball": str(transcripts_tarball_path),
-                "evalWorkspace": str(eval_workspace_root),
-            },
+            "artifactPaths": artifact_paths,
         }
         final_result.update(adapter.legacy_result_fields(run_agent_manifest))
         result_path.write_text(json.dumps(final_result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return final_result
     except Exception as error:
+        duration_ms = round((time.monotonic() - started_at) * 1000)
+        try:
+            write_workspace_summary(workspace_root, workspace_summary_path)
+        except Exception:
+            pass
+        artifact_paths = {
+            "result": str(result_path),
+            "runManifest": str(manifest_path),
+            "implementationRuns": str(runs_path),
+            "journey": str(journey_path),
+            "workspaceSummary": str(workspace_summary_path),
+        }
+        run_manifest = build_run_manifest(
+            ruhroh_run_id=ruhroh_run_id,
+            scenario_id=scenario_id,
+            started_at=started_at_wall,
+            duration_ms=duration_ms,
+            max_iterations=max_iterations,
+            implementation_stopped_reason="exception",
+            implementation_runs=implementation_runs,
+            run_agent_manifest=run_agent_manifest,
+            adapter=adapter,
+            session_handle=session_handle,
+            eval_result=None,
+            workspace_root=workspace_root,
+            eval_workspace_root=eval_workspace_root,
+            artifact_paths=artifact_paths,
+            failure_details={"message": str(error), "type": type(error).__name__},
+        )
+        manifest_path.write_text(json.dumps(run_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         final_result = {
+            "$schema": LOOP_RESULT_SCHEMA_URL,
             "version": "ruhroh_loop_result_v1",
+            "runId": ruhroh_run_id,
             "adapter": result_adapter(),
             "dataset": result_dataset(),
             "scenarioId": scenario_id,
@@ -192,7 +264,8 @@ def run_ruhroh_trial(
             "implementationIterationsUsed": len(implementation_runs),
             "implementationStoppedReason": "exception",
             "stoppedReason": "exception",
-            "duration_ms": round((time.monotonic() - started_at) * 1000),
+            "duration_ms": duration_ms,
+            "runManifest": run_manifest,
             "runAgent": run_agent_manifest,
             "runAgentAdapterId": adapter.id,
             "continuityLevel": adapter.continuity_level,
@@ -200,6 +273,7 @@ def run_ruhroh_trial(
             "runIds": run_agent_manifest.get("runIds", []),
             "implementationRuns": implementation_runs,
             "failure_details": {"message": str(error), "type": type(error).__name__},
+            "artifactPaths": artifact_paths,
         }
         final_result.update(adapter.legacy_result_fields(run_agent_manifest))
         result_path.write_text(json.dumps(final_result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -233,8 +307,12 @@ class RunAgentAdapter:
         raise NotImplementedError
 
     def collect_artifacts(self) -> dict[str, Any]:
+        adapter_version = latest_turn_string(self.turns, "adapterVersion")
+        model = latest_turn_record(self.turns, "model")
+        usage = latest_turn_record(self.turns, "usage")
         return {
             "adapterId": self.id,
+            **({"adapterVersion": adapter_version} if adapter_version is not None else {}),
             "continuityLevel": self.continuity_level,
             "sessionHandle": self.session_handle,
             "runIds": [
@@ -252,6 +330,8 @@ class RunAgentAdapter:
                 for turn in self.turns
                 if isinstance(turn.get("eventLogPath"), str)
             ],
+            **({"model": model} if model is not None else {}),
+            **({"usage": usage} if usage is not None else {}),
             "artifactPaths": {},
         }
 
@@ -312,14 +392,14 @@ class CommandRunAgentAdapter(RunAgentAdapter):
             "RUHROH_ADAPTER_ID": self.id,
         }
         completed = subprocess.run(
-            command,
+            command_args(command, shell_env_key=f"{self.command_env_key}_SHELL"),
             cwd=str(self.workspace_root),
             env=env,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=read_iteration_timeout_sec(),
-            shell=True,
+            shell=command_shell_enabled(f"{self.command_env_key}_SHELL"),
         )
         transcript_path.write_text(completed.stdout, encoding="utf-8")
         parsed_result = read_json_file(result_path)
@@ -335,6 +415,9 @@ class CommandRunAgentAdapter(RunAgentAdapter):
             "failureKind": "none" if status == "completed" else "custom_shell_failed",
             "sessionHandle": self.session_handle,
             "runId": parsed_result.get("runId") if isinstance(parsed_result.get("runId"), str) else f"{self.session_handle}-{iteration}",
+            "adapterVersion": parsed_result.get("adapterVersion") if isinstance(parsed_result.get("adapterVersion"), str) else None,
+            "model": parsed_result.get("model") if isinstance(parsed_result.get("model"), dict) else None,
+            "usage": parsed_result.get("usage") if isinstance(parsed_result.get("usage"), dict) else None,
             "threadId": parsed_result.get("threadId") if isinstance(parsed_result.get("threadId"), str) else None,
             "eventLogPath": parsed_result.get("eventLogPath") if isinstance(parsed_result.get("eventLogPath"), str) else None,
             "jobInputPath": parsed_result.get("jobInputPath") if isinstance(parsed_result.get("jobInputPath"), str) else None,
@@ -429,7 +512,7 @@ def build_run_agent_adapter(
 
 
 def read_run_agent_adapter() -> str:
-    return os.environ.get("RUHROH_RUN_AGENT_ADAPTER") or os.environ.get("RUHROH_RUN_AGENT_ADAPTER") or "custom-shell"
+    return os.environ.get("RUHROH_RUN_AGENT_ADAPTER") or "custom-shell"
 
 
 def completion_evidence_for_turn(turn_result: dict[str, Any]) -> list[dict[str, str]]:
@@ -472,6 +555,22 @@ def build_implementation_run_record_from_turn(turn_result: dict[str, Any], compl
         if value is not None:
             record[key] = value
     return record
+
+
+def latest_turn_string(turns: list[dict[str, Any]], key: str) -> str | None:
+    for turn in reversed(turns):
+        value = turn.get(key)
+        if isinstance(value, str) and value.strip():
+            return value
+    return None
+
+
+def latest_turn_record(turns: list[dict[str, Any]], key: str) -> dict[str, Any] | None:
+    for turn in reversed(turns):
+        value = turn.get(key)
+        if isinstance(value, dict) and value:
+            return value
+    return None
 
 
 def build_iteration_message(
@@ -543,14 +642,14 @@ def run_eval_agent(
             "RUHROH_EVAL_OUTPUT_PATH": str(eval_output_path),
         }
         completed = subprocess.run(
-            command,
+            command_args(command, shell_env_key="RUHROH_EVAL_COMMAND_SHELL"),
             cwd=str(eval_workspace_root),
             env=env,
             text=True,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             timeout=int(os.environ.get("RUHROH_EVAL_TIMEOUT_SEC", "300")),
-            shell=True,
+            shell=command_shell_enabled("RUHROH_EVAL_COMMAND_SHELL"),
         )
         if completed.returncode != 0:
             return synthetic_eval_infra_failure(
@@ -604,6 +703,8 @@ def build_eval_input(
         "scenarioContext": read_json_env_array("RUHROH_EVAL_SCENARIO_CONTEXT_JSON"),
         "goalRubric": read_json_env_array("RUHROH_EVAL_GOAL_RUBRIC_JSON"),
         "evidenceGuidance": read_json_env_array("RUHROH_EVAL_EVIDENCE_GUIDANCE_JSON"),
+        "calibrationCases": read_json_env_object_array("RUHROH_EVAL_CALIBRATION_CASES_JSON"),
+        "privateAssets": read_json_env_array("RUHROH_EVAL_PRIVATE_ASSETS_JSON"),
     }
 
 
@@ -620,11 +721,25 @@ def read_json_env_array(key: str) -> list[str]:
     return [item for item in parsed if isinstance(item, str)]
 
 
+def read_json_env_object_array(key: str) -> list[dict[str, Any]]:
+    raw = os.environ.get(key)
+    if not raw:
+        return []
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return []
+    if not isinstance(parsed, list):
+        return []
+    return [item for item in parsed if isinstance(item, dict)]
+
+
 def normalize_eval_result(result: dict[str, Any]) -> dict[str, Any]:
     status = result.get("status")
     if status not in {"passed", "failed", "review", "infra_failed"}:
         status = "infra_failed"
     normalized = {
+        "$schema": EVAL_RESULT_SCHEMA_URL,
         "version": "ruhroh_eval_result_v1",
         "status": status,
         "goalMet": bool(result.get("goalMet")) if isinstance(result.get("goalMet"), bool) else status == "passed",
@@ -636,7 +751,7 @@ def normalize_eval_result(result: dict[str, Any]) -> dict[str, Any]:
         "artifacts": string_record(result.get("artifacts")),
         "finalSummary": result.get("finalSummary") if isinstance(result.get("finalSummary"), str) else f"Eval-agent status: {status}.",
     }
-    for key in ("repairBrief", "criteriaResults", "subscores", "judge"):
+    for key in ("repairBrief", "criteriaResults", "subscores", "judge", "judgeVotes", "judgeAgreement"):
         if key in result:
             normalized[key] = result[key]
     return normalized
@@ -704,6 +819,7 @@ def synthetic_eval_infra_failure(
     diagnostics: str,
 ) -> dict[str, Any]:
     result = {
+        "$schema": EVAL_RESULT_SCHEMA_URL,
         "version": "ruhroh_eval_result_v1",
         "status": "infra_failed",
         "goalMet": False,
@@ -754,12 +870,373 @@ def write_workspace_tarball(workspace_root: Path, output_path: Path) -> None:
             tar.add(path, arcname=str(path.relative_to(workspace_root)))
 
 
+def write_workspace_summary(workspace_root: Path, output_path: Path) -> None:
+    summary = summarize_workspace(workspace_root)
+    output_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def summarize_workspace(workspace_root: Path) -> dict[str, Any]:
+    top_level_entries: list[dict[str, Any]] = []
+    sample_files: list[dict[str, Any]] = []
+    project_markers: list[str] = []
+    total_files = 0
+    total_directories = 0
+    total_bytes = 0
+    skipped_paths = 0
+    unreadable_paths = 0
+    marker_names = {
+        "package.json",
+        "pnpm-lock.yaml",
+        "package-lock.json",
+        "yarn.lock",
+        "pyproject.toml",
+        "requirements.txt",
+        "Cargo.toml",
+        "go.mod",
+        "README.md",
+        "index.html",
+        "vite.config.ts",
+        "next.config.js",
+        "tsconfig.json",
+    }
+    if not workspace_root.exists():
+        return {
+            "$schema": WORKSPACE_SUMMARY_SCHEMA_URL,
+            "version": "ruhroh_workspace_summary_v1",
+            "generatedAt": utc_now(),
+            "workspaceRoot": str(workspace_root),
+            "exists": False,
+            "totalFiles": 0,
+            "totalDirectories": 0,
+            "totalBytes": 0,
+            "topLevelEntries": [],
+            "projectMarkers": [],
+            "sampleFiles": [],
+            "truncated": False,
+        }
+
+    for child in sorted(workspace_root.iterdir(), key=lambda item: item.name):
+        try:
+            top_level_entries.append({
+                "path": child.name,
+                "type": "directory" if child.is_dir() else "file",
+            })
+        except OSError:
+            unreadable_paths += 1
+
+    for path in sorted(workspace_root.rglob("*"), key=lambda item: str(item.relative_to(workspace_root))):
+        relative = path.relative_to(workspace_root)
+        if any(part in SKIP_WORKSPACE_TAR_NAMES for part in relative.parts):
+            skipped_paths += 1
+            continue
+        try:
+            if path.is_dir():
+                total_directories += 1
+                continue
+            if not path.is_file():
+                continue
+            stat = path.stat()
+            total_files += 1
+            total_bytes += stat.st_size
+            relative_text = str(relative)
+            if path.name in marker_names:
+                project_markers.append(relative_text)
+            if len(sample_files) < WORKSPACE_SUMMARY_MAX_FILES:
+                file_summary: dict[str, Any] = {
+                    "path": relative_text,
+                    "sizeBytes": stat.st_size,
+                }
+                if stat.st_size <= WORKSPACE_SUMMARY_HASH_MAX_BYTES:
+                    file_summary["sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
+                sample_files.append(file_summary)
+        except OSError:
+            unreadable_paths += 1
+
+    return {
+        "$schema": WORKSPACE_SUMMARY_SCHEMA_URL,
+        "version": "ruhroh_workspace_summary_v1",
+        "generatedAt": utc_now(),
+        "workspaceRoot": str(workspace_root),
+        "exists": True,
+        "totalFiles": total_files,
+        "totalDirectories": total_directories,
+        "totalBytes": total_bytes,
+        "topLevelEntries": top_level_entries[:100],
+        "projectMarkers": sorted(project_markers),
+        "sampleFiles": sample_files,
+        "truncated": total_files > len(sample_files),
+        "skippedPaths": skipped_paths,
+        "unreadablePaths": unreadable_paths,
+    }
+
+
 def write_directory_tarball(directory: Path, output_path: Path) -> None:
     with tarfile.open(output_path, "w:gz") as tar:
         if not directory.exists():
             return
         for path in directory.rglob("*"):
             tar.add(path, arcname=str(path.relative_to(directory)))
+
+
+def build_run_manifest(
+    *,
+    ruhroh_run_id: str,
+    scenario_id: str,
+    started_at: str,
+    duration_ms: int,
+    max_iterations: int,
+    implementation_stopped_reason: str,
+    implementation_runs: list[dict[str, Any]],
+    run_agent_manifest: dict[str, Any],
+    adapter: RunAgentAdapter,
+    session_handle: str,
+    eval_result: dict[str, Any] | None,
+    workspace_root: Path,
+    eval_workspace_root: Path,
+    artifact_paths: dict[str, str],
+    failure_details: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    scenario_metadata = read_json_env_object("RUHROH_SCENARIO_METADATA_JSON")
+    manifest: dict[str, Any] = {
+        "$schema": RUN_MANIFEST_SCHEMA_URL,
+        "version": "ruhroh_run_manifest_v1",
+        "runId": ruhroh_run_id,
+        "scenario": {
+            "id": scenario_id,
+            **({"metadata": scenario_metadata} if scenario_metadata else {}),
+            **({"scenarioVersion": scenario_metadata["scenarioVersion"]} if isinstance(scenario_metadata.get("scenarioVersion"), str) else {}),
+            **({"runMode": optional_env("RUHROH_RUN_MODE")} if optional_env("RUHROH_RUN_MODE") else {}),
+        },
+        "benchmark": {
+            "dataset": result_dataset(),
+            "adapter": result_adapter(),
+            "harborAgent": DEFAULT_ADAPTER,
+        },
+        "timing": {
+            "startedAt": started_at,
+            "endedAt": utc_now(),
+            "durationMs": duration_ms,
+        },
+        "loop": {
+            "maxIterations": max_iterations,
+            "implementationIterationsUsed": len(implementation_runs),
+            "stoppedReason": implementation_stopped_reason,
+        },
+        "sample": without_none_values({
+            "id": optional_env("RUHROH_SAMPLE_ID"),
+            "index": integer_env("RUHROH_RUN_INDEX"),
+            "count": integer_env("RUHROH_RUN_COUNT"),
+            "seed": optional_env("RUHROH_SAMPLE_SEED") or optional_env("RUHROH_RUN_SEED"),
+        }),
+        "runAgent": without_none_values({
+            "adapterId": adapter.id,
+            "adapterVersion": run_agent_manifest.get("adapterVersion") if isinstance(run_agent_manifest.get("adapterVersion"), str) else optional_env("RUHROH_RUN_AGENT_ADAPTER_VERSION"),
+            "continuityLevel": adapter.continuity_level,
+            "sessionHandle": session_handle,
+            "runIds": run_agent_manifest.get("runIds", []),
+            "model": run_agent_manifest.get("model") if isinstance(run_agent_manifest.get("model"), dict) else model_manifest(prefix="RUHROH_AGENT"),
+            "usage": run_agent_manifest.get("usage") if isinstance(run_agent_manifest.get("usage"), dict) else None,
+            "command": command_manifest("RUHROH_RUN_AGENT_COMMAND"),
+        }),
+        "evaluator": without_none_values({
+            "command": command_manifest("RUHROH_EVAL_COMMAND"),
+            "fixtureConfigured": bool(os.environ.get("RUHROH_EVAL_RESULT_FIXTURE") or os.environ.get("RUHROH_EVAL_RESULT_FIXTURE_PATH")),
+            "inputSummary": evaluator_input_summary(),
+            "judge": eval_result.get("judge") if isinstance(eval_result, dict) and isinstance(eval_result.get("judge"), dict) else None,
+            "model": model_manifest(prefix="RUHROH_EVAL"),
+        }),
+        "environment": without_none_values({
+            "fingerprint": environment_fingerprint(),
+            "pythonVersion": platform.python_version(),
+            "platform": platform.platform(),
+            "system": platform.system(),
+            "machine": platform.machine(),
+            "containerImage": optional_env("RUHROH_CONTAINER_IMAGE"),
+            "runIndex": integer_env("RUHROH_RUN_INDEX"),
+            "runCount": integer_env("RUHROH_RUN_COUNT"),
+            "workspaceRoot": str(workspace_root),
+            "evalWorkspaceRoot": str(eval_workspace_root),
+        }),
+        "env": {
+            "forwardedKeys": forwarded_env_keys(),
+            "secretKeysPresent": secret_env_keys_present(),
+            "runtime": runtime_env_manifest(),
+        },
+        "usage": usage_manifest(run_agent_manifest.get("usage") if isinstance(run_agent_manifest.get("usage"), dict) else None),
+        "artifactPaths": artifact_paths,
+    }
+    if failure_details is not None:
+        manifest["failureDetails"] = failure_details
+    return without_none_values(manifest)
+
+
+def utc_now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def evaluator_input_summary() -> dict[str, Any]:
+    private_assets = read_json_env_array("RUHROH_EVAL_PRIVATE_ASSETS_JSON")
+    return {
+        "scenarioContextCount": len(read_json_env_array("RUHROH_EVAL_SCENARIO_CONTEXT_JSON")),
+        "goalRubricCount": len(read_json_env_array("RUHROH_EVAL_GOAL_RUBRIC_JSON")),
+        "evidenceGuidanceCount": len(read_json_env_array("RUHROH_EVAL_EVIDENCE_GUIDANCE_JSON")),
+        "calibrationCaseCount": len(read_json_env_object_array("RUHROH_EVAL_CALIBRATION_CASES_JSON")),
+        "privateAssetCount": len(private_assets),
+        "privateAssetPathHashes": [hash_text(asset) for asset in private_assets],
+    }
+
+
+def hash_text(value: str) -> str:
+    return hashlib.sha256(value.encode("utf-8")).hexdigest()
+
+
+def optional_env(key: str) -> str | None:
+    value = os.environ.get(key)
+    return value if value not in (None, "") else None
+
+
+def read_json_env_object(key: str) -> dict[str, Any]:
+    raw = os.environ.get(key)
+    if not raw:
+        return {}
+    try:
+        parsed = json.loads(raw)
+    except json.JSONDecodeError:
+        return {}
+    return parsed if isinstance(parsed, dict) else {}
+
+
+def command_manifest(env_key: str) -> dict[str, Any]:
+    command = os.environ.get(env_key)
+    if command is None or command.strip() == "":
+        return {"configured": False}
+    return {
+        "configured": True,
+        "envKey": env_key,
+        "sha256": hashlib.sha256(command.encode("utf-8")).hexdigest(),
+        "shellEnabled": command_shell_enabled(f"{env_key}_SHELL"),
+    }
+
+
+def command_shell_enabled(env_key: str) -> bool:
+    return str(os.environ.get(env_key, "")).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def command_args(command: str, *, shell_env_key: str) -> str | list[str]:
+    stripped = command.strip()
+    if command_shell_enabled(shell_env_key):
+        return stripped
+    if Path(stripped).exists():
+        return [stripped]
+    try:
+        args = shlex.split(stripped)
+    except ValueError as error:
+        raise RuntimeError(f"Invalid command syntax for no-shell execution: {error}") from error
+    if len(args) == 0:
+        raise RuntimeError("Command cannot be empty")
+    return args
+
+
+def model_manifest(*, prefix: str) -> dict[str, Any]:
+    provider = optional_env(f"{prefix}_PROVIDER") or optional_env("RUHROH_MODEL_PROVIDER") or optional_env("KCHAT_MODEL_PROVIDER")
+    model = optional_env(f"{prefix}_MODEL") or optional_env("RUHROH_MODEL") or optional_env("KCHAT_MODEL")
+    return without_none_values({
+        "provider": provider,
+        "model": model,
+        "version": optional_env(f"{prefix}_MODEL_VERSION"),
+        "promptVersion": optional_env(f"{prefix}_PROMPT_VERSION") or optional_env("RUHROH_PROMPT_VERSION"),
+    })
+
+
+def usage_manifest(adapter_usage: dict[str, Any] | None = None) -> dict[str, Any]:
+    return without_none_values({
+        "costUsd": nonnegative_number_field(adapter_usage, "costUsd") if adapter_usage is not None and nonnegative_number_field(adapter_usage, "costUsd") is not None else numeric_env("RUHROH_COST_USD"),
+        "inputTokens": nonnegative_integer_field(adapter_usage, "inputTokens") if adapter_usage is not None and nonnegative_integer_field(adapter_usage, "inputTokens") is not None else integer_env("RUHROH_INPUT_TOKENS"),
+        "outputTokens": nonnegative_integer_field(adapter_usage, "outputTokens") if adapter_usage is not None and nonnegative_integer_field(adapter_usage, "outputTokens") is not None else integer_env("RUHROH_OUTPUT_TOKENS"),
+        "totalTokens": nonnegative_integer_field(adapter_usage, "totalTokens") if adapter_usage is not None and nonnegative_integer_field(adapter_usage, "totalTokens") is not None else integer_env("RUHROH_TOTAL_TOKENS"),
+    })
+
+
+def runtime_env_manifest() -> dict[str, str]:
+    output: dict[str, str] = {}
+    for key in (
+        "RUHROH_RUN_SEED",
+        "RUHROH_RUN_INDEX",
+        "RUHROH_RUN_COUNT",
+        "RUHROH_RETRY_POLICY",
+        "RUHROH_MAX_ITERATIONS",
+        "RUHROH_ITERATION_TIMEOUT_SEC",
+        "RUHROH_AGENT_TIMEOUT_SEC",
+        "RUHROH_EVAL_TIMEOUT_SEC",
+    ):
+        value = os.environ.get(key)
+        if value not in (None, ""):
+            output[key] = value
+    return output
+
+
+def environment_fingerprint() -> dict[str, Any]:
+    components = without_none_values({
+        "pythonVersion": platform.python_version(),
+        "platform": platform.platform(),
+        "system": platform.system(),
+        "machine": platform.machine(),
+        "containerImage": optional_env("RUHROH_CONTAINER_IMAGE"),
+    })
+    canonical = json.dumps(components, sort_keys=True, separators=(",", ":"))
+    return {
+        "method": "sha256",
+        "sha256": hashlib.sha256(canonical.encode("utf-8")).hexdigest(),
+        "components": components,
+    }
+
+
+def forwarded_env_keys() -> list[str]:
+    prefixes = ("OPENAI_", "OPENROUTER_", "ANTHROPIC_", "TAVILY_", "KCHAT_", "RUHROH_")
+    return sorted(key for key in os.environ if key.startswith(prefixes))
+
+
+def secret_env_keys_present() -> list[str]:
+    secret_markers = ("API_KEY", "ACCESS_TOKEN", "AUTH_TOKEN", "BEARER_TOKEN", "SECRET", "PASSWORD")
+    return sorted(key for key in os.environ if any(marker in key for marker in secret_markers))
+
+
+def numeric_env(key: str) -> float | None:
+    value = os.environ.get(key)
+    if value in (None, ""):
+        return None
+    try:
+        return float(value)
+    except ValueError:
+        return None
+
+
+def nonnegative_number_field(record: dict[str, Any], key: str) -> float | int | None:
+    value = record.get(key)
+    if isinstance(value, (int, float)) and not isinstance(value, bool) and value >= 0:
+        return value
+    return None
+
+
+def nonnegative_integer_field(record: dict[str, Any], key: str) -> int | None:
+    value = record.get(key)
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+        return value
+    return None
+
+
+def integer_env(key: str) -> int | None:
+    value = os.environ.get(key)
+    if value in (None, ""):
+        return None
+    try:
+        return int(value)
+    except ValueError:
+        return None
+
+
+def without_none_values(value: dict[str, Any]) -> dict[str, Any]:
+    return {key: item for key, item in value.items() if item is not None}
 
 
 def append_jsonl(path: Path, value: dict[str, Any]) -> None:

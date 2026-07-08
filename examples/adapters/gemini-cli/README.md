@@ -36,6 +36,8 @@ export GEMINI_CLI_BIN=/path/to/gemini
 - Gemini CLI credentials/configuration required by your Gemini installation.
 - `RUHROH_RUN_AGENT_COMMAND=examples/adapters/gemini-cli/run.sh`
 - `RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line`
+- Optional: `GEMINI_MODEL` and `GEMINI_CLI_ADAPTER_VERSION` for run-manifest
+  metadata.
 
 ## Run
 

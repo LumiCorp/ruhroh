@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: Ruhroh
-  text: Real-user tasks for coding-agent evaluation.
-  tagline: Generate Harbor-compatible benchmark tasks from realistic user scenarios, run agents through adapters, and judge delivered outcomes.
+  text: Realistic user-task benchmarks for coding agents.
+  tagline: Run agents through adapters, preserve their implementation journeys, and compare delivered outcomes with auditable evidence.
   image:
     light: /ruhroh-logo.png
     dark: /ruhroh-logo-dark.png
@@ -25,8 +25,8 @@ features:
     details: Evaluate finished workspaces and full implementation journeys instead of brittle source-text heuristics.
   - title: Agent-agnostic
     details: Bring your own run-agent adapter. Ruhroh owns scenarios, generation, runtime contracts, and artifacts.
-  - title: Harbor-compatible
-    details: Generate repeatable local Harbor task directories from portable JSON scenarios.
+  - title: Publishable claims
+    details: Compare repeated runs with suites, run plans, artifact validation, confidence intervals, pass@k, and readiness gates.
 ---
 
 ## First commands
@@ -39,3 +39,5 @@ pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --
 
 Ruhroh is for benchmark authors who want tasks that behave more like real user
 requests: goals, constraints, assets, iteration evidence, and outcome judgment.
+It remains Harbor-compatible, but the user-facing contract is the benchmark
+pack and its evidence, not a Harbor task folder alone.

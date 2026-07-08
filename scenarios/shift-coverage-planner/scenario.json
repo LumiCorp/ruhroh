@@ -4,6 +4,30 @@
   "title": "Shift Coverage Planner",
   "tier": "nightly",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Original Ruhroh bundled scenario authored around synthetic shift-coverage planning fixtures.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "expert",
+    "tags": [
+      "local-app",
+      "scheduling",
+      "data-assets"
+    ],
+    "expectedRuntimeSeconds": 900,
+    "contaminationNotes": "Original scheduling workflow with bundled private fixture assets.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Initial published scenario."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "assets": [
     "assets/prompt-assets/shift-coverage"
@@ -42,6 +66,14 @@
       "Inspect the final workspace, the copied prompt assets, and the implementation choices before judging.",
       "Run local commands or start the app in the eval workspace when that is the most direct way to verify the delivered behavior.",
       "Do not require a specific framework, route path, source filename, or build command unless the user goal itself made that explicit."
+    ],
+    "calibrationCases": [
+      {
+        "id": "asset-ignored-failure",
+        "inputSummary": "The app shows a generic schedule grid but does not use the provided employee, time-off, requirement, or existing-schedule assets.",
+        "expectedStatus": "failed",
+        "rationale": "Using the supplied shift-coverage data is required to judge coverage gaps and conflicts."
+      }
     ]
   }
 }

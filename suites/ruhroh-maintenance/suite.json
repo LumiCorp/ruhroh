@@ -1,0 +1,45 @@
+{
+  "version": "ruhroh_suite_v1",
+  "id": "ruhroh-maintenance",
+  "title": "Ruhroh Maintenance",
+  "suiteVersion": "1.0.0",
+  "description": "Maintenance-oriented coding-agent tasks focused on local app repair, operational polish, and durable user workflows.",
+  "scenarioIds": [
+    "nextjs-task-board",
+    "vite-csv-reconciliation",
+    "shift-coverage-planner"
+  ],
+  "scenarioVersions": {
+    "nextjs-task-board": "1.0.0",
+    "vite-csv-reconciliation": "1.0.0",
+    "shift-coverage-planner": "1.0.0"
+  },
+  "methodology": {
+    "minRuns": 10,
+    "aggregationUnit": "scenario_adapter",
+    "reportPolicy": "pass_rate_ci_pass_at_k",
+    "confidenceLevel": 0.95,
+    "retryPolicy": "Use the run manifest to distinguish repeatable agent failures from one-off infrastructure failures; otherwise count the run."
+  },
+  "governance": {
+    "owner": "ruhroh-maintainers",
+    "createdAt": "2026-07-07",
+    "updatedAt": "2026-07-07",
+    "changelog": [
+      "1.0.0: Initial maintenance suite using the most stateful bundled app tasks."
+    ],
+    "acceptanceCriteria": [
+      "Scenario must have enough moving parts to expose agent repair and continuation behavior.",
+      "Scenario must preserve full implementation journey artifacts for post-failure diagnosis.",
+      "Evaluation must classify incomplete delivery separately from infrastructure failure."
+    ],
+    "contaminationReview": "Maintenance suite scenarios should be reviewed for reward-hacking shortcuts before each suiteVersion bump.",
+    "rewardHackingReview": "Review maintenance tasks for shallow cosmetic fixes, ignored broken workflows, and evaluator checks that fail to distinguish infrastructure failures from incomplete delivery.",
+    "reviewChecklist": [
+      "Confirm each scenario requires diagnosis or repair of a user-visible workflow.",
+      "Confirm evaluator evidence separates incomplete implementation from external infrastructure failure.",
+      "Confirm preserved journey artifacts expose the attempted repair path for review."
+    ],
+    "deprecationPolicy": "Retain deprecated scenarios in changelog and publish a replacement suiteVersion instead of silently changing membership."
+  }
+}

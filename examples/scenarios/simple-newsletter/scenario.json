@@ -1,14 +1,38 @@
 {
-  "version": "ruhroh_scenario_v1",
+  "version": "ruhroh_scenario_v2",
   "id": "simple-newsletter",
   "title": "Simple Newsletter",
   "tier": "smoke",
   "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Public example scenario for credential-free local-app validation.",
+    "createdAt": "2026-06-23",
+    "updatedAt": "2026-07-07",
+    "difficulty": "intro",
+    "tags": [
+      "local-app",
+      "static-ui",
+      "smoke"
+    ],
+    "expectedRuntimeSeconds": 420,
+    "contaminationNotes": "Small original smoke task with no canonical public solution.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Converted public example to runtime-adapter v2 format."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
   "userPromptPath": "instruction.md",
   "assets": [],
-  "driver": {
-    "adapter": "custom-shell",
-    "timeoutSeconds": 600
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 420
   },
   "requires": {
     "continuity": "workspace_only",
@@ -21,12 +45,26 @@
   },
   "evaluation": {
     "mode": "agentic_goal_review",
-    "scenarioContext": ["Dependency-free local app creation task."],
-    "goalRubric": [
-      "The final workspace contains a runnable local newsletter page.",
-      "The page covers the requested signup states and sample issue summaries.",
-      "The implementation avoids live service dependencies."
+    "scenarioContext": [
+      "This is a tiny local-app smoke task.",
+      "The user did not prescribe a framework or file layout."
     ],
-    "evidenceGuidance": ["Inspect and run the app when useful."]
+    "goalRubric": [
+      "The final workspace provides a locally viewable newsletter page.",
+      "The page covers the requested signup states and sample issue summaries.",
+      "The implementation avoids live service dependencies and is not a prose-only answer."
+    ],
+    "evidenceGuidance": [
+      "Inspect the final workspace and run or open the local page when useful.",
+      "Use transcripts and event logs only as supporting evidence; judge the final delivered state."
+    ],
+    "calibrationCases": [
+      {
+        "id": "missing-page-failure",
+        "inputSummary": "The workspace only contains notes about the newsletter and no runnable or openable page.",
+        "expectedStatus": "failed",
+        "rationale": "The scenario requires a delivered local page."
+      }
+    ]
   }
 }

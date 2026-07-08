@@ -1,0 +1,41 @@
+{
+  "version": "ruhroh_suite_v1",
+  "id": "ruhroh-smoke",
+  "title": "Ruhroh Smoke",
+  "suiteVersion": "1.0.0",
+  "description": "Small, fast real-user coding-agent checks for install validation and adapter bring-up.",
+  "scenarioIds": [
+    "simple-newsletter"
+  ],
+  "scenarioVersions": {
+    "simple-newsletter": "1.0.0"
+  },
+  "methodology": {
+    "minRuns": 5,
+    "aggregationUnit": "scenario_adapter",
+    "reportPolicy": "pass_rate_ci_pass_at_k",
+    "confidenceLevel": 0.95,
+    "retryPolicy": "Do not retry failed agent runs inside a sample. Re-run the full sample only for documented infrastructure failures."
+  },
+  "governance": {
+    "owner": "ruhroh-maintainers",
+    "createdAt": "2026-07-07",
+    "updatedAt": "2026-07-07",
+    "changelog": [
+      "1.0.0: Initial smoke suite with simple-newsletter."
+    ],
+    "acceptanceCriteria": [
+      "Scenario must be realistic enough to exercise a complete delivered workspace.",
+      "Scenario must run without public network access.",
+      "Rubric must judge outcome behavior rather than required filenames or source text."
+    ],
+    "contaminationReview": "Smoke scenarios should be original and small; do not include public canonical solutions.",
+    "rewardHackingReview": "Review prompts and rubrics for filename-only or static-content shortcuts. Smoke tasks may be small, but must still require a complete delivered workspace.",
+    "reviewChecklist": [
+      "Confirm the task exercises a full agent loop from user request to final workspace.",
+      "Confirm the evaluator can reject a static placeholder or copied prompt text.",
+      "Confirm artifacts are enough to diagnose an adapter bring-up failure."
+    ],
+    "deprecationPolicy": "Keep the latest smoke suite stable within a major version. Replace scenarios only in a new suiteVersion with changelog notes."
+  }
+}

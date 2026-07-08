@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/workspace-summary-v1.schema.json",
+  "title": "Ruhroh Workspace Summary v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "generatedAt",
+    "workspaceRoot",
+    "exists",
+    "totalFiles",
+    "totalDirectories",
+    "totalBytes",
+    "topLevelEntries",
+    "projectMarkers",
+    "sampleFiles",
+    "truncated"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_workspace_summary_v1" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "workspaceRoot": { "type": "string", "minLength": 1 },
+    "exists": { "type": "boolean" },
+    "totalFiles": { "type": "number", "minimum": 0 },
+    "totalDirectories": { "type": "number", "minimum": 0 },
+    "totalBytes": { "type": "number", "minimum": 0 },
+    "topLevelEntries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/workspaceEntry" }
+    },
+    "projectMarkers": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "sampleFiles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/sampleFile" }
+    },
+    "truncated": { "type": "boolean" },
+    "skippedPaths": { "type": "number", "minimum": 0 },
+    "unreadablePaths": { "type": "number", "minimum": 0 }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "workspaceEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["path", "type"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["file", "directory"] }
+      }
+    },
+    "sampleFile": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["path", "sizeBytes"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sizeBytes": { "type": "number", "minimum": 0 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

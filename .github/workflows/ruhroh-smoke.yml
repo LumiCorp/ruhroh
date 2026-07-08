@@ -20,12 +20,16 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "assets/**"
+      - "scripts/**"
       - "src/**"
       - "python/**"
       - "scenarios/**"
+      - "schemas/**"
+      - "suites/**"
       - "tests/**"
       - "examples/scenarios/**"
       - "examples/adapters/**"
+      - "examples/evaluators/**"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/ruhroh-smoke.yml"
@@ -40,12 +44,16 @@ on:
       - "package.json"
       - "pnpm-lock.yaml"
       - "assets/**"
+      - "scripts/**"
       - "src/**"
       - "python/**"
       - "scenarios/**"
+      - "schemas/**"
+      - "suites/**"
       - "tests/**"
       - "examples/scenarios/**"
       - "examples/adapters/**"
+      - "examples/evaluators/**"
       - "docs/**"
       - ".github/ISSUE_TEMPLATE/**"
       - ".github/workflows/ruhroh-smoke.yml"
@@ -77,8 +85,15 @@ jobs:
       - name: Build Ruhroh package
         run: pnpm build
 
-      - name: Pack Ruhroh package
-        run: pnpm pack --pack-destination /tmp/ruhroh-pack
+      - name: Validate bundled benchmark suites
+        run: |
+          node dist/cli.js validate --scenario-dir scenarios --suite-dir suites --suite ruhroh-smoke --json
+          node dist/cli.js validate --scenario-dir scenarios --suite-dir suites --suite ruhroh-productivity --json
+          node dist/cli.js validate --scenario-dir scenarios --suite-dir suites --suite ruhroh-data-apps --json
+          node dist/cli.js validate --scenario-dir scenarios --suite-dir suites --suite ruhroh-maintenance --json
+
+      - name: Smoke installed package
+        run: pnpm run smoke:package
 
       - name: List example scenarios
         run: node dist/cli.js --scenario-dir examples/scenarios --list

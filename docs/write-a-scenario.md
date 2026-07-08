@@ -23,6 +23,16 @@ ruhroh/scenarios/my-task/
   assets/
 ```
 
+Or scaffold a validation-ready draft:
+
+```bash
+pnpm exec ruhroh new-scenario my-task --scenario-dir ruhroh/scenarios
+```
+
+The scaffold creates private scenario metadata, an instruction stub, rubric
+guidance, evidence guidance, and a calibration case. Edit those fields before
+publishing the scenario or adding it to a benchmark suite.
+
 The prompt in `instruction.md` should read like a user request. It should state
 the desired outcome, useful constraints, and any domain context the agent needs.
 
@@ -47,16 +57,37 @@ they are genuinely part of the user's goal.
 The scenario JSON should define:
 
 - the scenario id, title, tier, and kind;
+- benchmark metadata such as scenario version, difficulty, tags, visibility,
+  changelog, lifecycle status, provenance, contamination notes, maintainers, and
+  expected runtime;
 - `userPromptPath`;
 - runtime requirements such as continuity, tools, and network;
 - loop defaults such as max iterations;
-- evaluation context, rubric, and evidence guidance.
+- evaluation context, rubric, evidence guidance, calibration cases, and optional
+  private evaluator assets.
 
 Keep adapter choice out of new `ruhroh_scenario_v2` scenarios. Select adapters
 at runtime with `--adapter`.
 
+Use `metadata.scenarioVersion` to version the scenario itself. This is separate
+from the Ruhroh schema `version` and lets published packs evolve without losing
+comparability.
+Use `metadata.changelog` and `metadata.lifecycle` to make scenario changes and
+deprecations explicit. Use `metadata.visibility` to distinguish public scenarios
+from private or held-out scenarios before publishing packs or reports.
+
 Use the rubric to describe outcome quality. The generated Harbor verifier stays
 generic; it should not become a scenario-specific file or source-code checker.
+
+Add `evaluation.calibrationCases` with at least one pass, fail, or review anchor
+that explains the expected judgment. These anchors help keep model-backed and
+human-assisted evaluators consistent without adding brittle implementation
+checks to the Harbor verifier.
+
+If the evaluator needs held-out expected outputs or private review fixtures,
+declare them in `evaluation.privateAssets`. Keep these files out of the public
+prompt and public `assets/`; Ruhroh forwards them to the eval-agent through the
+eval input.
 
 Validate the scenario before generating the task:
 

@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/run-plan-v1.schema.json",
+  "title": "Ruhroh Run Plan v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "createdAt",
+    "selection",
+    "generated",
+    "scenarios",
+    "samples"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_run_plan_v1" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "selection": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scenarioDir", "suiteDir", "runs", "adapters"],
+      "properties": {
+        "scenarioDir": { "type": "string", "minLength": 1 },
+        "suiteDir": { "type": "string", "minLength": 1 },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "suiteId": { "type": "string", "minLength": 1 },
+        "tier": { "enum": ["smoke", "standard", "extended"] },
+        "runs": { "type": "number", "minimum": 1 },
+        "adapters": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "suite": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "title", "suiteVersion", "scenarioIds", "scenarioVersions", "source"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "suiteVersion": { "type": "string", "minLength": 1 },
+        "scenarioIds": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "scenarioVersions": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "source": { "$ref": "#/$defs/sourceFingerprint" }
+      }
+    },
+    "generated": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["generatedDir", "datasetPath"],
+      "properties": {
+        "generatedDir": { "type": "string", "minLength": 1 },
+        "datasetPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/plannedScenario" }
+    },
+    "samples": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/plannedSample" }
+    }
+  },
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "sourceFingerprint": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "suitePath": { "type": "string", "minLength": 1 },
+        "suiteSha256": { "$ref": "#/$defs/sha256" },
+        "scenarioPath": { "type": "string", "minLength": 1 },
+        "scenarioSha256": { "$ref": "#/$defs/sha256" },
+        "instructionPath": { "type": "string", "minLength": 1 },
+        "instructionSha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "plannedScenario": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["id", "title", "tier"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "tier": { "enum": ["smoke", "standard", "extended"] },
+        "scenarioVersion": { "type": "string", "minLength": 1 },
+        "source": { "$ref": "#/$defs/sourceFingerprint" }
+      }
+    },
+    "plannedSample": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "label",
+        "scenarioId",
+        "adapter",
+        "sampleId",
+        "sampleSeed",
+        "runIndex",
+        "runCount",
+        "forwardedEnvKeys",
+        "harborCommand"
+      ],
+      "properties": {
+        "label": { "type": "string", "minLength": 1 },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "sampleId": { "type": "string", "minLength": 1 },
+        "sampleSeed": { "type": "string", "minLength": 1 },
+        "runIndex": { "type": "number", "minimum": 1 },
+        "runCount": { "type": "number", "minimum": 1 },
+        "forwardedEnvKeys": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "harborCommand": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": ["bin", "args", "display"],
+          "properties": {
+            "bin": { "type": "string", "minLength": 1 },
+            "args": {
+              "type": "array",
+              "items": { "type": "string" }
+            },
+            "display": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    }
+  }
+}

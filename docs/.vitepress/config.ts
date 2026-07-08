@@ -34,6 +34,7 @@ export default defineConfig({
         items: [
           { text: "Overview", link: "/" },
           { text: "Getting Started", link: "/getting-started" },
+          { text: "Local Fixture Run", link: "/local-fixture-run" },
         ],
       },
       {
@@ -41,6 +42,8 @@ export default defineConfig({
         items: [
           { text: "Write a Scenario", link: "/write-a-scenario" },
           { text: "Scenario Format", link: "/scenario-format" },
+          { text: "Benchmark Suites", link: "/benchmark-suites" },
+          { text: "Benchmark Methodology", link: "/benchmark-methodology" },
           { text: "Write an Adapter", link: "/write-an-adapter" },
           { text: "Custom Shell", link: "/custom-shell" },
         ],
@@ -52,6 +55,7 @@ export default defineConfig({
           { text: "Harbor", link: "/harbor" },
           { text: "Eval Agent", link: "/eval-agent" },
           { text: "Artifacts", link: "/artifacts" },
+          { text: "Result JSON", link: "/result-json-reference" },
         ],
       },
       {
@@ -65,7 +69,9 @@ export default defineConfig({
       {
         text: "Reference",
         items: [
+          { text: "CLI Reference", link: "/cli-reference" },
           { text: "Adapter Protocol", link: "/adapter-protocol" },
+          { text: "Result JSON Reference", link: "/result-json-reference" },
           { text: "Public Repo Layout", link: "/public-repo-layout" },
         ],
       },

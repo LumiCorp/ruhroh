@@ -1,0 +1,158 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/benchmark-summary-v1.schema.json",
+  "title": "Ruhroh Benchmark Summary v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "$schema",
+    "version",
+    "createdAt",
+    "claimVersion",
+    "tool",
+    "scope",
+    "publishable",
+    "summary",
+    "readiness",
+    "evidence",
+    "rows"
+  ],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/benchmark-summary-v1.schema.json" },
+    "version": { "const": "ruhroh_benchmark_summary_v1" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "claimVersion": { "const": "ruhroh_benchmark_claim_v1" },
+    "tool": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source": { "type": "object" },
+    "scope": { "enum": ["suite", "ad_hoc_compare"] },
+    "publishable": { "type": "boolean" },
+    "suite": { "type": "object" },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "scenarioCount",
+        "adapterCount",
+        "totalRuns",
+        "totalPasses",
+        "runWeightedPassRate",
+        "runWeightedPassRateCi95",
+        "reviewRequired",
+        "reviewRecommended",
+        "pairwiseComparisonCount"
+      ],
+      "properties": {
+        "scenarioCount": { "type": "number", "minimum": 0 },
+        "adapterCount": { "type": "number", "minimum": 0 },
+        "totalRuns": { "type": "number", "minimum": 0 },
+        "totalPasses": { "type": "number", "minimum": 0 },
+        "runWeightedPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "runWeightedPassRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "reviewRequired": { "type": "number", "minimum": 0 },
+        "reviewRecommended": { "type": "number", "minimum": 0 },
+        "pairwiseComparisonCount": { "type": "number", "minimum": 0 }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["scope", "publishable", "blockers", "advisories"],
+      "properties": {
+        "scope": { "enum": ["suite", "ad_hoc_compare"] },
+        "publishable": { "type": "boolean" },
+        "blockers": { "$ref": "#/$defs/stringArray" },
+        "advisories": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true
+    },
+    "rows": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/summaryRow" }
+    }
+  },
+  "$defs": {
+    "stringArray": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "confidenceInterval": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["method", "confidenceLevel", "lower", "upper"],
+      "properties": {
+        "method": { "type": "string", "minLength": 1 },
+        "confidenceLevel": { "type": "number" },
+        "lower": { "type": "number" },
+        "upper": { "type": "number" }
+      }
+    },
+    "summaryRow": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "scope",
+        "publishable",
+        "scenarioId",
+        "adapter",
+        "runs",
+        "passes",
+        "passRate",
+        "passRateCi95",
+        "passAtK",
+        "meanScore",
+        "meanScoreCi95",
+        "usage",
+        "reviewRequired",
+        "statisticalWarnings"
+      ],
+      "properties": {
+        "suiteId": { "type": "string", "minLength": 1 },
+        "suiteVersion": { "type": "string", "minLength": 1 },
+        "scope": { "enum": ["suite", "ad_hoc_compare"] },
+        "publishable": { "type": "boolean" },
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "adapter": { "type": "string", "minLength": 1 },
+        "runs": { "type": "number", "minimum": 0 },
+        "passes": { "type": "number", "minimum": 0 },
+        "passRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "passRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "passAtK": {
+          "type": "object",
+          "additionalProperties": { "type": "number", "minimum": 0, "maximum": 1 }
+        },
+        "meanScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "meanScoreCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "usage": { "$ref": "#/$defs/usage" },
+        "reviewRequired": { "type": "number", "minimum": 0 },
+        "statisticalWarnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["runsWithUsage", "runsWithCost", "runsWithTokens"],
+      "properties": {
+        "runsWithUsage": { "type": "number", "minimum": 0 },
+        "runsWithCost": { "type": "number", "minimum": 0 },
+        "runsWithTokens": { "type": "number", "minimum": 0 },
+        "totalCostUsd": { "type": "number", "minimum": 0 },
+        "meanCostUsd": { "type": "number", "minimum": 0 },
+        "costPerPass": { "type": "number", "minimum": 0 },
+        "totalTokens": { "type": "number", "minimum": 0 },
+        "meanTotalTokens": { "type": "number", "minimum": 0 },
+        "tokensPerPass": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}
