@@ -99,6 +99,7 @@ of bundled package content.
 ## Validation
 
 ```bash
+pnpm exec ruhroh validate
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios
 pnpm exec ruhroh validate --suite ruhroh-smoke --json
 ```

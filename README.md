@@ -46,16 +46,23 @@ Ruhroh ships bundled scenarios so you can inspect the package before wiring a
 live agent:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --list
+pnpm exec ruhroh --list
 pnpm exec ruhroh --list-suites
-pnpm exec ruhroh validate --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios
-pnpm exec ruhroh doctor --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --adapter ./path/to/agent-wrapper.sh
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh validate
+pnpm exec ruhroh doctor --adapter ./path/to/agent-wrapper.sh
+pnpm exec ruhroh --scenario simple-newsletter --generate-only
 ```
+
+By default, the CLI uses the scenarios and suites bundled with the installed
+package. Use `--scenario-dir` and `--suite-dir` only when pointing Ruhroh at
+project-local authoring trees.
 
 For a credential-free full-loop smoke path, use the fixture adapter and
 evaluator in `examples/`; see the
 [local fixture run guide](https://lumicorp.github.io/ruhroh/local-fixture-run).
+To add Ruhroh to an existing repo and wire a real command adapter plus local
+evals, see
+[Add Ruhroh to an Existing Project](https://lumicorp.github.io/ruhroh/add-to-existing-project).
 For a project-local starter with the same fixture pieces plus a local
 `ruhroh-smoke` suite, run `pnpm exec ruhroh init`.
 
@@ -88,7 +95,7 @@ Generated Harbor task directories are written under:
 Use `--dry-run` to see the Harbor command without starting a benchmark:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
+pnpm exec ruhroh --scenario simple-newsletter --adapter custom-shell --dry-run
 ```
 
 After a run, inspect and aggregate artifacts:
@@ -166,7 +173,6 @@ the adapter:
 
 ```bash
 pnpm exec ruhroh \
-  --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios \
   --scenario simple-newsletter \
   --adapter ./path/to/agent-wrapper.sh
 ```
@@ -183,7 +189,7 @@ environment:
 ```bash
 export RUHROH_RUN_AGENT_COMMAND=./path/to/agent-wrapper.sh
 export RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell
+pnpm exec ruhroh --scenario simple-newsletter --adapter custom-shell
 ```
 
 Example wrappers live under `examples/adapters/` for Codex CLI, Claude Code,

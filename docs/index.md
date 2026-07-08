@@ -33,8 +33,8 @@ features:
 
 ```bash
 pnpm add -D @kestrel-agents/ruhroh
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --list
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh --list
+pnpm exec ruhroh --scenario simple-newsletter --generate-only
 ```
 
 Ruhroh is for benchmark authors who want tasks that behave more like real user
