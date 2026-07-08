@@ -10,12 +10,12 @@ depends_on:
   - docs/eval-agent.md
 ---
 
-# Adjudication
+# Human Review
 
-Ruhroh treats evaluator judgment as part of the benchmark evidence, not an
-invisible score oracle. Runs that fail, request review, have evaluator-quality
-warnings, miss artifacts, or contain disagreeing judge votes enter a review
-queue.
+Ruhroh treats reviewer judgment as part of the benchmark evidence, not an
+invisible score oracle. Runs that fail, request review, have weak reviewer
+evidence, miss saved evidence files, or contain disagreeing judge votes enter a
+review queue.
 
 Inspect the queue directly:
 
@@ -25,29 +25,29 @@ pnpm exec ruhroh review ./path/to/results --json
 pnpm exec ruhroh review ./path/to/results --html ruhroh-review.html
 ```
 
-`review` accepts a single `ruhroh-loop-result.json`, one run artifact directory,
-or a recursive result root. JSON output is versioned as
+`review` accepts a single `ruhroh-loop-result.json`, one saved-run directory, or
+a recursive result root. JSON output is versioned as
 `ruhroh_review_queue_v1` and includes:
 
-- `requiredCount` for items that must be adjudicated before publication;
+- `requiredCount` for items that must be reviewed before publication;
 - `recommendedCount` for audit-quality issues that should be checked;
-- `reviewQueue` entries with scenario, adapter, run id, score, eval status,
-  reasons, unmet criteria, transcript paths, event-log paths, and artifact
-  pointers.
+- `reviewQueue` entries with task, agent connector, run id, score, review
+  status, reasons, unmet criteria, transcript paths, event-log paths, and
+  evidence pointers.
 
-Required review covers explicit `status: "review"`, eval infrastructure
-failures, and evaluator warnings that call for human review such as disagreeing
+Required review covers explicit `status: "review"`, review infrastructure
+failures, and reviewer warnings that call for human review such as disagreeing
 `judgeVotes`. Recommended review covers non-passing runs, unmet criteria,
-missing evidence, weak evaluator output, or incomplete artifacts.
+missing evidence, weak reviewer output, or incomplete evidence files.
 
 For each item:
 
-1. Open the listed transcripts, event logs, eval output, and final workspace
-   artifacts.
-2. Check the scenario rubric and calibration cases before changing a judgment.
-3. Record the adjudication decision, reviewer identity, rationale, and accepted
+1. Open the listed transcripts, event logs, review output, and final project
+   evidence files.
+2. Check the task rules and calibration examples before changing a judgment.
+3. Record the human review decision, reviewer identity, rationale, and accepted
    limitations with the benchmark pack or publication review.
-4. Update the evaluator, rerun the scenario, or document why the original
+4. Update the reviewer, rerun the task, or document why the original
    judgment stands.
 5. Rerun `ruhroh publish-check` before publishing the claim.
 

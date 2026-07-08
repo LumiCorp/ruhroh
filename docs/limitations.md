@@ -11,13 +11,13 @@ depends_on:
 
 # Limitations
 
-- The package-owned Python Harbor runtime supports command-backed adapters
-  selected at runtime. First-class provider packages for Kestrel and model eval
-  are still future work.
-- The Kestrel adapter is a consumer integration, not the public benchmark
-  boundary; consumers wire adapters through `RUHROH_RUN_AGENT_COMMAND`.
-- Model-backed eval is supplied by consumers through `RUHROH_EVAL_COMMAND`.
-  Fixture eval remains available for deterministic package smoke tests.
+- The package-owned Python Harbor runner supports command-backed agent
+  connectors selected on the run command. First-class provider packages for
+  Kestrel and model review are still future work.
+- The Kestrel connector is a consumer integration, not the public benchmark
+  boundary; consumers wire agent commands through `RUHROH_RUN_AGENT_COMMAND`.
+- Model-backed review is supplied by consumers through `RUHROH_EVAL_COMMAND`.
+  Fixture review remains available for deterministic package smoke tests.
 - Public agent wrappers using `custom-shell` have `workspace_only` continuity
   unless the wrapper implements stronger session preservation.
 - Live public-agent runs require credentials and are intentionally excluded from

@@ -1121,7 +1121,7 @@ function runValidateSummaryCommand(options: RuhrohCliOptions, deps: RuntimeDeps)
 
 function runValidateBundleCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
   if (options.inputPath === undefined) {
-    deps.stderr.write("ruhroh failed: validate-bundle requires a publication bundle directory.\n");
+    deps.stderr.write("ruhroh failed: validate-bundle requires a publication packet directory.\n");
     return 1;
   }
   try {
@@ -1147,7 +1147,7 @@ function runValidateBundleCommand(options: RuhrohCliOptions, deps: RuntimeDeps):
 
 function runClaimIndexCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
   if (options.inputPath === undefined) {
-    deps.stderr.write("ruhroh failed: claim-index requires a benchmark claim file, publication bundle, or directory of claims.\n");
+    deps.stderr.write("ruhroh failed: claim-index requires a benchmark claim file, publication packet, or directory of claims.\n");
     return 1;
   }
   try {
@@ -1388,7 +1388,7 @@ function formatClaimIndexReportHtml(report: RuhrohClaimIndexReport, htmlPath?: s
     <main>
       <header>
         <h1>Ruhroh claim index</h1>
-        <p class="muted">${localPathLinkHtml(report.source.inputPath, htmlPath)}</p>
+        <p class="muted">${escapeHtml(localPathDisplay(report.source.inputPath, htmlPath))}</p>
       </header>
       <section class="grid" aria-label="Claim index overview">
         ${metricHtml("Claims", String(report.claimCount))}
@@ -1397,7 +1397,7 @@ function formatClaimIndexReportHtml(report: RuhrohClaimIndexReport, htmlPath?: s
         ${metricHtml("Invalid", String(report.invalidCount), report.invalidCount === 0 ? "pass" : "fail")}
         ${metricHtml("Registry ready", report.registryReady ? "yes" : "no", report.registryReady ? "pass" : "fail")}
         ${metricHtml("Suites", String(report.suiteCount))}
-        ${metricHtml("Adapters", String(report.adapterCount))}
+        ${metricHtml("Agent connectors", String(report.adapterCount))}
         ${metricHtml("Total runs", String(report.totalRuns))}
       </section>
       ${report.registryBlockers.length === 0 ? "" : sectionHtml("Registry Blockers", `<ul>${report.registryBlockers.map((blocker) => `<li>${escapeHtml(claimIndexHtmlText(blocker, report, htmlPath))}</li>`).join("")}</ul>`)}
@@ -1405,7 +1405,7 @@ function formatClaimIndexReportHtml(report: RuhrohClaimIndexReport, htmlPath?: s
         "Status",
         "Suite",
         "Scope",
-        "Adapters",
+        "Agent connectors",
         "Runs",
         "Pass rate",
         "Review",
@@ -1422,9 +1422,9 @@ function formatClaimIndexReportHtml(report: RuhrohClaimIndexReport, htmlPath?: s
         String(claim.summary.totalRuns),
         formatPercent(claim.summary.runWeightedPassRate),
         String(claim.summary.reviewRecommended),
-        `runPlan=${claim.evidence.runPlanPresent ? "yes" : "no"}; artifactErrors=${claim.evidence.artifactValidationErrors}; artifactWarnings=${claim.evidence.artifactCompletenessWarnings}; requiredReview=${claim.evidence.requiredReviewItems}`,
+        `runPlan=${claim.evidence.runPlanPresent ? "yes" : "no"}; evidenceErrors=${claim.evidence.artifactValidationErrors}; evidenceWarnings=${claim.evidence.artifactCompletenessWarnings}; requiredReview=${claim.evidence.requiredReviewItems}`,
         localPathCell(claim.claimPath, htmlPath),
-        claim.bundlePath === undefined ? "" : localPathCell(claim.bundlePath, htmlPath),
+        claim.bundlePath === undefined ? "" : localPathDisplay(claim.bundlePath, htmlPath),
         claimIndexReviewPacketCell(claim, htmlPath),
         [...claim.validationErrors, ...claim.blockers].join("; "),
       ])))}
@@ -1444,7 +1444,6 @@ function claimIndexReviewPacketCell(claim: RuhrohClaimIndexEntry, htmlPath?: str
     ["eval-quality", path.join(claim.bundlePath, "ruhroh-eval-quality.html")],
     ["review", path.join(claim.bundlePath, "ruhroh-review.html")],
     ["manifest", path.join(claim.bundlePath, "manifest.json")],
-    ["sources", path.join(claim.bundlePath, "sources")],
   ];
   const links = packetFiles.filter(([, itemPath]) => existsSync(itemPath));
   if (links.length === 0) {
@@ -1483,7 +1482,7 @@ function claimIndexHtmlText(value: string, report: RuhrohClaimIndexReport, htmlP
 
 function formatPublishBundleValidationReport(report: RuhrohPublishBundleValidationReport, cwd: string): string {
   const lines = [
-    `publication bundle ${path.relative(cwd, report.source.bundlePath) || report.source.bundlePath}: ${report.valid ? "valid" : "failed"}; ${report.publishable ? "publishable" : "blocked"}`,
+    `publication packet ${path.relative(cwd, report.source.bundlePath) || report.source.bundlePath}: ${report.valid ? "valid" : "failed"}; ${report.publishable ? "publishable" : "blocked"}`,
   ];
   for (const check of report.checks) {
     const location = check.path === undefined ? "" : ` ${path.relative(cwd, check.path) || check.path}`;
@@ -1494,7 +1493,7 @@ function formatPublishBundleValidationReport(report: RuhrohPublishBundleValidati
 
 function runValidateArtifactsCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
   if (options.inputPath === undefined) {
-    deps.stderr.write("ruhroh failed: validate-artifacts requires a run artifact directory or ruhroh-loop-result.json file.\n");
+    deps.stderr.write("ruhroh failed: validate-artifacts requires a saved run directory or ruhroh-loop-result.json file.\n");
     return 1;
   }
   try {
@@ -2836,7 +2835,7 @@ function formatCalibrationWorkspaceReadme(
   calibrationCase: RuhrohScenarioEvaluationCalibrationCase,
 ): string {
   return [
-    `# Ruhroh Evaluator Calibration: ${scenario.id}/${calibrationCase.id}`,
+    `# Ruhroh Reviewer Calibration: ${scenario.id}/${calibrationCase.id}`,
     "",
     `Scenario: ${scenario.title}`,
     `Expected status: ${calibrationCase.expectedStatus}`,
@@ -3284,7 +3283,7 @@ function firstRunNextAction(checks: RuhrohFirstRunCheck[], nextCommands: string[
   }
   const fullRunCommand = nextCommands.find((command) => command.startsWith("pnpm exec ruhroh run --scenario-dir ") && !command.includes("--dry-run") && command.includes("--adapter custom-shell"));
   return {
-    summary: "Run the credential-free fixture loop, then inspect the resulting artifacts before wiring a live agent.",
+    summary: "Run the credential-free fixture loop, then inspect the saved evidence before wiring a live agent.",
     command: fullRunCommand ?? nextCommands[nextCommands.length - 1],
     stageId: "first_fixture_loop",
     docs: ["local-fixture-run", "artifacts", "report-gallery"],
@@ -3443,7 +3442,7 @@ function formatFirstRunCheckReport(report: RuhrohFirstRunCheckReport, cwd: strin
   for (const command of report.nextCommands) {
     lines.push(`    ${command}`);
   }
-  lines.push(`  docs: ${report.docs.join(", ")}`);
+  lines.push(`  docs: ${report.docs.map(formatWorkflowDocLabel).join(", ")}`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -3577,8 +3576,8 @@ function workflowFirstFixtureStage(firstRun: RuhrohFirstRunCheckReport, resultPa
     summary: hasResultArtifacts
       ? "A local fixture result artifact exists and can be inspected before authoring or publishing benchmarks."
       : firstRun.ready
-        ? "Local fixture setup is ready; run the full fixture loop and inspect its artifacts before moving on."
-        : "Start with a credential-free local fixture run before authoring or publishing benchmarks.",
+        ? "Local fixture setup is ready; run the full fixture loop and inspect its saved evidence before moving on."
+        : "Start with the built-in no-credentials example before authoring or publishing benchmarks.",
     checks: hasResultArtifacts
       ? [fixtureResultCheck]
       : [
@@ -3664,8 +3663,8 @@ function workflowEvaluatorQualityStage(deps: RuntimeDeps, evaluatorCommand: stri
     title: "Make evaluator quality operational",
     status,
     summary: status === "ready"
-      ? "Evaluator wiring and calibration evidence are ready for repeated benchmark runs."
-      : "Configure evaluator calibration and preserve a passing calibration report before collecting repeated runs.",
+      ? "Reviewer wiring and calibration evidence are ready for repeated benchmark runs."
+      : "Configure reviewer calibration and preserve a passing calibration report before collecting repeated runs.",
     checks,
     commands: hasEvaluatorCommand
       ? [calibrateCommand, ...scaffoldCommands]
@@ -3809,7 +3808,7 @@ function workflowCompareResultsStage(cwd: string, resultPaths: string[], workflo
     title: "Compare agents with evidence",
     status: workflowStageStatus(checks),
     summary: workflowStageStatus(checks) === "ready"
-      ? "Run results and a plan are available for artifact-backed comparison."
+      ? "Run results and a plan are available for evidence-backed comparison."
       : "Collect completed runs and compare them against the planned cohort before publishing claims.",
     checks,
     commands: [
@@ -3850,13 +3849,13 @@ function workflowPublishClaimStage(cwd: string, resultPaths: string[], workflowR
           name: "claim-or-bundle",
           status: "ok",
           details: existsSync(bundleManifestPath)
-            ? "publication bundle manifest exists"
+            ? "publication packet inventory exists"
             : "benchmark claim JSON exists",
         }
       : {
           name: "claim-or-bundle",
           status: "warning",
-          details: "No benchmark-claim.json or ruhroh-publication bundle has been written yet.",
+          details: "No benchmark-claim.json or ruhroh-publication packet has been written yet.",
         },
     workflowPublicationBundleValidationCheck(bundlePath, bundleManifestPath),
     existsSync(claimIndexJsonPath) || existsSync(claimIndexHtmlPath)
@@ -3870,13 +3869,13 @@ function workflowPublishClaimStage(cwd: string, resultPaths: string[], workflowR
   const status = workflowStageStatus(checks);
   const hasPublishArtifacts = existsSync(claimPath) || existsSync(bundleManifestPath);
   const summary = status === "ready"
-    ? "Publication artifacts are present and validation evidence is available for review."
+    ? "Publication files are present and validation evidence is available for review."
     : hasPublishArtifacts
-      ? "Validate the publication bundle and registry index before making external claims."
-      : "Use publish-check to turn comparison results into a source-verified claim or publication bundle.";
+      ? "Validate the publication packet and claim index before making external claims."
+      : "Use publish-check to turn comparison results into a verified claim and portable publication packet.";
   return {
     id: "publish_claim",
-    title: "Publish an audit-ready claim",
+      title: "Publish an audit-ready benchmark result",
     status,
     summary,
     checks,
@@ -3894,7 +3893,7 @@ function workflowPublicationBundleValidationCheck(bundlePath: string, bundleMani
     return {
       name: "bundle-validation",
       status: "warning",
-      details: "No publication bundle manifest is available for validate-bundle yet.",
+      details: "No publication packet inventory is available for validate-bundle yet.",
     };
   }
   try {
@@ -3907,7 +3906,7 @@ function workflowPublicationBundleValidationCheck(bundlePath: string, bundleMani
       return {
         name: "bundle-validation",
         status: "failed",
-        details: `Publication bundle validation failed: ${failures.join("; ")}`,
+        details: `Publication packet validation failed: ${failures.join("; ")}`,
       };
     }
     if (!validation.publishable) {
@@ -3919,20 +3918,20 @@ function workflowPublicationBundleValidationCheck(bundlePath: string, bundleMani
         name: "bundle-validation",
         status: "failed",
         details: warnings.length === 0
-          ? "Publication bundle is structurally valid but embedded publish-check or claim readiness is blocked."
-          : `Publication bundle is structurally valid but blocked: ${warnings.join("; ")}`,
+          ? "Publication packet is valid but embedded publish-check or ready-to-publish checks are blocked."
+          : `Publication packet is valid but blocked: ${warnings.join("; ")}`,
       };
     }
     return {
       name: "bundle-validation",
       status: "ok",
-      details: "Publication bundle is valid and publishable.",
+      details: "Publication packet is valid and publishable.",
     };
   } catch (error) {
     return {
       name: "bundle-validation",
       status: "failed",
-      details: `Publication bundle could not be validated: ${error instanceof Error ? error.message : String(error)}`,
+      details: `Publication packet could not be validated: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }
@@ -4083,9 +4082,9 @@ function formatWorkflowGuideReport(report: RuhrohWorkflowGuideReport, cwd: strin
     for (const command of stage.commands) {
       lines.push(`    ${command}`);
     }
-    lines.push(`  docs: ${stage.docs.join(", ")}`);
+    lines.push(`  docs: ${stage.docs.map(formatWorkflowDocLabel).join(", ")}`);
   }
-  lines.push("", `Docs path: ${report.docs.join(" -> ")}`);
+  lines.push("", `Docs path: ${report.docs.map(formatWorkflowDocLabel).join(" -> ")}`);
   return `${lines.join("\n")}\n`;
 }
 
@@ -4137,7 +4136,7 @@ function formatWorkflowGuideReportHtml(report: RuhrohWorkflowGuideReport, htmlPa
     <main>
       <header>
         <h1>Ruhroh workflow guide</h1>
-        <p class="muted">A read-only path from first local fixture run to artifact-backed comparison and audit-ready publication.</p>
+        <p class="muted">A read-only path from the built-in local example to evidence-backed comparison and audit-ready publication.</p>
       </header>
       <section class="grid" aria-label="Workflow overview">
         ${metricHtml("Current stage", workflowStageTitle(report, report.currentStage))}
@@ -4148,15 +4147,15 @@ function formatWorkflowGuideReportHtml(report: RuhrohWorkflowGuideReport, htmlPa
       ${sectionHtml("Next Action", [
         `<p>${escapeHtml(report.nextAction.summary)}</p>`,
         report.nextAction.command === undefined ? "" : `<p><code>${escapeHtml(report.nextAction.command)}</code></p>`,
-        report.nextAction.docs.length === 0 ? "" : `<p class="muted">Docs: ${escapeHtml(report.nextAction.docs.join(", "))}</p>`,
+        report.nextAction.docs.length === 0 ? "" : `<p class="muted">Docs: ${escapeHtml(report.nextAction.docs.map(formatWorkflowDocLabel).join(", "))}</p>`,
       ].join(""))}
       ${sectionHtml("Project Paths", tableHtml([
         "Name",
         "Path",
       ], [
-        ["Scenario directory", localPathCell(report.scenarioDir, htmlPath)],
-        ["Suite directory", localPathCell(report.suiteDir, htmlPath)],
-        ["Generated directory", localPathCell(report.generatedDir, htmlPath)],
+        ["Scenario directory", localPathDisplay(report.scenarioDir, htmlPath)],
+        ["Suite directory", localPathDisplay(report.suiteDir, htmlPath)],
+        ["Generated directory", localPathDisplay(report.generatedDir, htmlPath)],
       ]))}
       ${report.stages.map((stage) => `<section class="stage ${escapeHtml(stage.status)}">
         <h2>${escapeHtml(stage.title)}</h2>
@@ -4173,9 +4172,9 @@ function formatWorkflowGuideReportHtml(report: RuhrohWorkflowGuideReport, htmlPa
         ]))}
         <h3>Commands</h3>
         ${tableHtml(["Command"], stage.commands.map((command) => [{ html: `<code>${escapeHtml(command)}</code>` }]))}
-        <p class="muted">Docs: ${escapeHtml(stage.docs.join(", "))}</p>
+        <p class="muted">Docs: ${escapeHtml(stage.docs.map(formatWorkflowDocLabel).join(", "))}</p>
       </section>`).join("")}
-      ${sectionHtml("Workflow Docs", listHtml(report.docs))}
+      ${sectionHtml("Workflow Docs", listHtml(report.docs.map(formatWorkflowDocLabel)))}
     </main>
   </body>
 </html>
@@ -4184,6 +4183,10 @@ function formatWorkflowGuideReportHtml(report: RuhrohWorkflowGuideReport, htmlPa
 
 function workflowStageTitle(report: RuhrohWorkflowGuideReport, stageId: RuhrohWorkflowGuideStageId): string {
   return report.stages.find((stage) => stage.id === stageId)?.title ?? stageId;
+}
+
+function formatWorkflowDocLabel(doc: string): string {
+  return doc === "adjudication" ? "human-review" : doc;
 }
 
 function workflowHtmlDetail(details: string, rootDir: string, htmlPath?: string | undefined): string {
@@ -4234,7 +4237,7 @@ function formatExplainReport(report: RuhrohExplainReport): string {
 
 function runPublishCheckCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
   if (options.inputPath === undefined) {
-    deps.stderr.write("ruhroh failed: publish-check requires a directory containing Ruhroh result artifacts.\n");
+    deps.stderr.write("ruhroh failed: publish-check requires a directory containing saved Ruhroh results.\n");
     return 1;
   }
   const bundlePaths = options.bundlePath === undefined ? undefined : publishBundlePaths(options.bundlePath);
@@ -4411,23 +4414,116 @@ function writePublishBundle(
   const evalQualityReport = buildEvalQualityReport(options.inputPath, artifacts);
   const benchmarkSummary = isRecord(report.compare.benchmarkSummary) ? report.compare.benchmarkSummary : undefined;
   const localized = localizePublishBundleSources(report, benchmarkClaim, benchmarkSummary, paths);
+  const localizedArtifactPathMap = publishBundleArtifactPathMap(benchmarkClaim, localized.benchmarkClaim);
+  const localizedReviewReport = localizeReviewQueueReportForBundle(reviewReport, localizedArtifactPathMap);
+  const localizedEvalQualityReport = localizeEvalQualityReportForBundle(evalQualityReport, localizedArtifactPathMap);
+  localized.report.compare = {
+    ...localized.report.compare,
+    reviewQueue: localizedReviewReport.reviewQueue,
+  };
 
   writeJsonFile(paths.publishCheckPath, localized.report);
   writeJsonFile(paths.benchmarkClaimPath, localized.benchmarkClaim);
   if (localized.benchmarkSummary !== undefined) {
     writeJsonFile(paths.benchmarkSummaryPath, localized.benchmarkSummary);
   }
-  if (options.htmlPath !== undefined && path.resolve(options.htmlPath) !== path.resolve(paths.compareHtmlPath)) {
-    writeFileSync(paths.compareHtmlPath, readFileSync(options.htmlPath, "utf8"), "utf8");
-  }
-  writeJsonFile(paths.reviewJsonPath, reviewReport);
-  writeFileSync(paths.reviewHtmlPath, formatReviewQueueHtml(reviewReport, paths.reviewHtmlPath), "utf8");
-  writeJsonFile(paths.evalQualityPath, evalQualityReport);
-  writeFileSync(paths.evalQualityHtmlPath, formatEvalQualityReportHtml(evalQualityReport, paths.evalQualityHtmlPath), "utf8");
+  writeFileSync(paths.compareHtmlPath, formatPublishBundleCompareHtml(localized.report, paths.compareHtmlPath), "utf8");
+  writeJsonFile(paths.reviewJsonPath, localizedReviewReport);
+  writeFileSync(paths.reviewHtmlPath, formatReviewQueueHtml(localizedReviewReport, paths.reviewHtmlPath), "utf8");
+  writeJsonFile(paths.evalQualityPath, localizedEvalQualityReport);
+  writeFileSync(paths.evalQualityHtmlPath, formatEvalQualityReportHtml(localizedEvalQualityReport, paths.evalQualityHtmlPath), "utf8");
 
   const manifest = buildPublishBundleManifest(localized.report, paths, localized.benchmarkSummary !== undefined, localized.sourceFiles);
   writeJsonFile(paths.manifestPath, manifest);
   writeFileSync(paths.readmePath, formatPublishBundleReadme(manifest, localized.report, cwd), "utf8");
+}
+
+function formatPublishBundleCompareHtml(report: RuhrohPublishCheckReport, htmlPath: string): string {
+  const compare = report.compare;
+  const suite = isRecord(compare.suite)
+    ? { suite: compare.suite as unknown as RuhrohBenchmarkSuite, source: {} as RuhrohSuiteSource, warnings: stringArrayField(compare, "suiteWarnings") } satisfies ResolvedCompareSuite
+    : undefined;
+  const runPlan = isRecord(compare.runPlan) ? compare.runPlan as unknown as RuhrohRunPlanManifest : undefined;
+  const claimReadiness = isRecord(compare.claimReadiness) ? compare.claimReadiness as unknown as RuhrohBenchmarkClaimReadiness : undefined;
+  const benchmarkClaim = isRecord(compare.benchmarkClaim) ? compare.benchmarkClaim : undefined;
+  const source = benchmarkClaim !== undefined && isRecord(benchmarkClaim.source) ? benchmarkClaim.source : undefined;
+  const resultArtifacts = source !== undefined && Array.isArray(source.resultArtifacts)
+    ? source.resultArtifacts as unknown as RuhrohBenchmarkClaimResultArtifact[]
+    : [];
+  return formatCompareReportHtml(
+    Array.isArray(compare.groups) ? compare.groups as unknown as RuhrohAggregateRunGroup[] : [],
+    suite,
+    Array.isArray(compare.suiteAdapterSummaries) ? compare.suiteAdapterSummaries as unknown as RuhrohSuiteAdapterSummary[] : [],
+    Array.isArray(compare.pairwiseComparisons) ? compare.pairwiseComparisons as unknown as RuhrohPairwiseAdapterComparison[] : [],
+    Array.isArray(compare.reviewQueue) ? compare.reviewQueue as unknown as RuhrohReviewQueueItem[] : [],
+    claimReadiness,
+    runPlan,
+    stringArrayField(compare, "runPlanWarnings"),
+    resultArtifacts,
+    htmlPath,
+  );
+}
+
+function publishBundleArtifactPathMap(originalClaim: Record<string, unknown>, localizedClaim: Record<string, unknown>): Map<string, string> {
+  const pathMap = new Map<string, string>();
+  const originalArtifacts = publishBundleClaimResultArtifacts(originalClaim);
+  const localizedArtifacts = publishBundleClaimResultArtifacts(localizedClaim);
+  for (let index = 0; index < originalArtifacts.length; index += 1) {
+    const original = originalArtifacts[index];
+    const localized = localizedArtifacts[index];
+    if (original === undefined || localized === undefined) {
+      continue;
+    }
+    const originalPath = stringField(original, "path");
+    const localizedPath = stringField(localized, "path");
+    if (originalPath !== undefined && localizedPath !== undefined) {
+      pathMap.set(originalPath, localizedPath);
+    }
+    const originalInventory = Array.isArray(original.artifactInventory) ? original.artifactInventory : [];
+    const localizedInventory = Array.isArray(localized.artifactInventory) ? localized.artifactInventory : [];
+    for (let inventoryIndex = 0; inventoryIndex < originalInventory.length; inventoryIndex += 1) {
+      const originalItem = originalInventory[inventoryIndex];
+      const localizedItem = localizedInventory[inventoryIndex];
+      if (!isRecord(originalItem) || !isRecord(localizedItem)) {
+        continue;
+      }
+      const originalInventoryPath = stringField(originalItem, "path");
+      const localizedInventoryPath = stringField(localizedItem, "path");
+      if (originalInventoryPath !== undefined && localizedInventoryPath !== undefined) {
+        pathMap.set(originalInventoryPath, localizedInventoryPath);
+      }
+    }
+  }
+  return pathMap;
+}
+
+function publishBundleClaimResultArtifacts(claim: Record<string, unknown>): Record<string, unknown>[] {
+  const source = isRecord(claim.source) ? claim.source : undefined;
+  const artifacts = source !== undefined && Array.isArray(source.resultArtifacts) ? source.resultArtifacts : [];
+  return artifacts.filter(isRecord);
+}
+
+function localizeReviewQueueReportForBundle(report: RuhrohReviewQueueReport, pathMap: Map<string, string>): RuhrohReviewQueueReport {
+  return {
+    ...report,
+    source: { ...report.source, resultsPath: "sources/results" },
+    reviewQueue: report.reviewQueue.map((item) => ({
+      ...item,
+      transcriptPaths: item.transcriptPaths.map((itemPath) => pathMap.get(itemPath) ?? itemPath),
+      eventLogPaths: item.eventLogPaths.map((itemPath) => pathMap.get(itemPath) ?? itemPath),
+    })),
+  };
+}
+
+function localizeEvalQualityReportForBundle(report: RuhrohEvalQualityReport, pathMap: Map<string, string>): RuhrohEvalQualityReport {
+  return {
+    ...report,
+    source: { ...report.source, resultsPath: "sources/results" },
+    runs: report.runs.map((run) => ({
+      ...run,
+      resultPath: pathMap.get(run.resultPath) ?? run.resultPath,
+    })),
+  };
 }
 
 function localizePublishBundleSources(
@@ -4543,7 +4639,7 @@ function localizeEvaluatorCalibrationReportSourceFile(
   sourceFiles.push({
     role: "evaluator-calibration-report",
     path: relativeTargetPath,
-    description: "Evaluator calibration report hashed by this claim.",
+    description: "Reviewer calibration report hashed by this claim.",
   });
   localizedSource.evaluatorCalibrationReportPath = relativeTargetPath;
   localizedSource.evaluatorCalibrationReportSha256 = sha256File(targetPath);
@@ -4567,7 +4663,7 @@ function localizeCalibrationCaseFile(
     paths,
     relativeTargetPath,
     role,
-    `Evaluator calibration ${field === "inputPath" ? "input" : "output"} for ${stringField(item, "caseId") ?? "case"}.`,
+    `Reviewer calibration ${field === "inputPath" ? "input" : "output"} for ${stringField(item, "caseId") ?? "case"}.`,
     sourceFiles,
   );
   item[field] = relativeTargetPath;
@@ -4698,7 +4794,7 @@ function buildPublishBundleManifest(
     {
       role: "manifest",
       path: path.relative(paths.bundlePath, paths.manifestPath),
-      description: "Versioned inventory for this publication bundle.",
+      description: "Inventory for this publication packet.",
     },
     {
       role: "publish-check",
@@ -4718,7 +4814,7 @@ function buildPublishBundleManifest(
     {
       role: "review-json",
       path: path.relative(paths.bundlePath, paths.reviewJsonPath),
-      description: "Human adjudication queue derived from the claim's result artifacts.",
+      description: "Human review queue derived from the claim's saved results.",
     },
     {
       role: "review-html",
@@ -4728,12 +4824,12 @@ function buildPublishBundleManifest(
     {
       role: "eval-quality",
       path: path.relative(paths.bundlePath, paths.evalQualityPath),
-      description: "Evaluator evidence quality report for the claim's result artifacts.",
+      description: "Reviewer evidence quality report for the claim's saved results.",
     },
     {
       role: "eval-quality-html",
       path: path.relative(paths.bundlePath, paths.evalQualityHtmlPath),
-      description: "Static evaluator evidence quality packet for audit before citation.",
+      description: "Static reviewer evidence report for audit before citation.",
     },
     {
       role: "readme",
@@ -4795,16 +4891,16 @@ function formatPublishBundleReadme(
     lines.push(`Rerun ledger: ${path.relative(cwd, manifest.source.rerunLedgerPath) || manifest.source.rerunLedgerPath}`);
   }
   if (manifest.source.evaluatorCalibrationReportPath !== undefined) {
-    lines.push(`Evaluator calibration report: ${path.relative(cwd, manifest.source.evaluatorCalibrationReportPath) || manifest.source.evaluatorCalibrationReportPath}`);
+    lines.push(`Reviewer calibration report: ${path.relative(cwd, manifest.source.evaluatorCalibrationReportPath) || manifest.source.evaluatorCalibrationReportPath}`);
   }
   lines.push(
     "",
     "## Review Order",
     "",
     "- Open ruhroh-compare.html for the aggregate outcome, intervals, blockers, and evidence browser.",
-    "- Open ruhroh-eval-quality.html to inspect evaluator evidence warnings before citing the claim.",
-    "- Open ruhroh-review.html for the human adjudication queue and required review items.",
-    "- Inspect sources/ for the hashed run plan, calibration report, result JSON, transcripts, eval outputs, and preserved artifact inventory.",
+    "- Open ruhroh-eval-quality.html to inspect reviewer evidence warnings before citing the claim.",
+    "- Open ruhroh-review.html for the human review queue and required review items.",
+    "- Inspect sources/ for the hashed run plan, reviewer check report, result JSON, transcripts, review outputs, and saved evidence inventory.",
   );
   lines.push("", "## Files", "");
   for (const file of manifest.files) {
@@ -4906,7 +5002,7 @@ function formatPublishCheckMarkdownSummary(report: RuhrohPublishCheckReport, cwd
   const sourceRows = [
     ["Run plan", report.source.runPlanPath],
     ["Rerun ledger", report.source.rerunLedgerPath],
-    ["Evaluator calibration report", report.source.evaluatorCalibrationReportPath],
+    ["Reviewer calibration report", report.source.evaluatorCalibrationReportPath],
     ["Benchmark claim", report.source.benchmarkClaimPath],
     ["Benchmark summary", report.source.benchmarkSummaryPath],
     ["HTML report", report.source.htmlPath],
@@ -4962,7 +5058,7 @@ function publishCheckRemediationForBlocker(blocker: string): RuhrohPublishCheckR
 
 function runCompareCommand(options: RuhrohCliOptions, deps: RuntimeDeps): number {
   if (options.inputPath === undefined) {
-    deps.stderr.write("ruhroh failed: compare requires a directory containing Ruhroh result artifacts.\n");
+    deps.stderr.write("ruhroh failed: compare requires a directory containing saved Ruhroh results.\n");
     return 1;
   }
   try {
@@ -5617,14 +5713,14 @@ function scaffoldRuhrohSuite(input: {
       acceptanceCriteria: [
         "Each scenario represents a realistic user task with outcome-based evaluation.",
         "Each scenario validates cleanly before collecting repeated benchmark samples.",
-        "Suite reports must include preserved artifacts, run-plan coverage, and claim-readiness review before publication.",
+        "Suite reports must include saved evidence, planned-run coverage, and a ready-to-publish review before publication.",
       ],
       contaminationReview: "Local draft; review scenario prompts, assets, and expected outcomes for public solution leakage before publishing.",
       rewardHackingReview: "Local draft; inspect prompts, assets, rubrics, and evaluator behavior for shortcuts that let agents pass without satisfying the user outcome.",
       reviewChecklist: [
         "Confirm each scenario requires observable user-value delivery rather than a filename or source-text shortcut.",
-        "Confirm evaluator evidence guidance would catch superficial UI, hard-coded answers, and missing workflow behavior.",
-        "Confirm preserved artifacts are sufficient for a reviewer to reproduce the pass/fail judgment.",
+        "Confirm reviewer evidence guidance would catch superficial UI, hard-coded answers, and missing workflow behavior.",
+        "Confirm saved evidence is sufficient for a reviewer to reproduce the pass/fail judgment.",
       ],
       deprecationPolicy: "Bump suiteVersion when changing membership, scenario locks, assets, prompts, or acceptance criteria.",
     },
@@ -5708,7 +5804,7 @@ satisfied, exit 0; this wrapper will emit the Ruhroh completion signal.
 PROMPT
 
 cat > "$transcript_path" <<TRANSCRIPT
-Adapter ${adapterId} has not been wired to a real agent command yet.
+Agent connector ${adapterId} has not been wired to a real agent command yet.
 Edit ruhroh/adapters/${adapterId}/run.sh and replace this fail-fast block with
 your CLI invocation.
 TRANSCRIPT
@@ -5725,7 +5821,7 @@ if [[ -n "$result_path" ]]; then
     "model": "$model",
     "promptVersion": "$prompt_version"
   },
-  "summary": "Adapter wrapper is scaffolded but not wired to a real agent command.",
+  "summary": "Agent connector wrapper is scaffolded but not wired to a real agent command.",
   "artifacts": {
     "prompt": "$prompt_path",
     "transcript": "$transcript_path"
@@ -5734,7 +5830,7 @@ if [[ -n "$result_path" ]]; then
 JSON
 fi
 
-echo "Adapter ${adapterId} is scaffolded but not wired. Edit $0 before live benchmarking." >&2
+echo "Agent connector ${adapterId} is scaffolded but not wired. Edit $0 before live benchmarking." >&2
 exit 2
 `;
 }
@@ -5798,7 +5894,7 @@ if workspace.exists():
             break
 
 reason = (
-    "Evaluator scaffold requires scenario-specific checks before it can issue "
+    "Reviewer scaffold requires task-specific checks before it can issue "
     "a pass/fail judgment."
 )
 evidence_summary = (
@@ -6088,17 +6184,17 @@ deterministic_configured = bool(required_files)
 deterministic_passed = deterministic_configured and not deterministic_missing
 
 status = "review"
-reasons = ["Hybrid evaluator template needs deterministic checks and optional model adjudication before publication."]
+reasons = ["Hybrid evaluator template needs deterministic checks and optional model review before publication."]
 unmet = []
 if deterministic_configured and not deterministic_passed:
     status = "failed"
-    reasons = ["Deterministic gate failed before model adjudication."]
+    reasons = ["Deterministic gate failed before model review."]
     unmet = [f"missing file: {item}" for item in deterministic_missing]
 elif deterministic_passed:
     status = "review"
-    reasons = ["Deterministic gate passed; add model or human adjudication before marking passed."]
+    reasons = ["Deterministic gate passed; add model or human review before marking passed."]
 else:
-    unmet = ["Configure deterministic required_files and add model or human adjudication."]
+    unmet = ["Configure deterministic required_files and add model or human review."]
 
 evidence = [{
     "kind": "directory",
@@ -6117,7 +6213,7 @@ judge_votes = [
         "judge": {"kind": "model", "model": judge_model, "version": "0.1.0"},
         "status": "review",
         "confidence": "medium",
-        "rationale": "Model adjudication placeholder; wire a real judge before publication.",
+        "rationale": "Model review placeholder; wire a real judge before publication.",
         "evidenceRefs": evidence,
     },
 ]
@@ -6136,7 +6232,7 @@ result = {
         "workspacePath": str(workspace),
         **({"evalInputPath": str(input_path)} if input_path is not None else {}),
     },
-    "finalSummary": "Hybrid evaluator template combines deterministic gates with model or human adjudication; edit before publishable runs.",
+    "finalSummary": "Hybrid evaluator template combines deterministic gates with model or human review; edit before publishable runs.",
     "criteriaResults": [{
         "id": "hybrid-outcome-review",
         "description": "Deterministic and adjudicated checks support the final scenario judgment.",
@@ -6157,7 +6253,7 @@ PY
 
 function adapterReadme(adapterId: string, template: RuhrohAdapterTemplate): string {
   const templateGuidance = adapterTemplateGuidance(template);
-  return `# ${titleFromScenarioId(adapterId)} Adapter
+  return `# ${titleFromScenarioId(adapterId)} Agent Connector
 
 This directory contains a local Ruhroh custom-shell adapter scaffold.
 
@@ -6214,9 +6310,9 @@ Minimal publishable-shape result file:
 }
 \`\`\`
 
-Ruhroh copies these fields into \`ruhroh-run-manifest.json\` for cohort
-comparison, claim readiness, and artifact-backed review. Without them,
-comparison reports can still run, but adapter/model comparability warnings make
+Ruhroh copies these fields into \`ruhroh-run-manifest.json\` for repeated-run
+comparison, publication readiness, and evidence-backed review. Without them,
+comparison reports can still run, but agent/model comparability warnings make
 published claims harder to defend.
 `;
 }
@@ -6274,7 +6370,7 @@ function adapterTemplateGuidance(template: RuhrohAdapterTemplate): string {
 
 function evaluatorReadme(evaluatorId: string, template: RuhrohEvaluatorTemplate): string {
   const templateGuidance = evaluatorTemplateGuidance(template);
-  return `# ${titleFromScenarioId(evaluatorId)} Evaluator
+  return `# ${titleFromScenarioId(evaluatorId)} Reviewer
 
 This directory contains a local Ruhroh command-backed evaluator scaffold.
 
@@ -6308,8 +6404,8 @@ Before publishing comparisons, make sure the evaluator:
 - returns \`review\` instead of \`passed\` when evidence is ambiguous;
 - reports stable \`judge.kind\`, \`judge.model\`, and \`judge.version\` values.
 
-Ruhroh copies evaluator metadata into artifacts and treats weak evidence as a
-claim-readiness blocker.
+Ruhroh copies reviewer metadata into saved evidence and blocks publication when
+the review evidence is too weak.
 `;
 }
 
@@ -6328,9 +6424,9 @@ return structured JSON with \`status\`, \`reasons\`, and optional
 \`criteriaResults\`.`;
   }
   if (template === "hybrid") {
-    return `This hybrid template combines deterministic gates with model or human
-adjudication. Configure deterministic checks first, then replace the placeholder
-model vote before using the evaluator for publishable benchmark runs.`;
+    return `This hybrid template combines deterministic checks with model or human
+review. Configure deterministic checks first, then replace the placeholder model
+vote before using the evaluator for publishable benchmark runs.`;
   }
   return `This review template inventories the workspace and returns
 \`status: "review"\` until you replace the placeholder logic with
@@ -6360,14 +6456,14 @@ function duplicateStrings(values: string[]): string[] {
 function starterReadme(): string {
   return `# Ruhroh Starter
 
-This directory is a local Ruhroh benchmark starter. It includes a v2
-\`simple-newsletter\` scenario, the matching \`ruhroh-smoke\` suite, plus a
-credential-free fixture adapter and fixture evaluator so you can verify the full
+This directory is a local Ruhroh benchmark starter. It includes a
+\`simple-newsletter\` task, the matching \`ruhroh-smoke\` benchmark suite, plus a
+no-credentials example agent connector and reviewer so you can verify the full
 Ruhroh loop before wiring a live agent.
 
-The \`schemas/\` directory contains JSON Schemas for scenario manifests, suite
-manifests, run manifests, exported benchmark claims, evaluator calibration
-reports, publication bundles, publish checks, and workspace summary artifacts.
+The \`schemas/\` directory contains JSON Schemas for task manifests, benchmark-suite
+manifests, run metadata, exported benchmark claims, reviewer calibration
+reports, publication packets, publish checks, and project summary evidence.
 Use them from your editor, CI, or publication pipeline as structural checks;
 \`ruhroh validate\`,
 \`inspect-pack\`, \`eval-quality\`, and \`publish-check\` remain the
@@ -7451,7 +7547,7 @@ function formatRunReport(summary: RuhrohRunSummary, reviewQueue: RuhrohReviewQue
     }
   }
   if (summary.evalJudge !== undefined || summary.evalJudgeAgreement !== undefined || summary.evalJudgeVotes.length > 0) {
-    lines.push("", "Evaluator judges:");
+    lines.push("", "Reviewer judges:");
     if (summary.evalJudge !== undefined) {
       lines.push(`  primary: ${formatEvalJudge(summary.evalJudge)}`);
     }
@@ -7578,7 +7674,7 @@ function formatReviewQueueReport(report: RuhrohReviewQueueReport, cwd: string): 
     "",
     "Next steps:",
     "  inspect the listed transcripts, event logs, eval output, and final workspace artifacts",
-    "  record the adjudication decision and rationale with the benchmark pack or claim review",
+    "  record the human review decision and rationale with the benchmark pack or claim review",
     "  rerun ruhroh publish-check before publishing the claim",
   );
   return `${lines.join("\n")}\n`;
@@ -7647,7 +7743,7 @@ function buildExampleCatalog(packageRoot: string): RuhrohExampleCatalog {
       },
       {
         template: "hybrid",
-        description: "Deterministic gates plus optional model or human adjudication for ambiguous evidence.",
+        description: "Deterministic gates plus optional model or human review for ambiguous evidence.",
         recommendedFor: "Publishable benchmarks that combine objective checks with governed review.",
         command: "pnpm exec ruhroh new-evaluator local-hybrid --template hybrid",
         nextCommand: "pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario <scenario-id>",
@@ -7664,13 +7760,13 @@ function formatExampleCatalog(catalog: RuhrohExampleCatalog, cwd: string): strin
     "Scenarios:",
     ...catalog.scenarios.map((item) => formatExampleCatalogItem(item, cwd)),
     "",
-    "Adapters:",
+    "Agent connectors:",
     ...catalog.adapters.map((item) => formatExampleCatalogItem(item, cwd)),
     "",
-    "Evaluators:",
+    "Reviewers:",
     ...catalog.evaluators.map((item) => formatExampleCatalogItem(item, cwd)),
     "",
-    "Evaluator templates:",
+    "Reviewer templates:",
     ...catalog.evaluatorTemplates.map(formatEvaluatorTemplateCatalogItem),
     "",
     "Credential-free fixture loop:",
@@ -7700,15 +7796,15 @@ function formatExampleCatalogItem(item: RuhrohExampleCatalogItem, cwd: string): 
 function formatRunReportHtml(summary: RuhrohRunSummary, reviewQueue: RuhrohReviewQueueItem[] = [], htmlPath?: string | undefined): string {
   const title = `Ruhroh report: ${summary.scenarioId}`;
   const manifestRows: string[][] = summary.runManifest === undefined ? [] : [
-    ["Scenario version", summary.runManifest.scenario.scenarioVersion ?? "unknown"],
-    ["Dataset", summary.runManifest.benchmark.dataset],
+    ["Task version", summary.runManifest.scenario.scenarioVersion ?? "unknown"],
+    ["Result set", summary.runManifest.benchmark.dataset],
     ["Started", summary.runManifest.timing.startedAt],
     ["Duration", `${summary.runManifest.timing.durationMs}ms`],
     ["Max iterations", String(summary.runManifest.loop.maxIterations)],
     ["Sample", formatSample(summary.runManifest.sample)],
-    ["Run agent", `${summary.runManifest.runAgent.adapterId}${summary.runManifest.runAgent.adapterVersion === undefined ? "" : `@${summary.runManifest.runAgent.adapterVersion}`}`],
+    ["Agent connector", `${summary.runManifest.runAgent.adapterId}${summary.runManifest.runAgent.adapterVersion === undefined ? "" : `@${summary.runManifest.runAgent.adapterVersion}`}`],
     ["Agent model", formatManifestModel(summary.runManifest.runAgent.model) ?? ""],
-    ["Eval model", formatManifestModel(summary.runManifest.evaluator?.model) ?? ""],
+    ["Reviewer model", formatManifestModel(summary.runManifest.evaluator?.model) ?? ""],
   ].filter((row) => (row[1] ?? "").length > 0);
   return `<!doctype html>
 <html lang="en">
@@ -7745,16 +7841,16 @@ function formatRunReportHtml(summary: RuhrohRunSummary, reviewQueue: RuhrohRevie
       </header>
       <section class="grid" aria-label="Run overview">
         ${metricHtml("Run id", summary.runId ?? "unknown")}
-        ${metricHtml("Adapter", summary.adapter)}
+        ${metricHtml("Agent connector", summary.adapter)}
         ${metricHtml("Status", `${summary.status} / ${summary.evalStatus}`, summary.score === 1 ? "pass" : "fail")}
         ${metricHtml("Score", formatNumber(summary.score), summary.score === 1 ? "pass" : "fail")}
         ${metricHtml("Failure bucket", summary.failureBucket)}
         ${metricHtml("Iterations", String(summary.iterationsUsed))}
         ${metricHtml("Duration", `${summary.durationMs}ms`)}
       </section>
-      ${manifestRows.length === 0 ? "" : sectionHtml("Run Manifest", tableHtml(["Field", "Value"], manifestRows))}
+      ${manifestRows.length === 0 ? "" : sectionHtml("How This Run Was Produced", tableHtml(["Field", "Value"], manifestRows))}
       ${Object.keys(summary.subscores).length === 0 ? "" : sectionHtml("Subscores", tableHtml(["Dimension", "Score"], Object.entries(summary.subscores).map(([key, value]) => [key, formatNumber(value ?? 0)])))}
-      ${summary.evalJudge === undefined && summary.evalJudgeAgreement === undefined && summary.evalJudgeVotes.length === 0 ? "" : sectionHtml("Evaluator Judges", [
+      ${summary.evalJudge === undefined && summary.evalJudgeAgreement === undefined && summary.evalJudgeVotes.length === 0 ? "" : sectionHtml("Reviewer Details", [
         summary.evalJudge === undefined ? "" : tableHtml(["Field", "Value"], [["Primary judge", formatEvalJudge(summary.evalJudge)]]),
         summary.evalJudgeAgreement === undefined ? "" : tableHtml(["Votes", "Unanimous", "Majority", "Counts", "Dissenting judges"], [[
           String(summary.evalJudgeAgreement.votes),
@@ -7772,7 +7868,7 @@ function formatRunReportHtml(summary: RuhrohRunSummary, reviewQueue: RuhrohRevie
           vote.evidenceRefs.map((evidence) => `${evidence.kind}:${evidence.ref}`).join("; "),
         ])),
       ].join(""))}
-      ${summary.implementationTimeline.length === 0 ? "" : sectionHtml("Implementation Timeline", tableHtml(["Iteration", "Status", "Completion", "Stop", "Run id", "Transcript", "Event log", "Notes"], summary.implementationTimeline.map((step) => [
+      ${summary.implementationTimeline.length === 0 ? "" : sectionHtml("What The Agent Did", tableHtml(["Attempt", "Status", "Completion", "Stop", "Run id", "Transcript", "Event log", "Notes"], summary.implementationTimeline.map((step) => [
         String(step.iteration),
         step.status,
         step.completionState ?? "",
@@ -7791,11 +7887,11 @@ function formatRunReportHtml(summary: RuhrohRunSummary, reviewQueue: RuhrohRevie
       ])))}
       ${summary.evidenceRefs.length === 0 ? "" : sectionHtml("Evidence", tableHtml(["Kind", "Ref", "Summary"], summary.evidenceRefs.map((evidence) => [evidence.kind, evidence.ref, evidence.summary])))}
       ${summary.unmetCriteria.length === 0 ? "" : sectionHtml("Unmet Criteria", listHtml(summary.unmetCriteria))}
-      ${summary.evalQualityWarnings.length === 0 ? "" : sectionHtml("Eval Quality Warnings", listHtml(summary.evalQualityWarnings))}
-      ${summary.artifactCompletenessWarnings.length === 0 ? "" : sectionHtml("Artifact Completeness Warnings", listHtml(summary.artifactCompletenessWarnings))}
-      ${reviewQueue.length === 0 ? "" : sectionHtml("Review Queue", reviewQueueTableHtml(reviewQueue, htmlPath))}
+      ${summary.evalQualityWarnings.length === 0 ? "" : sectionHtml("Reviewer Evidence Warnings", listHtml(summary.evalQualityWarnings))}
+      ${summary.artifactCompletenessWarnings.length === 0 ? "" : sectionHtml("Missing Evidence Warnings", listHtml(summary.artifactCompletenessWarnings))}
+      ${reviewQueue.length === 0 ? "" : sectionHtml("Human Review Queue", reviewQueueTableHtml(reviewQueue, htmlPath))}
       ${summary.commandsRun.length === 0 ? "" : sectionHtml("Commands Run", tableHtml(["Command", "Exit", "Summary"], summary.commandsRun.map((command) => [command.command, String(command.exitCode), command.summary])))}
-      ${summary.artifactInventory.length === 0 ? "" : sectionHtml("Artifact Inventory", tableHtml(["Name", "Status", "Size", "SHA-256", "Path"], summary.artifactInventory.map((artifact) => [
+      ${summary.artifactInventory.length === 0 ? "" : sectionHtml("Saved Evidence Files", tableHtml(["Name", "Status", "Size", "SHA-256", "Path"], summary.artifactInventory.map((artifact) => [
         artifact.name,
         artifact.available ? "available" : artifact.error ?? "missing",
         artifact.sizeBytes === undefined ? "" : String(artifact.sizeBytes),
@@ -7809,7 +7905,7 @@ function formatRunReportHtml(summary: RuhrohRunSummary, reviewQueue: RuhrohRevie
 }
 
 function formatReviewQueueHtml(report: RuhrohReviewQueueReport, htmlPath?: string | undefined): string {
-  const title = "Ruhroh review queue";
+  const title = "Ruhroh human review queue";
   return `<!doctype html>
 <html lang="en">
   <head>
@@ -7839,7 +7935,7 @@ function formatReviewQueueHtml(report: RuhrohReviewQueueReport, htmlPath?: strin
     <main>
       <header>
         <h1>${escapeHtml(title)}</h1>
-        <p class="muted">${localPathLinkHtml(report.source.resultsPath, htmlPath)}</p>
+        <p class="muted">${escapeHtml(localPathDisplay(report.source.resultsPath, htmlPath))}</p>
       </header>
       <section class="grid" aria-label="Review queue overview">
         ${metricHtml("Results", String(report.source.resultCount))}
@@ -7848,11 +7944,11 @@ function formatReviewQueueHtml(report: RuhrohReviewQueueReport, htmlPath?: strin
         ${metricHtml("Recommended", String(report.recommendedCount))}
       </section>
       ${report.reviewQueue.length === 0
-        ? sectionHtml("Review Queue", "<p>No review items. Required human review is clear for these result artifacts.</p>")
-        : sectionHtml("Review Queue", reviewQueueTableHtml(report.reviewQueue, htmlPath))}
-      ${sectionHtml("Adjudication Checklist", listHtml([
-        "Inspect each listed transcript, event log, eval output, and final workspace artifact.",
-        "Record the decision, rationale, reviewer identity, and any accepted limitations with the benchmark pack or claim review.",
+        ? sectionHtml("Human Review Queue", "<p>No review items. Required human review is clear for these saved results.</p>")
+        : sectionHtml("Human Review Queue", reviewQueueTableHtml(report.reviewQueue, htmlPath))}
+      ${sectionHtml("Reviewer Checklist", listHtml([
+        "Inspect each listed transcript, event log, reviewer output, and final project evidence.",
+        "Record the decision, rationale, reviewer identity, and any accepted limitations with the benchmark result.",
         "Rerun ruhroh publish-check before publishing the claim.",
       ]))}
     </main>
@@ -7862,7 +7958,7 @@ function formatReviewQueueHtml(report: RuhrohReviewQueueReport, htmlPath?: strin
 }
 
 function formatEvalQualityReportHtml(report: RuhrohEvalQualityReport, htmlPath?: string | undefined): string {
-  const title = "Ruhroh eval-quality";
+  const title = "Ruhroh evaluation evidence";
   const evidenceRefTotal = report.runs.reduce((total, run) => total + run.evidenceRefCount, 0);
   const criteriaResultTotal = report.runs.reduce((total, run) => total + run.criteriaResultCount, 0);
   const commandTotal = report.runs.reduce((total, run) => total + run.commandCount, 0);
@@ -7896,23 +7992,23 @@ function formatEvalQualityReportHtml(report: RuhrohEvalQualityReport, htmlPath?:
     <main>
       <header>
         <h1>${escapeHtml(title)}</h1>
-        <p class="muted">${localPathLinkHtml(report.source.resultsPath, htmlPath)}</p>
+        <p class="muted">${escapeHtml(localPathDisplay(report.source.resultsPath, htmlPath))}</p>
       </header>
-      <section class="grid" aria-label="Eval quality overview">
+      <section class="grid" aria-label="Evaluation evidence overview">
         ${metricHtml("Gate", report.ok ? "ok" : "needs attention", report.ok ? "pass" : "fail")}
         ${metricHtml("Results", String(report.source.resultCount))}
         ${metricHtml("Warnings", String(report.warningCount), report.warningCount === 0 ? "pass" : "fail")}
         ${metricHtml("Human review required", String(report.humanReviewRequiredCount), report.humanReviewRequiredCount === 0 ? "pass" : "fail")}
-        ${metricHtml("Evidence refs", String(evidenceRefTotal))}
+        ${metricHtml("Evidence references", String(evidenceRefTotal))}
         ${metricHtml("Criteria results", String(criteriaResultTotal))}
         ${metricHtml("Commands", String(commandTotal))}
         ${metricHtml("Judge votes", String(judgeVoteTotal))}
       </section>
       ${Object.keys(report.warningCounts).length === 0
-        ? sectionHtml("Warning Counts", "<p>No evaluator evidence warnings were found.</p>")
+        ? sectionHtml("Warning Counts", "<p>No reviewer evidence warnings were found.</p>")
         : sectionHtml("Warning Counts", tableHtml(["Warning", "Count"], Object.entries(report.warningCounts).map(([warning, count]) => [warning, String(count)])))}
       ${report.nextActions.length === 0 ? "" : sectionHtml("Next Actions", listHtml(report.nextActions))}
-      ${sectionHtml("Evaluator Runs", evalQualityRunTableHtml(report.runs, htmlPath))}
+      ${sectionHtml("Reviewed Runs", evalQualityRunTableHtml(report.runs, htmlPath))}
     </main>
   </body>
 </html>
@@ -7921,12 +8017,12 @@ function formatEvalQualityReportHtml(report: RuhrohEvalQualityReport, htmlPath?:
 
 function evalQualityRunTableHtml(runs: RuhrohEvalQualityRun[], htmlPath?: string | undefined): string {
   return tableHtml([
-    "Scenario",
-    "Adapter",
+    "Task",
+    "Agent connector",
     "Run id",
-    "Eval",
+    "Review",
     "Score",
-    "Evidence refs",
+    "Evidence references",
     "Criteria results",
     "Commands",
     "Judge",
@@ -7982,11 +8078,11 @@ function listHtml(items: string[]): string {
 function reviewQueueTableHtml(items: RuhrohReviewQueueItem[], htmlPath?: string | undefined): string {
   return tableHtml([
     "Priority",
-    "Scenario",
-    "Adapter",
+    "Task",
+    "Agent connector",
     "Run id",
     "Score",
-    "Eval",
+    "Review",
     "Failure",
     "Reasons",
     "Transcripts",
@@ -8212,14 +8308,14 @@ function formatCompareReportHtml(
     <main>
       <header>
         <h1>Ruhroh compare</h1>
-        <p class="muted">${escapeHtml(`${groups.length} scenario/adapter group${groups.length === 1 ? "" : "s"}`)}</p>
+        <p class="muted">${escapeHtml(`${groups.length} task/agent result group${groups.length === 1 ? "" : "s"}`)}</p>
         ${runPlan === undefined ? "" : `<p class="muted">${escapeHtml(`run plan ${runPlan.samples.length} planned sample${runPlan.samples.length === 1 ? "" : "s"}`)}</p>`}
-        ${compareSuite === undefined ? "" : `<p class="muted">${escapeHtml(`suite ${compareSuite.suite.id}@${compareSuite.suite.suiteVersion}; minRuns=${compareSuite.suite.methodology.minRuns}`)}</p>`}
-        ${compareSuite === undefined || compareSuite.warnings.length === 0 ? "" : sectionHtml("Suite Warnings", listHtml(compareSuite.warnings))}
-        ${runPlanWarnings.length === 0 ? "" : sectionHtml("Run Plan Warnings", listHtml(runPlanWarnings))}
+        ${compareSuite === undefined ? "" : `<p class="muted">${escapeHtml(`benchmark suite ${compareSuite.suite.id}@${compareSuite.suite.suiteVersion}; minimum runs=${compareSuite.suite.methodology.minRuns}`)}</p>`}
+        ${compareSuite === undefined || compareSuite.warnings.length === 0 ? "" : sectionHtml("Benchmark Suite Warnings", listHtml(compareSuite.warnings))}
+        ${runPlanWarnings.length === 0 ? "" : sectionHtml("Planned Run Warnings", listHtml(runPlanWarnings))}
       </header>
       ${formatPublicationEvidenceOverviewHtml(groups, compareSuite, reviewQueue, claimReadiness, runPlan, runPlanWarnings, resultArtifacts)}
-      ${claimReadiness === undefined ? "" : sectionHtml("Claim Readiness", tableHtml([
+      ${claimReadiness === undefined ? "" : sectionHtml("Ready To Publish?", tableHtml([
         "Scope",
         "Publishable",
         "Blockers",
@@ -8230,18 +8326,18 @@ function formatCompareReportHtml(
         claimReadiness.blockers.join("; "),
         claimReadiness.advisories.join("; "),
       ]]))}
-      ${sectionHtml("Comparison Matrix", compareMatrixHtml(groups))}
+      ${sectionHtml("Side-by-Side Results", compareMatrixHtml(groups))}
       ${compareFailureTriageHtml(groups)}
       ${compareCostEfficiencyHtml(groups)}
-      ${suiteAdapterSummaries.length === 0 ? "" : sectionHtml("Suite Adapter Summary", tableHtml([
-        "Adapter",
-        "Scenarios",
-        "Missing scenarios",
-        "Scenario runs",
+      ${suiteAdapterSummaries.length === 0 ? "" : sectionHtml("Benchmark Suite Coverage By Agent", tableHtml([
+        "Agent connector",
+        "Tasks",
+        "Missing tasks",
+        "Runs per task",
         "Runs",
         "Pass rate",
         "95% CI",
-        "Mean scenario pass rate",
+        "Mean task pass rate",
         "Min runs",
         "Warnings",
       ], suiteAdapterSummaries.map((summary) => [
@@ -8256,8 +8352,8 @@ function formatCompareReportHtml(
         summary.minRunsSatisfied ? "satisfied" : "not satisfied",
         summary.warnings.join("; "),
       ])))}
-      ${pairwiseComparisons.length === 0 ? "" : sectionHtml("Pairwise Adapter Comparisons", tableHtml([
-        "Scenario",
+      ${pairwiseComparisons.length === 0 ? "" : sectionHtml("Pairwise Agent Comparisons", tableHtml([
+        "Task",
         "Contender",
         "Baseline",
         "Delta",
@@ -8281,17 +8377,17 @@ function formatCompareReportHtml(
         `${formatPercent(comparison.baselinePassRate)} (${comparison.baselinePasses}/${comparison.baselineRuns})`,
         comparison.warnings.join("; "),
       ])))}
-      ${reviewQueue.length === 0 ? "" : sectionHtml("Review Queue", reviewQueueTableHtml(reviewQueue, htmlPath))}
+      ${reviewQueue.length === 0 ? "" : sectionHtml("Human Review Queue", reviewQueueTableHtml(reviewQueue, htmlPath))}
       ${compareEvidenceBrowserHtml(resultArtifacts, htmlPath)}
-      ${resultArtifacts.length === 0 ? "" : sectionHtml("Result Artifacts", tableHtml([
-        "Scenario",
-        "Adapter",
+      ${resultArtifacts.length === 0 ? "" : sectionHtml("Saved Result Evidence", tableHtml([
+        "Task",
+        "Agent connector",
         "Run id",
         "Sample id",
-        "Scenario version",
+        "Task version",
         "Result JSON",
         "SHA-256",
-        "Named artifacts",
+        "Named evidence files",
       ], resultArtifacts.map((artifact) => [
         artifact.scenarioId,
         artifact.adapter,
@@ -8303,8 +8399,8 @@ function formatCompareReportHtml(
         artifactInventoryCell(artifact.artifactInventory, htmlPath),
       ])))}
       ${tableHtml([
-        "Scenario",
-        "Adapter",
+        "Task",
+        "Agent connector",
         "Runs",
         "Pass rate",
         "95% CI",
@@ -8316,8 +8412,8 @@ function formatCompareReportHtml(
         "Iterations",
         "Failures",
         "Review",
-        "Eval warnings",
-        "Artifact warnings",
+        "Reviewer warnings",
+        "Missing evidence warnings",
         "Usage",
         "Warnings",
       ], groups.map((group) => [
@@ -8362,7 +8458,7 @@ function compareEvidenceBrowserHtml(
     </article>`;
   }).join("");
   return sectionHtml("Evidence Browser", [
-    `<p class="muted">Open the preserved evidence for each run without digging through the full artifact table.</p>`,
+    `<p class="muted">Open the saved evidence for each run without digging through the full file table.</p>`,
     `<div class="evidence-grid">${cards}</div>`,
   ].join(""));
 }
@@ -8377,15 +8473,15 @@ function compareEvidenceLinksHtml(
     `<li><strong>result</strong>: ${localPathLinkHtml(artifact.path, htmlPath)}</li>`,
   ];
   for (const item of [
-    { name: "runManifest", label: "manifest" },
-    { name: "evalResult", label: "evaluation" },
-    { name: "evalInput", label: "eval input" },
-    { name: "journey", label: "journey" },
-    { name: "implementationRuns", label: "turns" },
+    { name: "runManifest", label: "how this run was produced" },
+    { name: "evalResult", label: "review result" },
+    { name: "evalInput", label: "review input" },
+    { name: "journey", label: "agent journey" },
+    { name: "implementationRuns", label: "agent turns" },
     { name: "transcript", label: "transcript" },
     { name: "events", label: "events" },
-    { name: "workspaceSummary", label: "workspace summary" },
-    { name: "workspaceTarball", label: "workspace archive" },
+    { name: "workspaceSummary", label: "project summary" },
+    { name: "workspaceTarball", label: "project archive" },
   ]) {
     const evidence = byName.get(item.name);
     if (evidence === undefined) {
@@ -8413,21 +8509,21 @@ function formatPublicationEvidenceOverviewHtml(
   const totalPasses = groups.reduce((total, group) => total + group.passes, 0);
   const publishable = claimReadiness?.publishable === true;
   const evidenceSummary = [
-    `${resultArtifacts.length} hashed result JSON source${resultArtifacts.length === 1 ? "" : "s"}`,
-    `${namedArtifacts.length} named artifact${namedArtifacts.length === 1 ? "" : "s"}`,
-    `${missingArtifacts} missing artifact${missingArtifacts === 1 ? "" : "s"}`,
+    `${resultArtifacts.length} hashed result file${resultArtifacts.length === 1 ? "" : "s"}`,
+    `${namedArtifacts.length} named evidence file${namedArtifacts.length === 1 ? "" : "s"}`,
+    `${missingArtifacts} missing evidence file${missingArtifacts === 1 ? "" : "s"}`,
     runPlan === undefined ? "no run plan" : `${runPlan.samples.length} planned sample${runPlan.samples.length === 1 ? "" : "s"}`,
-    compareSuite === undefined ? "ad hoc comparison" : `suite ${compareSuite.suite.id}@${compareSuite.suite.suiteVersion}`,
+    compareSuite === undefined ? "ad hoc comparison" : `benchmark suite ${compareSuite.suite.id}@${compareSuite.suite.suiteVersion}`,
   ].join("; ");
-  return sectionHtml("Publication and Evidence Overview", [
-    `<div class="grid" aria-label="Publication and evidence overview">`,
-    metricHtml("Publishable", claimReadiness === undefined ? "unknown" : publishable ? "yes" : "no", claimReadiness === undefined ? "" : publishable ? "pass" : "fail"),
+  return sectionHtml("Publish And Evidence Overview", [
+    `<div class="grid" aria-label="Publish and evidence overview">`,
+    metricHtml("Ready to publish", claimReadiness === undefined ? "unknown" : publishable ? "yes" : "no", claimReadiness === undefined ? "" : publishable ? "pass" : "fail"),
     metricHtml("Scope", claimReadiness?.scope ?? "unknown"),
     metricHtml("Runs", `${totalPasses}/${totalRuns} passing`),
-    metricHtml("Result sources", String(resultArtifacts.length), resultArtifacts.length > 0 ? "pass" : "fail"),
-    metricHtml("Named artifacts", `${namedArtifacts.length} tracked${missingArtifacts > 0 ? `, ${missingArtifacts} missing` : ""}`, missingArtifacts === 0 ? "pass" : "fail"),
-    metricHtml("Run plan", runPlan === undefined ? "missing" : runPlanWarnings.length === 0 ? "clean" : `${runPlanWarnings.length} warning${runPlanWarnings.length === 1 ? "" : "s"}`, runPlan !== undefined && runPlanWarnings.length === 0 ? "pass" : "fail"),
-    metricHtml("Review queue", `${requiredReview} required, ${recommendedReview} recommended`, requiredReview === 0 ? "pass" : "fail"),
+    metricHtml("Result files", String(resultArtifacts.length), resultArtifacts.length > 0 ? "pass" : "fail"),
+    metricHtml("Evidence files", `${namedArtifacts.length} tracked${missingArtifacts > 0 ? `, ${missingArtifacts} missing` : ""}`, missingArtifacts === 0 ? "pass" : "fail"),
+    metricHtml("Planned runs", runPlan === undefined ? "missing" : runPlanWarnings.length === 0 ? "clean" : `${runPlanWarnings.length} warning${runPlanWarnings.length === 1 ? "" : "s"}`, runPlan !== undefined && runPlanWarnings.length === 0 ? "pass" : "fail"),
+    metricHtml("Human review", `${requiredReview} required, ${recommendedReview} recommended`, requiredReview === 0 ? "pass" : "fail"),
     metricHtml("Readiness blockers", String(claimReadiness?.blockers.length ?? 0), claimReadiness === undefined || claimReadiness.blockers.length === 0 ? "pass" : "fail"),
     `</div>`,
     `<p class="muted">${escapeHtml(evidenceSummary)}</p>`,
@@ -8447,7 +8543,7 @@ function compareMatrixHtml(groups: RuhrohAggregateRunGroup[]): string {
   const adapters = compareMatrixAdapters(groups);
   const byScenarioAdapter = compareMatrixGroupMap(groups);
   return tableHtml([
-    "Scenario",
+    "Task",
     ...adapters,
   ], compareMatrixScenarios(groups).map((scenarioId) => [
     scenarioId,
@@ -8477,14 +8573,14 @@ function compareFailureTriageHtml(groups: RuhrohAggregateRunGroup[]): string {
   if (rows.length === 0) {
     return "";
   }
-  return sectionHtml("Failure Triage", tableHtml([
-    "Scenario",
-    "Adapter",
+  return sectionHtml("What Needs Attention", tableHtml([
+    "Task",
+    "Agent connector",
     "Non-passing runs",
     "Failure buckets",
     "Review required",
-    "Eval warnings",
-    "Artifact warnings",
+    "Reviewer warnings",
+    "Missing evidence warnings",
     "Statistical warnings",
     "Next action",
   ], rows.map((row) => [
@@ -8506,8 +8602,8 @@ function compareCostEfficiencyHtml(groups: RuhrohAggregateRunGroup[]): string {
     return "";
   }
   return sectionHtml("Cost and Efficiency", tableHtml([
-    "Scenario",
-    "Adapter",
+    "Task",
+    "Agent connector",
     "Usage coverage",
     "Cost coverage",
     "Total cost",
@@ -8537,16 +8633,16 @@ function compareFailureNextAction(
   artifactWarningCount: number,
 ): string {
   if (artifactWarningCount > 0) {
-    return "Restore missing or incomplete artifacts before publication.";
+    return "Restore missing or incomplete evidence files before publication.";
   }
   if (evalWarningCount > 0) {
-    return "Fix evaluator evidence quality before citing the score.";
+    return "Strengthen reviewer evidence before citing the score.";
   }
   if (group.reviewRequired > 0) {
-    return "Adjudicate required review items.";
+    return "Resolve required human review items.";
   }
   if (nonPassingRuns > 0) {
-    return "Inspect failing run artifacts and failure buckets.";
+    return "Inspect failing runs and failure reasons.";
   }
   return "Review statistical warnings before comparison.";
 }
@@ -8786,7 +8882,7 @@ Options:
   --iterations <n>          Override implementation iterations.
   --runs <n>                Repeat each selected scenario n times. Default: 1.
   --shard <i>/<n>           Run only shard i of n from the planned sample matrix. Sample ids still use the full --runs count.
-  --adapter <id-or-command> Select run-agent adapter by id or command path. May be repeated. Required for run/dry-run/plan.
+  --adapter <id-or-command> Select agent connector by id or command path. May be repeated. Required for run/dry-run/plan.
                             For init, accepts a starter adapter template: generic, codex-cli, claude-code, gemini-cli, aider, or fixture.
   --template <name>         Scaffold template. For init/new-adapter: generic, codex-cli, claude-code, gemini-cli, aider, or fixture. Default: generic.
                             For new-evaluator: review, deterministic, model, or hybrid. Default: review.
@@ -8794,7 +8890,7 @@ Options:
   --rerun-ledger <path>     Account for infrastructure exclusions against a run plan with a ruhroh_rerun_ledger_v1 JSON file.
   --benchmark-claim <path>  Write the compact benchmarkClaim JSON export from compare.
   --benchmark-summary <path> Write a row-oriented benchmark summary JSON export from compare.
-  --bundle <dir>            Write a publication bundle from publish-check: manifest, claim, summary, compare HTML, review/eval-quality packets, and calibration evidence when present.
+  --bundle <dir>            Write a publication packet from publish-check: inventory, claim, summary, compare HTML, review/evaluation-evidence reports, and calibration evidence when present.
   --generate-only           Generate Harbor task directories without running Harbor.
   --harbor-bin <path>       Harbor binary. Default: harbor.
   --dry-run                 Preview Harbor commands without writing task directories, a run plan, Harbor process, or agent calls.

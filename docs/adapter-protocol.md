@@ -9,27 +9,25 @@ depends_on:
   - python/ruhroh/loop_controller.py
 ---
 
-# Adapter Protocol
+# Agent Command Protocol
 
-Run-agent adapters own agent-specific behavior. Ruhroh core owns orchestration
-and result mapping.
+Agent connectors own agent-specific behavior. Ruhroh owns the task loop and
+result mapping.
 
-Most users should use the command-backed adapter path documented in
-[Write an Adapter](./write-an-adapter.md) and
-[Custom-Shell Adapter](./custom-shell.md). A command wrapper is easier to audit,
+Most users should use the command-backed path documented in
+[Connect an Agent](./write-an-adapter.md) and
+[Run a Shell Agent](./custom-shell.md). A command wrapper is easier to audit,
 works with existing agent CLIs, and already supports completion status,
-transcripts, model identity, usage, and artifact metadata through
+transcripts, model identity, usage, and evidence metadata through
 `RUHROH_RESULT_PATH`.
 
-Use the TypeScript adapter lifecycle only for advanced integrations where a
+Use the TypeScript connector lifecycle only for advanced integrations where a
 process wrapper cannot preserve the agent behavior you need, for example a
-native session transport, embedded SDK client, or runtime that needs custom
-artifact collection hooks.
+native session transport, embedded SDK client, or custom evidence collection.
 
 ## Recommended Command Protocol
 
-For shell-based public agents, use the generic command adapter protocol. The
-current command adapter passes:
+For shell-based public agents, use the generic command protocol. Ruhroh passes:
 
 - `RUHROH_MESSAGE`
 - `RUHROH_ITERATION`
@@ -53,12 +51,12 @@ Wrappers should emit a final JSON line:
 ```
 
 Wrappers may also write `RUHROH_RESULT_PATH` with
-`version: "ruhroh_run_agent_result_v1"`. The adapter reads that file when
+`version: "ruhroh_run_agent_result_v1"`. Ruhroh reads that file when
 present and maps `goal_satisfied`, `continue`, `cannot_satisfy`,
 `policy_blocked`, `runtime_failure`, and `infra_failure` into the generic
 completion contract.
 
-The result file may include adapter-specific metadata:
+The result file may include connector-specific metadata:
 
 ```json
 {
@@ -116,7 +114,7 @@ The TypeScript adapter contract is exported from `@kestrel-agents/ruhroh`:
 - `collectArtifacts()`
 - `cleanup()`
 
-Adapters report their continuity level:
+Connectors report their continuity level:
 
 - `native_session`
 - `workspace_plus_transcript`

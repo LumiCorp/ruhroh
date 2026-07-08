@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Ruhroh eval-quality</title>
+    <title>Ruhroh evaluation evidence</title>
     <style>
       :root { color-scheme: light; --border: #d8dee4; --muted: #57606a; --bg: #f6f8fa; --bad: #b42318; --ok: #1f7a3f; }
       body { margin: 0; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #1f2328; background: #fff; }
@@ -26,22 +26,22 @@
   <body>
     <main>
       <header>
-        <h1>Ruhroh eval-quality</h1>
-        <p class="muted"><a href="./sample-results">./sample-results</a></p>
+        <h1>Ruhroh evaluation evidence</h1>
+        <p class="muted">./sample-results</p>
       </header>
-      <section class="grid" aria-label="Eval quality overview">
+      <section class="grid" aria-label="Evaluation evidence overview">
         <div class="metric"><strong>Gate</strong><span class="fail">needs attention</span></div>
         <div class="metric"><strong>Results</strong><span>2</span></div>
         <div class="metric"><strong>Warnings</strong><span class="fail">1</span></div>
         <div class="metric"><strong>Human review required</strong><span class="pass">0</span></div>
-        <div class="metric"><strong>Evidence refs</strong><span>4</span></div>
+        <div class="metric"><strong>Evidence references</strong><span>4</span></div>
         <div class="metric"><strong>Criteria results</strong><span>2</span></div>
         <div class="metric"><strong>Commands</strong><span>2</span></div>
         <div class="metric"><strong>Judge votes</strong><span>4</span></div>
       </section>
       <section><h2>Warning Counts</h2><table><thead><tr><th>Warning</th><th>Count</th></tr></thead><tbody><tr><td>eval command evidence includes non-zero exit codes</td><td>1</td></tr></tbody></table></section>
       <section><h2>Next Actions</h2><ul><li>Explain non-zero evaluator command evidence or fix the evaluator checks that produced it.</li></ul></section>
-      <section><h2>Evaluator Runs</h2><table><thead><tr><th>Scenario</th><th>Adapter</th><th>Run id</th><th>Eval</th><th>Score</th><th>Evidence refs</th><th>Criteria results</th><th>Commands</th><th>Judge</th><th>Judge votes</th><th>Agreement</th><th>Review</th><th>Warnings</th><th>Result</th></tr></thead><tbody><tr><td>simple-newsletter</td><td>agent-a</td><td>sample-newsletter-agent-a-1</td><td>passed</td><td>1</td><td>2</td><td>1</td><td>1</td><td>hybrid/docs-fixture-evaluator@2026-07-08</td><td>2</td><td>unanimous majority=passed</td><td></td><td></td><td><a href="./sample-results/run-one/ruhroh-loop-result.json">./sample-results/run-one/ruhroh-loop-result.json</a></td></tr><tr><td>simple-newsletter</td><td>agent-a</td><td>sample-newsletter-agent-a-2</td><td>failed</td><td>0</td><td>2</td><td>1</td><td>1</td><td>hybrid/docs-fixture-evaluator@2026-07-08</td><td>2</td><td>unanimous majority=failed</td><td></td><td>eval command evidence includes non-zero exit codes</td><td><a href="./sample-results/run-two/ruhroh-loop-result.json">./sample-results/run-two/ruhroh-loop-result.json</a></td></tr></tbody></table></section>
+      <section><h2>Reviewed Runs</h2><table><thead><tr><th>Task</th><th>Agent connector</th><th>Run id</th><th>Review</th><th>Score</th><th>Evidence references</th><th>Criteria results</th><th>Commands</th><th>Judge</th><th>Judge votes</th><th>Agreement</th><th>Review</th><th>Warnings</th><th>Result</th></tr></thead><tbody><tr><td>simple-newsletter</td><td>agent-a</td><td>sample-newsletter-agent-a-1</td><td>passed</td><td>1</td><td>2</td><td>1</td><td>1</td><td>hybrid/docs-fixture-evaluator@2026-07-08</td><td>2</td><td>unanimous majority=passed</td><td></td><td></td><td><a href="./sample-results/run-one/ruhroh-loop-result.json">./sample-results/run-one/ruhroh-loop-result.json</a></td></tr><tr><td>simple-newsletter</td><td>agent-a</td><td>sample-newsletter-agent-a-2</td><td>failed</td><td>0</td><td>2</td><td>1</td><td>1</td><td>hybrid/docs-fixture-evaluator@2026-07-08</td><td>2</td><td>unanimous majority=failed</td><td></td><td>eval command evidence includes non-zero exit codes</td><td><a href="./sample-results/run-two/ruhroh-loop-result.json">./sample-results/run-two/ruhroh-loop-result.json</a></td></tr></tbody></table></section>
     </main>
   </body>
 </html>

@@ -9,10 +9,10 @@ depends_on:
   - python/ruhroh/loop_controller.py
 ---
 
-# Write an Adapter
+# Connect an Agent
 
-Ruhroh is agent-agnostic. A run-agent adapter is the bridge between Ruhroh's
-iteration loop and the coding agent you want to evaluate.
+Ruhroh is agent-agnostic. An agent connector is the command or integration that
+lets Ruhroh ask a coding agent to work on a task.
 
 For public usage, start with a command wrapper. It is the supported path for
 most benchmark authors because it works with existing CLIs, is easy to inspect,
@@ -24,7 +24,7 @@ pnpm exec ruhroh \
   --adapter ./adapters/my-agent.sh
 ```
 
-List the packaged adapter examples before writing your own wrapper:
+List the packaged connector examples before writing your own wrapper:
 
 ```bash
 pnpm exec ruhroh examples
@@ -33,22 +33,22 @@ pnpm exec ruhroh examples
 The credential-free fixture proves the loop without live model credentials.
 The Codex CLI, Claude Code, Gemini CLI, and Aider examples show the supported
 `custom-shell` pattern for real public-agent wrappers. See
-[Adapter Examples](./adapter-examples.md).
+[Agent Connector Examples](./adapter-examples.md).
 
-Choose the adapter surface by integration need:
+Choose the connector style by integration need:
 
 | Need | Use | Why |
 | --- | --- | --- |
 | Evaluate a CLI agent or local wrapper | `custom-shell` or `--adapter ./wrapper.sh` | Fastest path; Ruhroh passes environment variables and reads the completion line or result file. |
 | Start from a maintained public-agent example | `new-adapter --template codex-cli`, `claude-code`, `gemini-cli`, or `aider` | Copies a wrapper that already writes prompt, transcript, model, usage, and result metadata where the agent exposes it. |
 | Prove the loop without credentials | `new-adapter --template fixture` or the `fixture-newsletter` example | Deterministic smoke path for setup and CI. |
-| Build a native integration that cannot be represented as a process wrapper | TypeScript adapter protocol | Advanced extension point; use only when a command wrapper cannot preserve session behavior or metadata. |
+| Build a native integration that cannot be represented as a process wrapper | TypeScript connector protocol | Advanced extension point; use only when a command wrapper cannot preserve session behavior or metadata. |
 
 If you are unsure, choose a script-backed command wrapper. A checked-in wrapper
 is easier for reviewers to inspect, easier for `doctor` to analyze, and easier
-to reproduce in a publication bundle than an inline shell command. Use the
-TypeScript adapter lifecycle only when the wrapper model loses essential agent
-state, session transport, or artifact-collection behavior that affects the
+to reproduce in a publication packet than an inline shell command. Use the
+TypeScript connector lifecycle only when the wrapper model loses essential agent
+state, session transport, or evidence-collection behavior that affects the
 benchmark claim.
 
 Start from a local scaffold when creating a wrapper:
@@ -68,7 +68,7 @@ generic scaffold writes
 prompt/transcript files and a `ruhroh_run_agent_result_v1` result file, but
 exits with `runtime_failure` until you replace the placeholder block with a
 real agent invocation. Live CLI templates still need the matching agent CLI
-installed and authenticated before they can run. Each scaffolded adapter README
+installed and authenticated before they can run. Each scaffolded connector README
 includes a "Comparison Readiness" checklist; do not collect repeated live-agent
 samples until its `adapter-metadata` doctor gate is `ok`.
 
@@ -76,7 +76,7 @@ When `--adapter` looks like a path or command, Ruhroh sets
 `RUHROH_RUN_AGENT_COMMAND` for the package runtime. Prefer passing a readable
 script path such as `./ruhroh/adapters/local-agent/run.sh` over a long inline
 command string. Readable paths let `doctor` check adapter metadata and give
-reviewers a stable wrapper surface to inspect alongside the run artifacts.
+reviewers a stable wrapper surface to inspect alongside the saved evidence.
 
 Minimal wrapper:
 
@@ -120,7 +120,7 @@ If the wrapper does not emit completion, Ruhroh may continue until the iteration
 cap. For richer results, write a `ruhroh_run_agent_result_v1` JSON result file
 to `RUHROH_RESULT_PATH`.
 
-Use that result file to self-report adapter metadata for credible comparisons:
+Use that result file to self-report connector metadata for credible comparisons:
 
 ```json
 {
@@ -144,17 +144,17 @@ Ruhroh writes these fields into `ruhroh-run-manifest.json`; result-file metadata
 takes precedence over environment fallback values such as
 `RUHROH_AGENT_MODEL`.
 
-## Adapter Readiness Checklist
+## Connector Readiness Checklist
 
 Before collecting repeated live-agent samples, make `ruhroh doctor` report the
-adapter metadata check as ready for repeated comparisons. A wrapper should write
+connector metadata check as ready for repeated comparisons. A wrapper should write
 `RUHROH_RESULT_PATH` and include:
 
 - `adapterVersion`, so later reports can distinguish wrapper changes;
 - `model.provider`, `model.model`, and, when available, `model.version`;
 - `model.promptVersion`, when prompts or system instructions can change;
 - `artifacts.transcript` or an equivalent transcript/log path;
-- any prompt, last-message, event, or tool-call artifacts that help audit the
+- any prompt, last-message, event, or tool-call evidence that helps audit the
   implementation journey.
 
 Usage fields are optional, but add `usage.costUsd`, `usage.inputTokens`,
@@ -164,7 +164,7 @@ tokens-per-pass views will show partial coverage.
 
 `ruhroh doctor` includes an `adapter-metadata` check for readable command
 wrappers. It warns when a wrapper does not reference `RUHROH_RESULT_PATH` or
-when the result file is missing adapter version, model identity, or artifacts.
+when the result file is missing connector version, model identity, or evidence.
 Treat that warning as a preflight signal before collecting repeated live-agent
 runs.
 

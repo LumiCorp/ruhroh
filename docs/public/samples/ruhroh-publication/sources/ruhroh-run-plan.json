@@ -23,7 +23,7 @@
     },
     "source": {
       "suitePath": "./ruhroh/suites/ruhroh-sample/suite.json",
-      "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014"
+      "suiteSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc"
     }
   },
   "generated": {

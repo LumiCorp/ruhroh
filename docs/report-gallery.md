@@ -12,57 +12,48 @@ depends_on:
 
 # Report Gallery
 
-Ruhroh reports are designed for audit, not just presentation. A reader should be
-able to move from an aggregate score to the runs, manifests, evaluator evidence,
-journeys, transcripts, and claim-readiness blockers behind it.
+Ruhroh reports are designed to answer two beginner questions: what did the
+agent do, and why should anyone trust the score? A reader should be able to
+move from a summary result to the saved runs, review notes, transcripts, and
+blockers behind it.
 
-Open the generated samples:
+## Start Here
 
-- [Workflow guide](/samples/ruhroh-workflow.html)
-- [Single-run report](/samples/ruhroh-report.html)
-- [Eval-quality report](/samples/ruhroh-eval-quality.html)
-- [Eval-quality JSON](/samples/ruhroh-eval-quality.json)
-- [Review queue](/samples/ruhroh-review.html)
-- [Review queue JSON](/samples/ruhroh-review.json)
-- [Compare report](/samples/ruhroh-compare.html)
-- [Run plan JSON](/samples/ruhroh-run-plan.json)
-- [Benchmark claim JSON](/samples/benchmark-claim.json)
-- [Benchmark summary JSON](/samples/benchmark-summary.json)
-- [Publish-check JSON](/samples/publish-check.json)
-- [Publication bundle manifest](/samples/ruhroh-publication/manifest.json)
-- `samples/ruhroh-publication/README.md`: bundle-local reviewer map
-- [Publication bundle validation JSON](/samples/publish-bundle-validation.json)
-- [Claim index](/samples/ruhroh-claims.html)
-- [Claim index JSON](/samples/claim-index.json)
+| Report | What it shows |
+| --- | --- |
+| [Workflow guide](/samples/ruhroh-workflow) | The step-by-step path from the built-in local example to a result that is ready to share. |
+| [Single-run report](/samples/ruhroh-report) | One agent attempt with the verdict, review result, timeline, commands, saved evidence, and follow-up review signals. |
+| [Evaluation evidence report](/samples/ruhroh-eval-quality) | Whether the reviewer supplied enough evidence, criteria, commands, and judge details to trust the result. |
+| [Review queue](/samples/ruhroh-review) | The runs a human should inspect before trusting the overall score or publishing a benchmark result. |
 
-The workflow guide is the lightweight orientation artifact: it shows the current
-stage, next action, checks, commands, and doc pointers from first local fixture
-run through publication readiness. The eval-quality report is the focused
-evaluator-evidence gate: it shows warning counts, next actions, per-run
-evidence counts, judge metadata, and result links before a claim is trusted.
-The sample compare is intentionally small
-and not publishable. It demonstrates how Ruhroh leads with a publication and
-evidence overview before the detailed tables: publishable status, scope,
-run-plan state, review queue, result sources, and named artifact coverage. The
-same report then gives each run an evidence browser with direct links to the
-result JSON, manifest, evaluator input/output, implementation journey,
-transcript, events, workspace summary, and workspace archive. Below that, it
-links the scenario-by-adapter matrix, failure triage, cost and efficiency when
-usage metadata exists, low sample counts, evaluator-quality warnings, review
-items, artifact hashes, claim readiness, and remediation codes before a
-benchmark claim is cited. The run plan shows the intended scenario, adapter,
-sample, and seed matrix that the compare report checks before any claim can be
-published.
+## Compare And Claim Evidence
 
-The publication bundle is structurally valid and source verification is clean;
-the bundle README gives a reviewer the local packet map, status, source
-verification summary, and remediation list without requiring the original
-workspace. The bundle includes its hashed source evidence under `sources/` so
-the claim can be validated after relocation. The claim index shows how one or
-more bundles become a registry-ready catalog with claim status, blockers, suite
-version, adapters, evidence counts, source paths, and direct links into each
-bundle's reviewer packet. The sample remains blocked because two synthetic runs
-are not enough for a real suite claim.
+| Report | What it shows |
+| --- | --- |
+| [Compare report](/samples/ruhroh-compare) | Side-by-side agent results, expected-vs-actual run coverage, review items, missing evidence, low-sample warnings, and blockers. |
+| [Claim index](/samples/ruhroh-claims) | A catalog of benchmark results, whether each is ready to cite, what blocks it, and where reviewers can inspect the evidence. |
+
+## Publication Packet
+
+| Report | What it shows |
+| --- | --- |
+| [Publication packet compare](/samples/ruhroh-publication/ruhroh-compare) | A portable compare report reviewers can inspect without the original run directory. |
+| [Publication packet evaluation evidence](/samples/ruhroh-publication/ruhroh-eval-quality) | The portable evidence-quality report for the result reviewer. |
+| [Publication packet review queue](/samples/ruhroh-publication/ruhroh-review) | The portable list of human review items for publication review. |
+
+## How To Read The Samples
+
+Start with the workflow guide, then open the single-run, evaluation-evidence,
+and review reports to see how one agent attempt becomes auditable. The compare
+report rolls those attempts into an overall result, but this sample is
+intentionally small and not ready to publish: two synthetic runs are enough to
+demonstrate the workflow, not enough to support a real benchmark claim.
+
+The publication packet reports show how reviewers can inspect the status,
+evidence map, verification summary, and next actions without opening the
+original run directory. The packet still includes hashed source evidence under
+`sources/`, but the gallery leads with the HTML reports instead of raw contract
+files.
 
 Regenerate these files after report contract changes:
 

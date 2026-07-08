@@ -16,7 +16,7 @@
     {
       "role": "manifest",
       "path": "manifest.json",
-      "description": "Versioned inventory for this publication bundle."
+      "description": "Inventory for this publication packet."
     },
     {
       "role": "publish-check",
@@ -41,7 +41,7 @@
     {
       "role": "review-json",
       "path": "ruhroh-review.json",
-      "description": "Human adjudication queue derived from the claim's result artifacts."
+      "description": "Human review queue derived from the claim's saved results."
     },
     {
       "role": "review-html",
@@ -51,12 +51,12 @@
     {
       "role": "eval-quality",
       "path": "ruhroh-eval-quality.json",
-      "description": "Evaluator evidence quality report for the claim's result artifacts."
+      "description": "Reviewer evidence quality report for the claim's saved results."
     },
     {
       "role": "eval-quality-html",
       "path": "ruhroh-eval-quality.html",
-      "description": "Static evaluator evidence quality packet for audit before citation."
+      "description": "Static reviewer evidence report for audit before citation."
     },
     {
       "role": "readme",
@@ -76,37 +76,37 @@
     {
       "role": "evaluator-calibration-complete-newsletter-pass-input",
       "path": "sources/evaluator-calibration/complete-newsletter-pass/ruhroh-eval-calibration-input.json",
-      "description": "Evaluator calibration input for complete-newsletter-pass."
+      "description": "Reviewer calibration input for complete-newsletter-pass."
     },
     {
       "role": "evaluator-calibration-complete-newsletter-pass-output",
       "path": "sources/evaluator-calibration/complete-newsletter-pass/ruhroh-loop-eval.json",
-      "description": "Evaluator calibration output for complete-newsletter-pass."
+      "description": "Reviewer calibration output for complete-newsletter-pass."
     },
     {
       "role": "evaluator-calibration-missing-page-failure-input",
       "path": "sources/evaluator-calibration/missing-page-failure/ruhroh-eval-calibration-input.json",
-      "description": "Evaluator calibration input for missing-page-failure."
+      "description": "Reviewer calibration input for missing-page-failure."
     },
     {
       "role": "evaluator-calibration-missing-page-failure-output",
       "path": "sources/evaluator-calibration/missing-page-failure/ruhroh-loop-eval.json",
-      "description": "Evaluator calibration output for missing-page-failure."
+      "description": "Reviewer calibration output for missing-page-failure."
     },
     {
       "role": "evaluator-calibration-partial-signup-review-input",
       "path": "sources/evaluator-calibration/partial-signup-review/ruhroh-eval-calibration-input.json",
-      "description": "Evaluator calibration input for partial-signup-review."
+      "description": "Reviewer calibration input for partial-signup-review."
     },
     {
       "role": "evaluator-calibration-partial-signup-review-output",
       "path": "sources/evaluator-calibration/partial-signup-review/ruhroh-loop-eval.json",
-      "description": "Evaluator calibration output for partial-signup-review."
+      "description": "Reviewer calibration output for partial-signup-review."
     },
     {
       "role": "evaluator-calibration-report",
       "path": "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
-      "description": "Evaluator calibration report hashed by this claim."
+      "description": "Reviewer calibration report hashed by this claim."
     },
     {
       "role": "source-result-1",

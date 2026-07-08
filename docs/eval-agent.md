@@ -8,12 +8,12 @@ depends_on:
   - src/results.ts
 ---
 
-# Eval-Agent
+# Reviewer Command
 
-The eval-agent is terminal-only in V1. It runs after the implementation loop,
-not after every run-agent turn.
+The reviewer command runs after the agent finishes the task, not after every
+agent turn.
 
-Start from a command-backed scaffold when creating a local evaluator:
+Start from a command-backed scaffold when creating a local reviewer:
 
 ```bash
 pnpm exec ruhroh new-evaluator local-evaluator
@@ -21,8 +21,8 @@ $EDITOR ruhroh/evaluators/local-evaluator/run.sh
 export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/local-evaluator/run.sh"
 ```
 
-The scaffold returns `review` until edited, which keeps unfinished evaluators
-from creating false passing runs. See [Write an Evaluator](./write-an-evaluator.md)
+The scaffold returns `review` until edited, which keeps unfinished reviewers
+from creating false passing runs. See [Write a Reviewer](./write-an-evaluator.md)
 for the authoring workflow.
 
 Inputs include:
@@ -34,8 +34,8 @@ Inputs include:
 - copied final workspace;
 - implementation stop reason.
 
-The runtime writes these inputs to `ruhroh-loop-eval-input.json` and also
-exports path-oriented environment variables for command-backed evaluators:
+Ruhroh writes these inputs to `ruhroh-loop-eval-input.json` and also exports
+path-oriented environment variables for command-backed reviewers:
 
 - `RUHROH_EVAL_INPUT_PATH`
 - `RUHROH_EVAL_OUTPUT_PATH`
@@ -45,32 +45,32 @@ exports path-oriented environment variables for command-backed evaluators:
 - `RUHROH_EVAL_CALIBRATION_CASES_JSON`
 - `RUHROH_EVAL_PRIVATE_ASSETS_JSON`
 
-The eval-agent may inspect files, run commands, start the app, and gather
+The reviewer may inspect files, run commands, start the app, and gather
 evidence. It must not mutate the original implementation workspace.
 When a scenario declares `evaluation.privateAssets`, the eval input also
-contains `privateAssets`, an array of evaluator-only paths. Use those files for
+contains `privateAssets`, an array of reviewer-only paths. Use those files for
 held-out expected outputs or private review fixtures; do not expose them in the
 public task prompt.
 When a scenario declares `evaluation.calibrationCases`, the eval input also
 contains `calibrationCases`, an array of expected judgment anchors with
 `id`, `inputSummary`, `expectedStatus`, and `rationale`. Use these anchors to
-keep model-backed and human-assisted evaluators consistent about what should
+keep model-backed and human-assisted reviewers consistent about what should
 pass, fail, or require review for that scenario.
-Run `ruhroh calibrate-evaluator` to execute the configured evaluator against
+Run `ruhroh calibrate-evaluator` to execute the configured reviewer against
 those anchors before collecting benchmark runs. During calibration, Ruhroh also
 sets `RUHROH_EVAL_ACTIVE_CALIBRATION_CASE_JSON` and writes an eval input whose
 `calibrationCase` field is the active anchor. Calibration workspaces and
-evaluator outputs are written under `.generated/ruhroh/evaluator-calibration`.
+reviewer outputs are written under `.generated/ruhroh/evaluator-calibration`.
 `ruhroh workflow` treats a missing, malformed, or failing calibration report as
-an evaluator-quality blocker before repeated run planning.
+reviewer-quality blocker before repeated run planning.
 
-Evaluator launch scripts may set `RUHROH_EVAL_PROVIDER`,
+Reviewer launch scripts may set `RUHROH_EVAL_PROVIDER`,
 `RUHROH_EVAL_MODEL`, `RUHROH_EVAL_MODEL_VERSION`, and
 `RUHROH_EVAL_PROMPT_VERSION`. Ruhroh copies those values into
 `ruhroh-run-manifest.json` so model-backed judgments can be traced across runs.
 `RUHROH_EVAL_COMMAND` is executed without a shell by default. Use quoted command
 arguments when needed, and set `RUHROH_EVAL_COMMAND_SHELL=1` only for trusted
-evaluator commands that require shell operators or expansion.
+reviewer commands that require shell operators or expansion.
 `ruhroh doctor` reports a `command-safety` warning for eval shell opt-ins and
 for no-shell eval command strings that contain shell operators.
 
@@ -94,7 +94,7 @@ Minimal legacy-compatible output:
 }
 ```
 
-Evaluators may add structured evidence and subscores without changing Harbor
+Reviewers may add structured evidence and subscores without changing Harbor
 reward compatibility:
 
 ```json
@@ -197,16 +197,15 @@ expected pass/fail/review anchors and lists missing expected statuses. Use those
 details for CI gates and pack review checklists.
 After runs are collected, run
 `ruhroh eval-quality ./path/to/results --html ruhroh-eval-quality.html --json`
-to inspect evaluator evidence as a standalone gate. It returns exit code `2`
-when valid runs have evaluator-quality warnings or human-review requirements,
+to inspect reviewer evidence as a standalone check. It returns exit code `2`
+when valid runs have reviewer-quality warnings or human-review requirements,
 emits `ruhroh_eval_quality_v1` JSON, and writes a static reviewer report with
 warning counts, per-run evidence counts, judge metadata, next actions, and
 result links. `ruhroh report` and `ruhroh compare` also emit a `reviewQueue`
-for explicit `review` judgments, evaluator
-infrastructure failures, non-passing runs, and eval-quality audit warnings.
-`ruhroh review` extracts the same queue as a focused adjudication packet for
-humans deciding whether the evaluator judgment is acceptable, should be rerun,
-or requires a rubric/evaluator fix.
+for explicit `review` judgments, reviewer infrastructure failures, non-passing
+runs, and evidence-quality audit warnings. `ruhroh review` extracts the same
+queue as a focused human-review packet for people deciding whether the reviewer
+judgment is acceptable, should be rerun, or requires a rubric/reviewer fix.
 
 Ruhroh normalizes legacy and enriched eval results before deriving the final
 verdict. The binary mapping remains unchanged: only top-level

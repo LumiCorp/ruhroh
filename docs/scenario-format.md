@@ -9,9 +9,9 @@ depends_on:
   - src/generate.ts
 ---
 
-# Scenario Format
+# Task File Format
 
-Ruhroh supports JSON scenario directories:
+Ruhroh stores each benchmark task in a JSON-backed directory:
 
 ```text
 ruhroh/scenarios/<id>/
@@ -28,8 +28,8 @@ The package ships a JSON Schema at
 Projects created with `ruhroh init` also copy it to
 `ruhroh/schemas/scenario-v2.schema.json`. Use the schema for editor completion
 and structural CI checks; `ruhroh validate` remains the authoritative check for
-prompt files, declared assets, adapter compatibility, evaluator lint, and
-published-pack governance rules.
+prompt files, declared assets, agent-connector compatibility, reviewer lint,
+and publication rules.
 
 Core fields:
 
@@ -43,24 +43,24 @@ Core fields:
   `evaluation.evidenceGuidance`, optional `evaluation.calibrationCases`, and
   optional `evaluation.privateAssets`
 
-Declared assets are copied into the generated Harbor task at their declared
-relative paths. Scenario prompts and assets are untrusted input; run them only
+Declared assets are copied into the generated task at their declared
+relative paths. Task prompts and assets are untrusted input; run them only
 inside benchmark workspaces.
 
-Private evaluator assets are copied separately under `private-eval-assets/` in
-the generated task and are forwarded to the eval-agent as paths in
+Private reviewer files are copied separately under `private-eval-assets/` in
+the generated task and are forwarded to the reviewer command as paths in
 `RUHROH_EVAL_PRIVATE_ASSETS_JSON` and `ruhroh-loop-eval-input.json`. Use them
 for held-out expected outputs, reviewer checklists, or fixtures that should not
 be part of the public prompt or copied into the agent workspace.
 
-Calibration cases are evaluator-only judgment anchors. They are forwarded in
+Calibration cases are reviewer-only judgment anchors. They are forwarded in
 `RUHROH_EVAL_CALIBRATION_CASES_JSON` and written to
-`ruhroh-loop-eval-input.json` so a model-backed or human-assisted evaluator can
-compare the live run against known pass/fail/review examples for the scenario.
+`ruhroh-loop-eval-input.json` so a model-backed or human-assisted reviewer can
+compare the live run against known pass/fail/review examples for the task.
 
 `metadata` is optional for compatibility, but published benchmark packs should
-include it. Ruhroh preserves selected metadata in generated Harbor task metadata
-so results can be tied back to a scenario version and provenance.
+include it. Ruhroh preserves selected metadata in generated task metadata so
+results can be tied back to a task version and provenance.
 
 Generate tasks with:
 
@@ -68,33 +68,32 @@ Generate tasks with:
 pnpm exec ruhroh generate --scenario simple-newsletter
 ```
 
-Adapter selection is runtime configuration, for example:
+Agent connector selection happens when you run the task, for example:
 
 ```bash
 pnpm exec ruhroh run --scenario simple-newsletter --adapter ./adapters/my-agent
 ```
 
-Validate scenarios before generating Harbor tasks:
+Validate tasks before generating runnable task directories:
 
 ```bash
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --json
 ```
 
-Validation checks the scenario JSON shape, prompt path, declared assets,
-adapter-independent runtime requirements, loop settings, evaluation rubric, and
+Validation checks the task JSON shape, prompt path, declared assets,
+agent-neutral requirements, loop settings, review rubric, and
 network policy. A scenario with `requires.network: true` is valid, but validation
-prints a warning because generated Harbor tasks will allow public network
-access.
+prints a warning because generated tasks will allow public network access.
 
-Validation also lints evaluator context. Warnings are emitted for generic
+Validation also lints reviewer context. Warnings are emitted for generic
 rubrics such as "satisfies the user goal", too few outcome criteria, weak
 evidence guidance, and source-text or filename proxy checks. Warnings do not
 block task generation, but published benchmark packs should resolve or justify
 them before reporting results.
 
 `ruhroh validate --json` includes the same warnings as strings plus structured
-`warningDetails` for evaluator lint findings. Each detail has a stable `code`,
+`warningDetails` for reviewer lint findings. Each detail has a stable `code`,
 `category`, `field`, `severity`, and `message`. Pack maintainers can use these
 codes to fail CI for generic rubrics while still allowing local authoring
 iterations to proceed.
@@ -166,11 +165,11 @@ iterations to proceed.
 
 ## Field Rules
 
-`version` should be `ruhroh_scenario_v2` for new scenarios. Legacy
-`ruhroh_scenario_v1` scenarios may still load, but v2 scenarios must not include
-`driver`; adapter selection belongs at runtime.
+`version` should be `ruhroh_scenario_v2` for new tasks. Legacy
+`ruhroh_scenario_v1` tasks may still load, but v2 tasks must not include
+`driver`; agent connector selection belongs on the run command.
 
-`id` must use only letters, numbers, `.`, `_`, and `-`. It becomes the Harbor
+`id` must use only letters, numbers, `.`, `_`, and `-`. It becomes the generated
 task directory name.
 
 `metadata.scenarioVersion` is required when `metadata` is present. Use it as the
@@ -190,36 +189,36 @@ held-out scenarios that require network access must also include
 Held-out scenarios must also either declare `evaluation.privateAssets` or set
 `metadata.privateEvalRationale` to explain where the private evaluator material
 or private review process lives.
-`metadata.changelog` records scenario-level changes, separate from suite
+`metadata.changelog` records task-level changes, separate from benchmark-suite
 changelogs. `metadata.lifecycle.status` may be `active`, `deprecated`, or
-`retired`; deprecated or retired scenarios may also name a safe
+`retired`; deprecated or retired tasks may also name a safe
 `replacementId`, `reason`, and `sunsetAt`.
 For version bump rules and examples, see
 [Scenario Evolution](./scenario-evolution.md).
 
-`userPromptPath` points to the real-user prompt. The loaded scenario stores the
+`userPromptPath` points to the real-user prompt. The loaded task stores the
 prompt content as `userPrompt`.
 
 `run.mode` may be `build`, `plan`, or `chat`. Ruhroh records it as
-`run_mode` in generated Harbor task metadata and forwards it into run manifests
+`run_mode` in generated task metadata and forwards it into run manifests
 as `scenario.runMode`, so reports can distinguish delivery-style tasks from
 planning or chat-style scenarios.
 
 `assets` is an optional array of relative paths that must stay inside the
-scenario directory. Treat it as an allowlist: the generator copies only the
-declared files or directories into the Harbor task. Prefer declarations such as
+task directory. Treat it as an allowlist: the generator copies only the
+declared files or directories into the generated task. Prefer declarations such as
 `assets/prompt-assets/my-fixture` instead of broad paths such as `assets` when
-the scenario directory also contains evaluator-only material.
+the task directory also contains reviewer-only material.
 
 `evaluation.privateAssets` is an optional array of relative paths that must stay
 inside the scenario directory. These files are copied under
-`private-eval-assets/` and listed in the eval input as `privateAssets`. They are
-for evaluator-only evidence and held-out checks, not for user prompt material or
-agent-visible workspace assets. Validation fails if a private evaluator asset
+`private-eval-assets/` and listed in the review input as `privateAssets`. They are
+for reviewer-only evidence and held-out checks, not for user prompt material or
+agent-visible workspace assets. Validation fails if a private reviewer file
 overlaps a declared public asset path, because that would expose held-out
-judgment material to the run-agent.
+judgment material to the agent being tested.
 
-`evaluation.calibrationCases` is an optional array of expected judgment anchors.
+`evaluation.calibrationCases` is an optional array of expected review anchors.
 Each entry must include:
 
 - `id`: stable case id.
@@ -233,8 +232,8 @@ Each entry must include:
 - `true` generates `network_mode = "public"`.
 
 `evaluation.scenarioContext`, `evaluation.goalRubric`, and
-`evaluation.evidenceGuidance` are forwarded to the runtime and written into
-`ruhroh-loop-eval-input.json` so external evaluators can judge from a stable file
+`evaluation.evidenceGuidance` are written into
+`ruhroh-loop-eval-input.json` so external reviewers can judge from a stable file
 contract. When present, `evaluation.calibrationCases` is forwarded in the same
 eval input as structured objects, and `evaluation.privateAssets` is forwarded as
 path strings.

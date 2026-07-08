@@ -20,9 +20,9 @@ Aider is useful for a follow-along because it is public, scriptable, and its
 command-line runs with `--message-file`.
 
 Ruhroh does not benchmark the source repo in place. It uses the repo as the
-place where you keep benchmark scenarios, suites, adapters, evaluators, and
-reports. Each run creates an isolated generated workspace for the selected
-scenario.
+place where you keep benchmark tasks, benchmark suites, agent connectors, reviewer
+commands, and reports. Each run creates an isolated generated workspace for the
+selected task.
 
 ## Clone a Public Agent Project
 
@@ -47,16 +47,16 @@ pnpm exec ruhroh init
 
 `init` creates `ruhroh/` with:
 
-- `scenarios/simple-newsletter/`: a small public smoke scenario.
-- `suites/ruhroh-smoke/`: a suite that locks the smoke scenario.
-- `adapters/fixture-newsletter/run.sh`: a credential-free fixture run-agent.
-- `evaluators/fixture-newsletter/run.sh`: a deterministic fixture evaluator.
-- `schemas/`: JSON Schemas for scenario, suite, run, and report artifacts.
+- `scenarios/simple-newsletter/`: a small public smoke task.
+- `suites/ruhroh-smoke/`: a benchmark suite that locks the smoke task.
+- `adapters/fixture-newsletter/run.sh`: a credential-free fixture agent command.
+- `evaluators/fixture-newsletter/run.sh`: a deterministic fixture reviewer.
+- `schemas/`: JSON Schemas for task, benchmark suite, run, and report evidence.
 
-## Prove the Eval Loop First
+## Prove the Review Loop First
 
-Before wiring a live coding agent, run the fixture adapter and evaluator. This
-checks the Ruhroh install, local scenario path, evaluator command, run-plan
+Before wiring a live coding agent, run the fixture agent and reviewer. This
+checks the Ruhroh install, local task path, reviewer command, run-plan
 generation, and Harbor command shape without model credentials.
 
 ```bash
@@ -84,11 +84,11 @@ pnpm exec ruhroh \
 When Harbor is installed, remove `--dry-run` to execute the fixture-backed
 task end to end.
 
-## Add an Agent Adapter
+## Add an Agent Connector
 
-Ruhroh runs shell-based agents through the `custom-shell` adapter. The wrapper
+Ruhroh runs shell-based agents through `custom-shell`. The wrapper
 receives `RUHROH_MESSAGE`, writes or runs inside `RUHROH_WORKSPACE`, and emits a
-completion signal when the goal appears satisfied. The evaluator remains the
+completion signal when the goal appears satisfied. The reviewer remains the
 source of truth for pass or fail.
 
 Start from Ruhroh's maintained Aider wrapper template:
@@ -100,7 +100,7 @@ $EDITOR ruhroh/adapters/aider-cli/README.md
 
 The template writes prompts and transcripts under `.ruhroh/`, calls Aider with
 `--message-file`, emits `ruhroh_run_agent_result_v1`, and records
-`adapterVersion`, model identity, and artifact paths for repeated comparisons.
+`adapterVersion`, model identity, and evidence paths for repeated comparisons.
 Review the generated README before editing the wrapper so local model/provider
 choices are captured intentionally.
 
@@ -141,20 +141,20 @@ pnpm exec ruhroh \
   --adapter custom-shell
 ```
 
-## Wire the Evaluator
+## Wire the Reviewer
 
-The fixture evaluator proves that the evaluator command is wired correctly. For
-real benchmark scenarios, replace it with an evaluator that checks the final
+The fixture reviewer proves that the reviewer command is wired correctly. For
+real benchmark tasks, replace it with a reviewer that checks the final
 workspace outcome.
 
-Evaluators receive path-oriented environment variables:
+Reviewers receive path-oriented environment variables:
 
-- `RUHROH_EVAL_INPUT_PATH`: JSON input with task, rubric, and artifact paths.
-- `RUHROH_EVAL_OUTPUT_PATH`: where the evaluator must write its result JSON.
+- `RUHROH_EVAL_INPUT_PATH`: JSON input with task, rubric, and evidence paths.
+- `RUHROH_EVAL_OUTPUT_PATH`: where the reviewer must write its result JSON.
 - `RUHROH_EVAL_WORKSPACE_PATH`: copied final workspace to inspect.
 - `RUHROH_EVAL_ORIGINAL_WORKSPACE_PATH`: original generated workspace.
-- `RUHROH_EVAL_JOURNEY_PATH`: run journey and iteration artifacts.
-- `RUHROH_EVAL_CALIBRATION_CASES_JSON`: scenario calibration anchors.
+- `RUHROH_EVAL_JOURNEY_PATH`: run journey and iteration evidence.
+- `RUHROH_EVAL_CALIBRATION_CASES_JSON`: task calibration anchors.
 
 Start from the scaffold:
 
@@ -164,7 +164,7 @@ $EDITOR ruhroh/evaluators/simple-newsletter/run.sh
 ```
 
 The scaffold writes valid `ruhroh_eval_result_v1` JSON with `status: "review"`
-until you add scenario-specific checks. A minimal command evaluator can replace
+until you add task-specific checks. A minimal reviewer command can replace
 the generated placeholder with logic like this:
 
 ```bash
@@ -184,7 +184,7 @@ else
   status="failed"
   goal_met=false
   score=0
-  reason="The evaluator did not find an index.html newsletter page."
+  reason="The reviewer did not find an index.html newsletter page."
 fi
 
 cat > "$output" <<JSON
@@ -241,18 +241,18 @@ pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter custom-shell
 pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
 ```
 
-For publishable evals, make the evaluator stricter than this toy example:
+For publishable reviews, make the reviewer stricter than this toy example:
 
-- run the project or relevant tests inside the copied eval workspace;
+- run the project or relevant tests inside the copied review workspace;
 - inspect behavior, not just source text;
 - return `review` when evidence is ambiguous;
 - include `criteriaResults`, `evidenceRefs`, `commandsRun`, and judge metadata;
-- keep private expected outputs in scenario private assets, not in the public
+- keep private expected outputs in task private files, not in the public
   prompt.
 
-## Add Your Own Scenario
+## Add Your Own Task
 
-Once the adapter and evaluator are wired, add project-specific tasks:
+Once the agent connector and reviewer are wired, add project-specific tasks:
 
 ```bash
 pnpm exec ruhroh new-scenario cli-help-regression --scenario-dir ruhroh/scenarios
@@ -261,7 +261,7 @@ $EDITOR ruhroh/scenarios/cli-help-regression/scenario.json
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario cli-help-regression
 ```
 
-Then lock the scenario into a suite:
+Then lock the task into a benchmark suite:
 
 ```bash
 pnpm exec ruhroh new-suite aider-smoke \
@@ -290,7 +290,7 @@ pnpm exec ruhroh \
 
 ## Review Results
 
-After runs complete, keep the generated artifacts with the benchmark report:
+After runs complete, keep the saved evidence with the benchmark report:
 
 ```bash
 pnpm exec ruhroh report ./path/to/ruhroh-loop-result.json
@@ -299,8 +299,8 @@ pnpm exec ruhroh compare ./path/to/results --suite aider-smoke --html ruhroh-rep
 ```
 
 Use `compare --run-plan .generated/ruhroh/ruhroh-run-plan.json` when you have
-the generated run plan. It checks that result artifacts match the intended
-scenario, adapter, sample, and seed matrix.
+the generated run plan. It checks that saved results match the intended task,
+agent connector, sample, and seed matrix.
 
 ## What to Commit
 
@@ -313,5 +313,5 @@ For a project that keeps Ruhroh benchmarks in-tree, commit:
 - `ruhroh/evaluators/**`;
 - `ruhroh/schemas/**` if your team wants local editor and CI schemas.
 
-Do not commit `.generated/`, raw run artifacts with secrets, or local model
+Do not commit `.generated/`, raw run evidence with secrets, or local model
 credentials.

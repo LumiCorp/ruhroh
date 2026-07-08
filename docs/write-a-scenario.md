@@ -9,10 +9,11 @@ depends_on:
   - src/scenarios.ts
 ---
 
-# Write a Scenario
+# Write a Task
 
-A Ruhroh scenario is a realistic user task plus the metadata needed to run and
-judge it repeatedly.
+A Ruhroh task is a realistic user request plus the metadata needed to run and
+review it repeatedly. The on-disk file is still named `scenario.json`; treat
+that as the schema name, not the reader-facing concept.
 
 Create a directory:
 
@@ -29,9 +30,9 @@ Or scaffold a validation-ready draft:
 pnpm exec ruhroh new-scenario my-task --scenario-dir ruhroh/scenarios
 ```
 
-The scaffold creates private scenario metadata, an instruction stub, rubric
+The scaffold creates private task metadata, an instruction stub, rubric
 guidance, evidence guidance, and pass/fail/review calibration anchors. Edit
-those fields before publishing the scenario or adding it to a benchmark suite.
+those fields before publishing the task or adding it to a benchmark suite.
 
 The prompt in `instruction.md` should read like a user request. It should state
 the desired outcome, useful constraints, and any domain context the agent needs.
@@ -54,63 +55,63 @@ Create `src/App.tsx`, add a route at `/reconcile`, and include the text
 The second prompt overfits implementation details. Use those details only when
 they are genuinely part of the user's goal.
 
-The scenario JSON should define:
+The task JSON should define:
 
-- the scenario id, title, tier, and kind;
-- benchmark metadata such as scenario version, difficulty, tags, visibility,
+- the task id, title, tier, and kind;
+- benchmark metadata such as task version, difficulty, tags, visibility,
   changelog, lifecycle status, provenance, contamination notes, maintainers, and
   expected runtime;
 - `userPromptPath`;
-- runtime requirements such as continuity, tools, and network;
+- run requirements such as continuity, tools, and network;
 - loop defaults such as max iterations;
 - evaluation context, rubric, evidence guidance, calibration cases, and optional
-  private evaluator assets.
+  private reviewer files.
 
-Keep adapter choice out of new `ruhroh_scenario_v2` scenarios. Select adapters
-at runtime with `--adapter`.
+Keep agent choice out of new `ruhroh_scenario_v2` tasks. Select agent
+connectors when you run with `--adapter`.
 
-Use `metadata.scenarioVersion` to version the scenario itself. This is separate
+Use `metadata.scenarioVersion` to version the task itself. This is separate
 from the Ruhroh schema `version` and lets published packs evolve without losing
 comparability.
-Use `metadata.changelog` and `metadata.lifecycle` to make scenario changes and
-deprecations explicit. Use `metadata.visibility` to distinguish public scenarios
-from private or held-out scenarios before publishing packs or reports.
-See [Scenario Evolution](./scenario-evolution.md) for version bump rules and
-suite-lock implications.
+Use `metadata.changelog` and `metadata.lifecycle` to make task changes and
+deprecations explicit. Use `metadata.visibility` to distinguish public tasks
+from private or held-out tasks before publishing packs or reports.
+See [Task Versioning](./scenario-evolution.md) for version bump rules and
+benchmark-suite lock implications.
 
 Use the rubric to describe outcome quality. The generated Harbor verifier stays
-generic; it should not become a scenario-specific file or source-code checker.
+generic; it should not become a task-specific file or source-code checker.
 
 Add `evaluation.calibrationCases` with pass, fail, and review anchors that
 explain the expected judgment. These anchors help keep model-backed and
-human-assisted evaluators consistent without adding brittle implementation
+human-assisted reviewers consistent without adding brittle implementation
 checks to the Harbor verifier. `new-scenario` scaffolds one of each status so
 authors can replace the examples with task-specific cases instead of inventing
 the structure from scratch. `ruhroh validate` prints calibration coverage, and
 `ruhroh validate --json` includes a `calibration` object that shows which
 expected statuses are covered or missing.
 
-If the evaluator needs held-out expected outputs or private review fixtures,
+If the reviewer needs held-out expected outputs or private review fixtures,
 declare them in `evaluation.privateAssets`. Keep these files out of the public
-prompt and public `assets/`; Ruhroh forwards them to the eval-agent through the
-eval input.
+prompt and public `assets/`; Ruhroh forwards them to the reviewer command
+through the review input.
 
-Use private evaluator assets only for material the agent should not see:
+Use private reviewer files only for material the agent should not see:
 
 - expected output files used to judge a transformation;
 - reviewer checklists that would reveal the pass/fail boundary;
 - model-judge rubrics or examples that would contaminate the task prompt;
-- fixture data used only during evaluator calibration or adjudication.
+- fixture data used only during reviewer calibration or human review.
 
 Place those files under a clearly named private directory such as
 `private-eval-assets/`, list them in `evaluation.privateAssets`, and keep public
 inputs under `assets/`. Do not duplicate the same file in both places.
-Validation fails when a private evaluator asset overlaps a declared public
+Validation fails when a private reviewer file overlaps a declared public
 asset, because that would leak held-out material into the agent-visible task.
 
 Private assets do not replace calibration cases. Calibration cases explain
 which kinds of final workspaces should pass, fail, or require review. Private
-assets are the evaluator-only evidence used to make those judgments harder to
+assets are the reviewer-only evidence used to make those judgments harder to
 overfit. Before collecting runs for a public or team-shared suite, use both
 gates:
 
@@ -121,13 +122,13 @@ pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario 
 ```
 
 `inspect-pack --json` fingerprints public prompts, public assets, and private
-evaluator assets separately so reviewers and registry tooling can detect drift
+reviewer files separately so reviewers and registry tooling can detect drift
 without exposing held-out content in the user prompt. If the scenario is
 private or held out and cannot list concrete private assets, document the reason
-with `metadata.privateEvalRationale` so reviewers know where the evaluator-only
+with `metadata.privateEvalRationale` so reviewers know where the reviewer-only
 boundary lives.
 
-Validate the scenario before generating the task:
+Validate the task before generating runnable files:
 
 ```bash
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario my-task

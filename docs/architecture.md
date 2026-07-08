@@ -11,46 +11,45 @@ depends_on:
 
 # Ruhroh Architecture
 
-Ruhroh is a focused benchmark framework for realistic user-task evaluation of
-coding agents. It runs scenarios through adapters, preserves the full
-implementation journey, and runs a terminal evaluator over the final delivered
-workspace. Harbor compatibility is the execution substrate, not the benchmark
-boundary.
+Ruhroh is a focused way to test coding agents on realistic user tasks. It gives
+an agent a task, saves the full attempt, reviews the finished project, and
+writes reports another person can inspect. Harbor is the lower-level runner for
+full executions; the benchmark boundary is the Ruhroh task, evidence, and
+review result.
 
 ## Components
 
-- Ruhroh core: scenario discovery, scenario and suite validation, Harbor task
-  generation, Harbor command construction, artifact naming, result typing, and
-  verdict mapping.
-- Package Harbor runtime: the installable Python controller used for portable
-  custom-shell benchmarks.
-- Run-agent adapter: the agent-specific bridge that starts or continues a
-  coding agent in a benchmark workspace.
-- Harbor: the execution substrate that installs the benchmark agent, runs the
-  generated task, collects artifacts, and reads verifier reward output.
-- Eval-agent: the terminal evaluator that inspects a copied final workspace and
-  journey evidence after implementation is complete.
-- Reporting layer: TypeScript helpers and CLI commands that normalize eval
-  output, summarize run artifacts, validate artifact bundles, aggregate
-  repeated runs, and export publishability evidence.
+- Ruhroh core: finds task files, validates benchmark suites, prepares Harbor tasks,
+  names evidence files, types results, and maps review results to scores.
+- Package Harbor helper: the installable Python controller used for portable
+  command-wrapper benchmarks.
+- Agent connector: the bridge that starts or continues the coding agent in a
+  benchmark project.
+- Harbor: the lower-level runner that installs the benchmark agent, runs the
+  generated task, collects evidence files, and reads verifier reward output.
+- Eval agent: the reviewer command that inspects a copied final project and the
+  saved journey after implementation is complete.
+- Reporting layer: TypeScript helpers and CLI commands that normalize review
+  output, summarize saved runs, validate evidence packets, aggregate repeated
+  runs, and export publishability evidence.
 
-Kestrel is one reference run-agent adapter. It is not the benchmark itself.
+Kestrel is one reference agent connector. It is not the benchmark itself.
 
 ## Lifecycle
 
-1. Discover and validate JSON scenarios.
+1. Discover and validate JSON task definitions.
 2. Generate Harbor task directories under `.generated/ruhroh/harbor/tasks`.
 3. Run Harbor against the selected task.
-4. The installed Ruhroh controller asks the selected run-agent adapter to work.
-5. The adapter continues until it reports `goal_satisfied` or the iteration cap
-   is reached.
-6. Ruhroh writes `ruhroh-loop-eval-input.json` and the eval-agent reviews the
-   full journey once.
+4. The installed Ruhroh controller asks the selected agent connector to work.
+5. The connector continues until it reports `goal_satisfied` or the iteration
+   cap is reached.
+6. Ruhroh writes `ruhroh-loop-eval-input.json` and the reviewer checks the full
+   journey once.
 7. Ruhroh normalizes the eval result and derives the binary Harbor verdict.
 8. The generic Harbor verifier maps the structured Ruhroh result to reward.
 9. Users inspect a single run with `ruhroh report` or aggregate repeated runs
    with `ruhroh compare`.
 
-Ruhroh core does not perform brittle app-specific checks. Scenario-specific
-judgment belongs in the rubric and evaluator evidence; Harbor compatibility
-stays binary through `score` and the generic verifier.
+Ruhroh core does not perform brittle app-specific checks. Task-specific
+judgment belongs in the review rules and evidence; Harbor compatibility stays
+binary through `score` and the generic verifier.

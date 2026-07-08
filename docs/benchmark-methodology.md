@@ -84,33 +84,33 @@ Do not retry ordinary agent failures inside a sample. A failed implementation,
 goal mismatch, low-quality answer, or abandoned run is part of the measured
 agent behavior.
 
-Retry only when artifacts show an infrastructure failure outside the agent's
-control, such as a Harbor crash, missing package runtime, broken evaluator
-command, or unavailable external dependency that the suite allowed. Preserve the
-failed artifact set and record the exclusion reason outside the result directory
+Retry only when saved evidence shows an infrastructure failure outside the agent's
+control, such as a Harbor crash, missing package runner, broken reviewer
+command, or unavailable external dependency that the benchmark suite allowed. Preserve the
+failed evidence set and record the exclusion reason outside the result directory
 when publishing numbers.
 
-## Scenario Governance
+## Task Governance
 
-Published scenarios should include `metadata.scenarioVersion`, creation/update
+Published tasks should include `metadata.scenarioVersion`, creation/update
 dates, difficulty, tags, visibility, expected runtime, maintainers, changelog,
 provenance, lifecycle status, and contamination notes. Ruhroh validation
-enforces those fields for `public` and `held_out` scenarios; network-enabled
-public or held-out scenarios must also explain the network rationale. Use
-`visibility: "held_out"` for scenarios or packs that should not be treated as
-public training/debug material. Held-out scenarios must either declare
+enforces those fields for `public` and `held_out` tasks; network-enabled
+public or held-out tasks must also explain the network rationale. Use
+`visibility: "held_out"` for tasks or packs that should not be treated as
+public training/debug material. Held-out tasks must either declare
 `evaluation.privateAssets` or provide `metadata.privateEvalRationale` so the
-private evaluator path is explicit in the manifest. Bump
+private reviewer path is explicit in the manifest. Bump
 `scenarioVersion` when prompts, assets, rubrics, calibration cases, or expected
-outcomes change in a way that could affect results. Mark scenarios
+outcomes change in a way that could affect results. Mark tasks
 `deprecated` or `retired` instead of silently removing or replacing them.
 `inspect-pack` reports `riskReview` warnings when scenario contamination notes
 or suite contamination/reward-hacking reviews are missing or left as
 placeholders, so public packs can catch leakage-review gaps before run
 collection starts.
 
-Suites freeze scenario membership under a `suiteVersion`. Bump `suiteVersion`
-when membership, locked scenario versions, acceptance criteria, or methodology
+Benchmark suites freeze task membership under a `suiteVersion`. Bump `suiteVersion`
+when membership, locked task versions, acceptance criteria, or methodology
 changes. A suite manifest should include `scenarioVersions` for every member so
 validation can catch accidental prompt, asset, or rubric drift before comparing
 new runs against older numbers. Published suite manifests must also document a
@@ -118,53 +118,53 @@ contamination review, reward-hacking review, review checklist, and deprecation
 policy, making adversarial review and scenario lifecycle handling explicit parts
 of the benchmark contract.
 
-## Evaluator Governance
+## Reviewer Governance
 
-The evaluator should judge the final delivered state, using transcripts and
+The reviewer should judge the final delivered state, using transcripts and
 events as supporting evidence. A strong rubric has multiple concrete criteria,
 explicit context, and clear instructions for evidence collection.
 
 Published scenarios should include `evaluation.calibrationCases`: short
 pass/fail/review anchors with a rationale for the expected judgment. Calibration
 cases do not score the live run directly; they give model-backed and
-human-assisted evaluators scenario-specific examples before judging the actual
+human-assisted reviewers task-specific examples before judging the actual
 workspace. `ruhroh validate` reports a `calibration` summary for each scenario,
 including expected-status counts and missing pass/fail/review anchors, so pack
-maintainers can see whether the evaluator has enough judgment coverage before
+maintainers can see whether the reviewer has enough judgment coverage before
 collecting runs.
 
-Use `evaluation.privateAssets` for held-out expected outputs, evaluator-only
+Use `evaluation.privateAssets` for held-out expected outputs, reviewer-only
 fixtures, or reviewer checklists that should not be included in the public
 prompt. Ruhroh copies those files under `private-eval-assets/` in generated
-tasks and lists the evaluator-only paths in `ruhroh-loop-eval-input.json`.
-Run manifests record evaluator input counts and hashes of private asset paths,
-not private asset contents, so result reviewers can detect evaluator setup drift
+tasks and lists the reviewer-only paths in `ruhroh-loop-eval-input.json`.
+Run manifests record reviewer input counts and hashes of private asset paths,
+not private asset contents, so result reviewers can detect reviewer setup drift
 without exposing held-out materials.
 
 `ruhroh validate` warns when scenario rubrics look too generic or underspecified.
-JSON validation output includes structured evaluator lint `warningDetails` with
+JSON validation output includes structured reviewer lint `warningDetails` with
 stable codes, categories, and field paths, plus the per-scenario `calibration`
 summary. Use those diagnostics as benchmark pack governance inputs instead of
 scraping warning prose. Run `ruhroh calibrate-evaluator` and preserve a passing
 calibration report before repeated run planning; `ruhroh workflow` treats that
-report as a required evaluator-quality gate. `ruhroh report` and
-`ruhroh compare` warn when evaluator output lacks evidence, criteria results,
+report as a required reviewer-quality gate. `ruhroh report` and
+`ruhroh compare` warn when reviewer output lacks evidence, criteria results,
 judge metadata, or enough summary detail. These warnings do not change the
 binary Harbor score, but they should block public benchmark claims until
 reviewed. Both commands expose a
 `reviewQueue` in JSON and HTML so maintainers
-can inspect non-passing runs, explicit `review` judgments, evaluator
-infrastructure failures, and weak evaluator evidence with transcript and
+can inspect non-passing runs, explicit `review` judgments, reviewer
+infrastructure failures, and weak reviewer evidence with transcript and
 event-log pointers. Use `ruhroh review ./results --json` or `--html` to extract
-that queue as a standalone adjudication packet. Reviewers should record the
+that queue as a standalone human-review packet. Reviewers should record the
 decision, reviewer identity, rationale, and accepted limitations before rerunning
 `ruhroh publish-check`.
 
-Model-backed evaluators should record provider, model, model version, and prompt
+Model-backed reviewers should record provider, model, model version, and prompt
 version in the run manifest. For higher-stakes benchmark packs, include
 `judgeVotes` from multiple model, command, or human-assisted judges so Ruhroh can
 record `judgeAgreement` and flag disagreement before publication. Use `review`
-when the evaluator cannot confidently decide from available evidence.
+when the reviewer cannot confidently decide from available evidence.
 
 ## Reporting Claims
 
@@ -208,7 +208,7 @@ check the versioned claim contract and internal consistency. In publication
 pipelines, run
 `ruhroh validate-claim benchmark-claim.json --require-publishable --verify-sources --json`
 so an archived claim with remaining readiness blockers exits `2` even when its
-JSON shape is valid, and a claim whose referenced source artifacts have drifted
+JSON shape is valid, and a claim whose referenced source evidence has drifted
 exits `1` with source-verification errors.
 Comparisons also count artifact-completeness warnings when result JSON omits
 core path entries for the run manifest, implementation turn log, journey,

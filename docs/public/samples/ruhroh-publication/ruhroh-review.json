@@ -1,7 +1,7 @@
 {
   "version": "ruhroh_review_queue_v1",
   "source": {
-    "resultsPath": "./sample-results",
+    "resultsPath": "sources/results",
     "resultCount": 2
   },
   "itemCount": 1,
@@ -45,10 +45,10 @@
         "transcriptsTarball": "./sample-results/run-two/ruhroh-loop-transcripts.tar.gz"
       },
       "transcriptPaths": [
-        "./sample-results/run-two/transcript.log"
+        "sources/results/run-2/transcript.log"
       ],
       "eventLogPaths": [
-        "./sample-results/run-two/events.jsonl"
+        "sources/results/run-2/events.jsonl"
       ]
     }
   ]
