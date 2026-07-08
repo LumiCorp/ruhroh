@@ -12,9 +12,15 @@ const cleanSampleReports = new Set([
   "/ruhroh/samples/ruhroh-publication/ruhroh-review",
 ]);
 
+const siteUrl = "https://lumicorp.github.io/ruhroh/";
+const siteTitle = "Ruhroh";
+const siteDescription = "Evidence-backed benchmarks for coding agents.";
+const socialDescription = "Run coding agents on realistic software work, save the evidence, and compare benchmark results reviewers can inspect.";
+const socialImage = "https://lumicorp.github.io/ruhroh/ruhroh-social-card.png";
+
 export default defineConfig({
-  title: "Ruhroh",
-  description: "Evidence-backed benchmarks for coding-agent delivery",
+  title: siteTitle,
+  description: siteDescription,
   base: "/ruhroh/",
   cleanUrls: true,
   vite: {
@@ -43,6 +49,7 @@ export default defineConfig({
     }],
   },
   head: [
+    ["link", { rel: "canonical", href: siteUrl }],
     ["link", { rel: "icon", href: "/ruhroh/ruhroh-badge.png" }],
     [
       "link",
@@ -52,6 +59,23 @@ export default defineConfig({
         media: "(prefers-color-scheme: dark)",
       },
     ],
+    ["meta", { name: "description", content: socialDescription }],
+    ["meta", { property: "og:type", content: "website" }],
+    ["meta", { property: "og:site_name", content: siteTitle }],
+    ["meta", { property: "og:title", content: `${siteTitle}: ${siteDescription}` }],
+    ["meta", { property: "og:description", content: socialDescription }],
+    ["meta", { property: "og:url", content: siteUrl }],
+    ["meta", { property: "og:image", content: socialImage }],
+    ["meta", { property: "og:image:secure_url", content: socialImage }],
+    ["meta", { property: "og:image:type", content: "image/png" }],
+    ["meta", { property: "og:image:width", content: "1200" }],
+    ["meta", { property: "og:image:height", content: "630" }],
+    ["meta", { property: "og:image:alt", content: "Ruhroh: evidence-backed benchmarks for coding agents" }],
+    ["meta", { name: "twitter:card", content: "summary_large_image" }],
+    ["meta", { name: "twitter:title", content: `${siteTitle}: ${siteDescription}` }],
+    ["meta", { name: "twitter:description", content: socialDescription }],
+    ["meta", { name: "twitter:image", content: socialImage }],
+    ["meta", { name: "twitter:image:alt", content: "Ruhroh: evidence-backed benchmarks for coding agents" }],
   ],
   themeConfig: {
     logo: {
