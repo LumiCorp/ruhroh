@@ -34,6 +34,7 @@ export default defineConfig({
         items: [
           { text: "Overview", link: "/" },
           { text: "Getting Started", link: "/getting-started" },
+          { text: "Add to Existing Project", link: "/add-to-existing-project" },
           { text: "Local Fixture Run", link: "/local-fixture-run" },
         ],
       },

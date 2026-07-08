@@ -65,13 +65,13 @@ so results can be tied back to a scenario version and provenance.
 Generate tasks with:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh --scenario simple-newsletter --generate-only
 ```
 
 Adapter selection is runtime configuration, for example:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter ./adapters/my-agent
+pnpm exec ruhroh --scenario simple-newsletter --adapter ./adapters/my-agent
 ```
 
 Validate scenarios before generating Harbor tasks:

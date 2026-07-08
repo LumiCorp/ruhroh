@@ -38,11 +38,11 @@ files, routes, build commands, or source text.
 Dry-run command:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
+pnpm exec ruhroh --scenario simple-newsletter --adapter custom-shell --dry-run
 ```
 
 Generate without running Harbor:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh --scenario simple-newsletter --generate-only
 ```

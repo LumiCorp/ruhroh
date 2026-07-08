@@ -18,7 +18,6 @@ For public usage, the simplest adapter is a shell command:
 
 ```bash
 pnpm exec ruhroh \
-  --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios \
   --scenario simple-newsletter \
   --adapter ./adapters/my-agent.sh
 ```

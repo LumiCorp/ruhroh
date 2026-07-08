@@ -27,21 +27,23 @@ local edits.
 List the bundled scenarios:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --list
+pnpm exec ruhroh --list
 pnpm exec ruhroh --list-suites
 ```
 
 Validate scenarios before generating tasks:
 
 ```bash
-pnpm exec ruhroh validate --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios
+pnpm exec ruhroh validate
 ```
+
+Bundled scenarios and suites are the default. Add `--scenario-dir` or
+`--suite-dir` only when you want Ruhroh to read project-local content.
 
 Check local runtime readiness before a live run:
 
 ```bash
 pnpm exec ruhroh doctor \
-  --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios \
   --adapter ./path/to/agent-wrapper.sh
 ```
 
@@ -64,6 +66,9 @@ benchmark suite. `doctor` then validates suite membership and scenario-version
 locks before you spend time collecting runs.
 
 See [Local Fixture Run](./local-fixture-run.md) for the complete smoke path.
+For a public-project walkthrough that installs Ruhroh into an existing repo,
+wires a command adapter, and swaps in a local evaluator, see
+[Add Ruhroh to an Existing Project](./add-to-existing-project.md).
 
 Create your first local scenario draft:
 
@@ -101,7 +106,7 @@ transcript, and result-file metadata shape Ruhroh expects from real wrappers.
 Generate a Harbor task without running an agent:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --generate-only
+pnpm exec ruhroh --scenario simple-newsletter --generate-only
 ```
 
 Generate a whole benchmark pack by suite id:
@@ -119,7 +124,7 @@ The generated task appears under:
 Preview the Harbor command:
 
 ```bash
-pnpm exec ruhroh --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell --dry-run
+pnpm exec ruhroh --scenario simple-newsletter --adapter custom-shell --dry-run
 ```
 
 That dry run should print a `harbor run` command and placeholder secret values
@@ -149,7 +154,6 @@ To run a live agent, provide a command-backed adapter:
 
 ```bash
 pnpm exec ruhroh \
-  --scenario-dir node_modules/@kestrel-agents/ruhroh/scenarios \
   --scenario simple-newsletter \
   --adapter ./path/to/agent-wrapper.sh
 ```
