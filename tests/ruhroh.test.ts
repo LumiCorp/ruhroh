@@ -2387,7 +2387,7 @@ test("public CLI lists bundled examples for adapter discovery", async () => {
   assert.equal(textCode, 0);
   assert.match(text, /Ruhroh examples/u);
   assert.match(text, /fixture-newsletter/u);
-  assert.match(text, /Evaluator templates:/u);
+  assert.match(text, /Reviewer templates:/u);
   assert.match(text, /local-deterministic --template deterministic/u);
   assert.match(text, /calibrate-evaluator/u);
   assert.match(text, /Live agent wrapper pattern:/u);
@@ -2770,8 +2770,8 @@ test("public CLI guides the end-to-end workflow", async () => {
     const nestedWorkflow = JSON.parse(nestedWorkflowStdout.join(""));
     const nestedPublishStage = nestedWorkflow.stages.find((stage: { id: string }) => stage.id === "publish_claim");
     assert.equal(nestedWorkflowCode, 0);
-    assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "claim-or-bundle" && check.status === "ok" && check.details === "publication bundle manifest exists"), true);
-    assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "bundle-validation" && check.status === "failed" && check.details.includes("Publication bundle validation failed")), true);
+    assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "claim-or-bundle" && check.status === "ok" && check.details === "publication packet inventory exists"), true);
+    assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "bundle-validation" && check.status === "failed" && check.details.includes("Publication packet validation failed")), true);
     assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "registry-index" && check.status === "failed" && check.details.includes("registryReady is false")), true);
     assert.equal(nestedPublishStage.commands[0].includes("--bundle docs/public/samples/ruhroh-publication"), true);
     assert.equal(nestedPublishStage.commands.includes("pnpm exec ruhroh claim-index docs/public/samples/ruhroh-publication --html docs/public/samples/ruhroh-claims.html --json > docs/public/samples/claim-index.json"), true);
@@ -2789,8 +2789,8 @@ test("public CLI guides the end-to-end workflow", async () => {
     });
     const nestedWorkflowHtml = readFileSync(nestedWorkflowHtmlPath, "utf8");
     assert.equal(nestedWorkflowHtmlCode, 0);
-    assert.match(nestedWorkflowHtml, /<strong>Next action<\/strong><span class="fail">Publish an audit-ready claim<\/span>/u);
-    assert.match(nestedWorkflowHtml, /Publication bundle validation failed/u);
+    assert.match(nestedWorkflowHtml, /<strong>Next action<\/strong><span class="fail">Publish an audit-ready benchmark result<\/span>/u);
+    assert.match(nestedWorkflowHtml, /Publication packet validation failed/u);
     assert.equal(nestedWorkflowHtml.includes(tmp), false);
 
     const htmlStdout: string[] = [];
@@ -2830,7 +2830,7 @@ test("public CLI guides the end-to-end workflow", async () => {
     assert.match(text, /next action: Plan repeated agent runs/u);
     assert.match(text, /command: pnpm exec ruhroh plan/u);
     assert.match(text, /First local fixture loop/u);
-    assert.match(text, /Publish an audit-ready claim/u);
+    assert.match(text, /Publish an audit-ready benchmark result/u);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -4738,10 +4738,10 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(htmlCode, 0);
     assert.match(htmlStdout.join(""), /Wrote Ruhroh HTML report/u);
     assert.match(html, /<!doctype html>/u);
-    assert.match(html, /Implementation Timeline/u);
+    assert.match(html, /What The Agent Did/u);
     assert.match(html, /Review Queue/u);
-    assert.match(html, /Evaluator Judges/u);
-    assert.match(html, /Artifact Inventory/u);
+    assert.match(html, /Reviewer Details/u);
+    assert.match(html, /Saved Evidence Files/u);
     assert.match(html, /SHA-256/u);
     assert.match(html, /available/u);
     assert.match(html, /href="\.\/run-one\/ruhroh-journey\.jsonl"/u);
@@ -4765,27 +4765,27 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.match(compareHtmlStdout.join(""), /Wrote Ruhroh compare HTML report/u);
     assert.match(compareHtml, /Ruhroh compare/u);
     assert.match(compareHtml, /simple-newsletter/u);
-    assert.match(compareHtml, /Publication and Evidence Overview/u);
-    assert.match(compareHtml, /Result sources/u);
-    assert.match(compareHtml, /Named artifacts/u);
-    assert.match(compareHtml, /Review queue/u);
-    assert.match(compareHtml, /2 hashed result JSON sources/u);
-    assert.match(compareHtml, /Claim Readiness/u);
-    assert.match(compareHtml, /Comparison Matrix/u);
+    assert.match(compareHtml, /Publish And Evidence Overview/u);
+    assert.match(compareHtml, /Result files/u);
+    assert.match(compareHtml, /Evidence files/u);
+    assert.match(compareHtml, /Human review/u);
+    assert.match(compareHtml, /2 hashed result files/u);
+    assert.match(compareHtml, /Ready To Publish\?/u);
+    assert.match(compareHtml, /Side-by-Side Results/u);
     assert.match(compareHtml, /50% \(1\/2\); CI/u);
-    assert.match(compareHtml, /Failure Triage/u);
+    assert.match(compareHtml, /What Needs Attention/u);
     assert.match(compareHtml, /goal_mismatch=1/u);
-    assert.match(compareHtml, /Restore missing or incomplete artifacts before publication\./u);
+    assert.match(compareHtml, /Restore missing or incomplete evidence files before publication\./u);
     assert.match(compareHtml, /Cost and Efficiency/u);
     assert.match(compareHtml, /1\/2 runs/u);
-    assert.match(compareHtml, /Run Plan Warnings/u);
+    assert.match(compareHtml, /Planned Run Warnings/u);
     assert.match(compareHtml, /run plan sample has no result artifact/u);
     assert.match(compareHtml, /Review Queue/u);
     assert.match(compareHtml, /Evidence Browser/u);
-    assert.match(compareHtml, /Open the preserved evidence for each run/u);
-    assert.match(compareHtml, /<strong>manifest<\/strong>: <a href="\.\/run-one\/ruhroh-run-manifest\.json">/u);
-    assert.match(compareHtml, /<strong>journey<\/strong>: <a href="\.\/run-one\/ruhroh-journey\.jsonl">/u);
-    assert.match(compareHtml, /Result Artifacts/u);
+    assert.match(compareHtml, /Open the saved evidence for each run/u);
+    assert.match(compareHtml, /<strong>how this run was produced<\/strong>: <a href="\.\/run-one\/ruhroh-run-manifest\.json">/u);
+    assert.match(compareHtml, /<strong>agent journey<\/strong>: <a href="\.\/run-one\/ruhroh-journey\.jsonl">/u);
+    assert.match(compareHtml, /Saved Result Evidence/u);
     assert.match(compareHtml, /href="\.\/run-one\/ruhroh-loop-result\.json"/u);
     assert.match(compareHtml, /href="\.\/run-one\/ruhroh-journey\.jsonl"/u);
     assert.match(compareHtml, /journey: available/u);
@@ -4868,13 +4868,13 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(evalQuality.runs.some((run: { runId: string; evidenceRefCount: number; judge: string }) => run.runId === "simple-newsletter-agent-a-1" && run.evidenceRefCount === 0 && run.judge === "hybrid/arbiter@2026-07-07"), true);
     assert.equal(evalQuality.nextActions.some((action: string) => action.includes("evidenceRefs")), true);
     assert.match(evalQualityStderr.join(""), /eval-quality failed audit gate: \d+ warnings/u);
-    assert.match(evalQualityHtml, /Ruhroh eval-quality/u);
+    assert.match(evalQualityHtml, /Ruhroh evaluation evidence/u);
     assert.match(evalQualityHtml, /Gate/u);
     assert.match(evalQualityHtml, /needs attention/u);
     assert.match(evalQualityHtml, /Warning Counts/u);
     assert.match(evalQualityHtml, /eval result has no top-level evidenceRefs/u);
     assert.match(evalQualityHtml, /Next Actions/u);
-    assert.match(evalQualityHtml, /Evaluator Runs/u);
+    assert.match(evalQualityHtml, /Reviewed Runs/u);
     assert.match(evalQualityHtml, /hybrid\/arbiter@2026-07-07/u);
     assert.match(evalQualityHtml, /href="\.\/run-one\/ruhroh-loop-result\.json"/u);
 
@@ -4891,7 +4891,7 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(evalQualityHtmlOnlyCode, 2);
     assert.match(evalQualityHtmlOnlyStdout.join(""), /Wrote Ruhroh eval-quality HTML/u);
     assert.match(evalQualityHtmlOnlyStderr.join(""), /eval-quality failed audit gate/u);
-    assert.match(readFileSync(evalQualityHtmlOnlyPath, "utf8"), /Evaluator Runs/u);
+    assert.match(readFileSync(evalQualityHtmlOnlyPath, "utf8"), /Reviewed Runs/u);
 
     const evalQualityTextStdout: string[] = [];
     const evalQualityTextCode = await runRuhrohCli(["eval-quality", "."], {
@@ -4926,8 +4926,8 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(review.recommendedCount, 2);
     assert.equal(review.reviewQueue.some((item: { priority: string; reasons: string[] }) => item.priority === "recommended" && item.reasons.includes("non-passing run: goal_mismatch")), true);
     assert.equal(review.htmlPath, reviewPath);
-    assert.match(reviewHtml, /Ruhroh review queue/u);
-    assert.match(reviewHtml, /Adjudication Checklist/u);
+    assert.match(reviewHtml, /Ruhroh human review queue/u);
+    assert.match(reviewHtml, /Reviewer Checklist/u);
     assert.match(reviewHtml, /transcript\.log/u);
 
     const reviewTextStdout: string[] = [];
@@ -5324,17 +5324,17 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(bundledReview.version, "ruhroh_review_queue_v1");
     assert.equal(bundledReview.source.resultCount, 2);
     const bundledReviewHtml = readFileSync(path.join(publishBundlePath, "ruhroh-review.html"), "utf8");
-    assert.match(bundledReviewHtml, /Ruhroh review queue/u);
+    assert.match(bundledReviewHtml, /Ruhroh human review queue/u);
     const bundledEvalQuality = JSON.parse(readFileSync(path.join(publishBundlePath, "ruhroh-eval-quality.json"), "utf8"));
     assert.equal(bundledEvalQuality.version, "ruhroh_eval_quality_v1");
     assert.equal(bundledEvalQuality.source.resultCount, 2);
     const bundledEvalQualityHtml = readFileSync(path.join(publishBundlePath, "ruhroh-eval-quality.html"), "utf8");
-    assert.match(bundledEvalQualityHtml, /Ruhroh eval-quality/u);
-    assert.match(bundledEvalQualityHtml, /Evaluator Runs/u);
+    assert.match(bundledEvalQualityHtml, /Ruhroh evaluation evidence/u);
+    assert.match(bundledEvalQualityHtml, /Reviewed Runs/u);
     const bundledReadme = readFileSync(path.join(publishBundlePath, "README.md"), "utf8");
     assert.match(bundledReadme, /Status: blocked/u);
     assert.match(bundledReadme, /## Review Order/u);
-    assert.match(bundledReadme, /Open ruhroh-eval-quality\.html to inspect evaluator evidence warnings/u);
+    assert.match(bundledReadme, /Open ruhroh-eval-quality\.html to inspect reviewer evidence warnings/u);
     assert.match(publishCheckStderr.join(""), /publish-check failed publishability gate: \d+ blockers/u);
 
     const implicitBundleStdout: string[] = [];
@@ -5659,9 +5659,9 @@ test("public CLI reports and compares run artifacts", async () => {
     const suiteHtml = readFileSync(suiteHtmlPath, "utf8");
     assert.equal(suiteHtmlCode, 0);
     assert.match(suiteHtmlStdout.join(""), /Wrote Ruhroh compare HTML report/u);
-    assert.match(suiteHtml, /Suite Adapter Summary/u);
-    assert.match(suiteHtml, /Missing scenarios/u);
-    assert.match(suiteHtml, /Scenario runs/u);
+    assert.match(suiteHtml, /Benchmark Suite Coverage By Agent/u);
+    assert.match(suiteHtml, /Missing tasks/u);
+    assert.match(suiteHtml, /Runs per task/u);
     assert.match(suiteHtml, /missing-scenario/u);
     assert.match(suiteHtml, /simple-newsletter=2/u);
 
@@ -5938,7 +5938,7 @@ test("public CLI compare includes pairwise adapter comparisons", async () => {
     const html = readFileSync(htmlPath, "utf8");
     assert.equal(htmlCode, 0);
     assert.match(htmlStdout.join(""), /Wrote Ruhroh compare HTML report/u);
-    assert.match(html, /Pairwise Adapter Comparisons/u);
+    assert.match(html, /Pairwise Agent Comparisons/u);
     assert.match(html, /agent-b/u);
     assert.match(html, /\+50%/u);
     assert.match(html, /Fisher p/u);
