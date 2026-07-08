@@ -1657,8 +1657,8 @@
       }
     ],
     "htmlPath": "./ruhroh-publication/ruhroh-compare.html",
-    "benchmarkClaimPath": "./ruhroh-publication/benchmark-claim.json",
-    "benchmarkSummaryPath": "./ruhroh-publication/benchmark-summary.json"
+    "benchmarkClaimPath": "./benchmark-claim.json",
+    "benchmarkSummaryPath": "./benchmark-summary.json"
   },
   "sourceVerification": {
     "version": "ruhroh_claim_source_verification_v1",
@@ -1676,24 +1676,24 @@
         "name": "runPlan",
         "status": "ok",
         "path": "sources/ruhroh-run-plan.json",
-        "expectedSha256": "845340b7f60fe5c218467f59950db59b26c331da400a59557dbff90dff177eb6",
-        "actualSha256": "845340b7f60fe5c218467f59950db59b26c331da400a59557dbff90dff177eb6",
+        "expectedSha256": "68266e8bccf7356d06ccd82e49c09caa134bde80ca48f3a2307c8452109a2b63",
+        "actualSha256": "68266e8bccf7356d06ccd82e49c09caa134bde80ca48f3a2307c8452109a2b63",
         "details": "source.runPlanPath hash matches"
       },
       {
         "name": "evaluatorCalibrationReport",
         "status": "ok",
         "path": "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
-        "expectedSha256": "e7149a99334811c864674240bf5f7eef66c4dc86a866bb906f75d2570ed38153",
-        "actualSha256": "e7149a99334811c864674240bf5f7eef66c4dc86a866bb906f75d2570ed38153",
+        "expectedSha256": "02e73d36cb15cbfd897933740322f031a26c06d1d92930a408b08654e89a9d6a",
+        "actualSha256": "02e73d36cb15cbfd897933740322f031a26c06d1d92930a408b08654e89a9d6a",
         "details": "source.evaluatorCalibrationReportPath hash matches"
       },
       {
         "name": "resultArtifacts[0]",
         "status": "ok",
         "path": "sources/results/run-1/ruhroh-loop-result.json",
-        "expectedSha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d",
-        "actualSha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d",
+        "expectedSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
+        "actualSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
         "details": "source.resultArtifacts[0].path hash matches"
       },
       {
@@ -1732,8 +1732,8 @@
         "name": "resultArtifacts[0].artifactInventory[4]",
         "status": "ok",
         "path": "sources/results/run-1/ruhroh-loop-iterations.jsonl",
-        "expectedSha256": "346e2074c5d53e454ce31fe1d30c9574e57c5905926f508718c9f198bc089945",
-        "actualSha256": "346e2074c5d53e454ce31fe1d30c9574e57c5905926f508718c9f198bc089945",
+        "expectedSha256": "791fecab95e947282d21a5293f8b1a127310161277ac9efba6c50bc7d257d867",
+        "actualSha256": "791fecab95e947282d21a5293f8b1a127310161277ac9efba6c50bc7d257d867",
         "details": "source.resultArtifacts[0].artifactInventory[4].path hash matches"
       },
       {
@@ -1748,8 +1748,8 @@
         "name": "resultArtifacts[0].artifactInventory[6]",
         "status": "ok",
         "path": "sources/results/run-1/ruhroh-loop-result.json",
-        "expectedSha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d",
-        "actualSha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d",
+        "expectedSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
+        "actualSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
         "details": "source.resultArtifacts[0].artifactInventory[6].path hash matches"
       },
       {
@@ -1796,8 +1796,8 @@
         "name": "resultArtifacts[1]",
         "status": "ok",
         "path": "sources/results/run-2/ruhroh-loop-result.json",
-        "expectedSha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3",
-        "actualSha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3",
+        "expectedSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
+        "actualSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
         "details": "source.resultArtifacts[1].path hash matches"
       },
       {
@@ -1836,8 +1836,8 @@
         "name": "resultArtifacts[1].artifactInventory[4]",
         "status": "ok",
         "path": "sources/results/run-2/ruhroh-loop-iterations.jsonl",
-        "expectedSha256": "5821c27bb0665e4120fad3e68604523fc8e11c8765ceeebe0f47540b39ad1366",
-        "actualSha256": "5821c27bb0665e4120fad3e68604523fc8e11c8765ceeebe0f47540b39ad1366",
+        "expectedSha256": "3d9b3814142e91963857753f9de32e03cac88db3d54ce487446ffda00b8cfd15",
+        "actualSha256": "3d9b3814142e91963857753f9de32e03cac88db3d54ce487446ffda00b8cfd15",
         "details": "source.resultArtifacts[1].artifactInventory[4].path hash matches"
       },
       {
@@ -1852,8 +1852,8 @@
         "name": "resultArtifacts[1].artifactInventory[6]",
         "status": "ok",
         "path": "sources/results/run-2/ruhroh-loop-result.json",
-        "expectedSha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3",
-        "actualSha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3",
+        "expectedSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
+        "actualSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
         "details": "source.resultArtifacts[1].artifactInventory[6].path hash matches"
       },
       {

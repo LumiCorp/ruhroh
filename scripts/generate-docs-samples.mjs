@@ -93,8 +93,8 @@ writeJson(runPlanPath, {
   version: "ruhroh_run_plan_v1",
   createdAt: "2026-07-08T12:00:00Z",
   selection: {
-    scenarioDir: scenarioRoot,
-    suiteDir: suiteRoot,
+    scenarioDir: samplePath("ruhroh", "scenarios"),
+    suiteDir: samplePath("ruhroh", "suites"),
     suiteId: "ruhroh-sample",
     runs: 2,
     adapters: ["agent-a"],
@@ -106,13 +106,13 @@ writeJson(runPlanPath, {
     scenarioIds: ["simple-newsletter"],
     scenarioVersions: { "simple-newsletter": "1.0.0" },
     source: {
-      suitePath: path.join(suiteDir, "suite.json"),
+      suitePath: samplePath("ruhroh", "suites", "ruhroh-sample", "suite.json"),
       suiteSha256: sha256File(path.join(suiteDir, "suite.json")),
     },
   },
   generated: {
-    generatedDir: generatedRoot,
-    datasetPath: path.join(generatedRoot, "harbor"),
+    generatedDir: samplePath(".generated", "ruhroh"),
+    datasetPath: samplePath(".generated", "ruhroh", "harbor"),
   },
   scenarios: [{
     id: "simple-newsletter",
@@ -133,10 +133,10 @@ writeJson(calibrationReportPath, {
   $schema: "https://lumicorp.github.io/ruhroh/schemas/eval-calibration-report-v1.schema.json",
   version: "ruhroh_eval_calibration_report_v1",
   source: {
-    scenarioDir: scenarioRoot,
-    generatedDir: generatedRoot,
-    evaluatorCommand: evaluatorPath,
-    reportPath: calibrationReportPath,
+    scenarioDir: samplePath("ruhroh", "scenarios"),
+    generatedDir: samplePath(".generated", "ruhroh"),
+    evaluatorCommand: samplePath("ruhroh", "evaluators", "fixture-newsletter", "run.sh"),
+    reportPath: samplePathForFile(calibrationReportPath),
   },
   ok: true,
   scenarioCount: 1,
@@ -195,6 +195,10 @@ const publishCheck = runCli([
   "ruhroh-run-plan.json",
   "--generated-dir",
   ".generated/ruhroh",
+  "--benchmark-claim",
+  "benchmark-claim.json",
+  "--benchmark-summary",
+  "benchmark-summary.json",
   "--bundle",
   "ruhroh-publication",
   "--verify-sources",
@@ -285,6 +289,22 @@ function writeSampleRun(input) {
   const workspaceTarballPath = path.join(input.runDir, "ruhroh-workspace.tar.gz");
   const eventsTarballPath = path.join(input.runDir, "ruhroh-loop-events.tar.gz");
   const transcriptsTarballPath = path.join(input.runDir, "ruhroh-loop-transcripts.tar.gz");
+  const transcriptPublicPath = samplePathForFile(transcriptPath);
+  const eventLogPublicPath = samplePathForFile(eventLogPath);
+  const artifactPaths = {
+    result: samplePathForFile(resultPath),
+    runManifest: samplePathForFile(manifestPath),
+    evalResult: samplePathForFile(evalPath),
+    workspaceSummary: samplePathForFile(workspaceSummaryPath),
+    implementationRuns: samplePathForFile(iterationsPath),
+    journey: samplePathForFile(journeyPath),
+    evalInput: samplePathForFile(evalInputPath),
+    transcript: transcriptPublicPath,
+    events: eventLogPublicPath,
+    workspaceTarball: samplePathForFile(workspaceTarballPath),
+    eventsTarball: samplePathForFile(eventsTarballPath),
+    transcriptsTarball: samplePathForFile(transcriptsTarballPath),
+  };
 
   const evalResult = {
     $schema: "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
@@ -390,8 +410,8 @@ function writeSampleRun(input) {
       continuityLevel: "workspace_only",
       sessionHandle: input.runId,
       runIds: [input.runId],
-      transcriptPaths: [transcriptPath],
-      eventLogPaths: [eventLogPath],
+      transcriptPaths: [transcriptPublicPath],
+      eventLogPaths: [eventLogPublicPath],
       artifactPaths: {},
     },
     runAgentAdapterId: "agent-a",
@@ -406,26 +426,13 @@ function writeSampleRun(input) {
       completionStatus: { state: "done", reason: "goal_satisfied" },
       stopReason: "goal_satisfied",
       runId: input.runId,
-      transcriptPath,
-      eventLogPath,
+      transcriptPath: transcriptPublicPath,
+      eventLogPath: eventLogPublicPath,
       notes: input.timelineNote,
     }],
     evalResult,
     runManifest,
-    artifactPaths: {
-      result: resultPath,
-      runManifest: manifestPath,
-      evalResult: evalPath,
-      workspaceSummary: workspaceSummaryPath,
-      implementationRuns: iterationsPath,
-      journey: journeyPath,
-      evalInput: evalInputPath,
-      transcript: transcriptPath,
-      events: eventLogPath,
-      workspaceTarball: workspaceTarballPath,
-      eventsTarball: eventsTarballPath,
-      transcriptsTarball: transcriptsTarballPath,
-    },
+    artifactPaths,
   };
 
   writeJson(resultPath, result);
@@ -493,7 +500,7 @@ function writeSampleCalibrationCase(calibrationCase) {
     version: "ruhroh_eval_calibration_input_v1",
     scenarioId: "simple-newsletter",
     calibrationCase,
-    workspacePath,
+    workspacePath: samplePathForFile(workspacePath),
   });
   writeJson(outputPath, {
     $schema: "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
@@ -505,7 +512,7 @@ function writeSampleCalibrationCase(calibrationCase) {
     unmetCriteria: calibrationCase.expectedStatus === "passed" ? [] : [calibrationCase.rationale],
     evidenceRefs: [{ kind: "file", ref: "CALIBRATION.md", summary: calibrationCase.inputSummary }],
     commandsRun: [],
-    artifacts: { workspacePath },
+    artifacts: { workspacePath: samplePathForFile(workspacePath) },
     finalSummary: calibrationCase.rationale,
     criteriaResults: [{
       id: "calibration-anchor",
@@ -522,9 +529,9 @@ function writeSampleCalibrationCase(calibrationCase) {
     expectedStatus: calibrationCase.expectedStatus,
     actualStatus: calibrationCase.expectedStatus,
     matched: true,
-    outputPath,
-    inputPath,
-    workspacePath,
+    outputPath: samplePathForFile(outputPath),
+    inputPath: samplePathForFile(inputPath),
+    workspacePath: samplePathForFile(workspacePath),
     details: `Synthetic docs sample calibration anchor ${calibrationCase.id} matched ${calibrationCase.expectedStatus}.`,
   };
 }
@@ -536,6 +543,14 @@ function writeJson(filePath, value) {
 
 function sha256File(filePath) {
   return createHash("sha256").update(readFileSync(filePath)).digest("hex");
+}
+
+function samplePath(...segments) {
+  return `./${path.posix.join(...segments)}`;
+}
+
+function samplePathForFile(filePath) {
+  return samplePath(...path.relative(sampleRoot, filePath).split(path.sep));
 }
 
 function runCli(args, options = {}) {

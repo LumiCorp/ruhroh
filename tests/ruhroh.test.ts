@@ -493,7 +493,7 @@ test("published package contract ships benchmark authoring assets", () => {
   const exampleNewsletter = JSON.parse(readFileSync(path.resolve("examples", "scenarios", "simple-newsletter", "scenario.json"), "utf8"));
   const exampleGroceryPlanner = JSON.parse(readFileSync(path.resolve("examples", "scenarios", "grocery-budget-planner", "scenario.json"), "utf8"));
   const docsSampleNewsletter = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "ruhroh", "scenarios", "simple-newsletter", "scenario.json"), "utf8"));
-  const docsSampleCalibrationReport = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", ".generated", "ruhroh", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json"), "utf8"));
+  const docsSampleCalibrationReport = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "ruhroh-publication", "sources", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json"), "utf8"));
   const docsSamplePublishCheck = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "publish-check.json"), "utf8"));
   const docsSamplePublishBundleManifest = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "ruhroh-publication", "manifest.json"), "utf8"));
   const docsSampleBundledPublishCheck = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "ruhroh-publication", "publish-check.json"), "utf8"));
@@ -639,10 +639,11 @@ test("published package contract ships benchmark authoring assets", () => {
       matched: true,
     })),
   );
+  const docsSamplePublishBundleRoot = path.resolve("docs", "public", "samples", "ruhroh-publication");
   for (const result of docsSampleCalibrationReport.results as Array<{ inputPath: string; outputPath: string; workspacePath: string }>) {
-    assert.equal(existsSync(path.resolve("docs", "public", "samples", result.inputPath)), true);
-    assert.equal(existsSync(path.resolve("docs", "public", "samples", result.outputPath)), true);
-    assert.equal(existsSync(path.resolve("docs", "public", "samples", result.workspacePath, "CALIBRATION.md")), true);
+    assert.equal(existsSync(path.resolve(docsSamplePublishBundleRoot, result.inputPath)), true);
+    assert.equal(existsSync(path.resolve(docsSamplePublishBundleRoot, result.outputPath)), true);
+    assert.equal(existsSync(path.resolve(docsSamplePublishBundleRoot, result.workspacePath, "CALIBRATION.md")), true);
   }
 });
 

@@ -11,14 +11,14 @@
     "suitePath": "./ruhroh/suites/ruhroh-sample/suite.json",
     "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014",
     "runPlanPath": "./ruhroh-run-plan.json",
-    "runPlanSha256": "845340b7f60fe5c218467f59950db59b26c331da400a59557dbff90dff177eb6",
-    "htmlPath": "./ruhroh-compare.html",
+    "runPlanSha256": "68266e8bccf7356d06ccd82e49c09caa134bde80ca48f3a2307c8452109a2b63",
+    "htmlPath": "./ruhroh-publication/ruhroh-compare.html",
     "benchmarkClaimPath": "./benchmark-claim.json",
     "benchmarkSummaryPath": "./benchmark-summary.json",
     "resultArtifacts": [
       {
         "path": "./sample-results/run-one/ruhroh-loop-result.json",
-        "sha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d",
+        "sha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
         "scenarioId": "simple-newsletter",
         "adapter": "agent-a",
         "runId": "sample-newsletter-agent-a-1",
@@ -57,8 +57,8 @@
             "name": "implementationRuns",
             "path": "./sample-results/run-one/ruhroh-loop-iterations.jsonl",
             "available": true,
-            "sizeBytes": 505,
-            "sha256": "346e2074c5d53e454ce31fe1d30c9574e57c5905926f508718c9f198bc089945"
+            "sizeBytes": 403,
+            "sha256": "791fecab95e947282d21a5293f8b1a127310161277ac9efba6c50bc7d257d867"
           },
           {
             "name": "journey",
@@ -71,8 +71,8 @@
             "name": "result",
             "path": "./sample-results/run-one/ruhroh-loop-result.json",
             "available": true,
-            "sizeBytes": 8165,
-            "sha256": "a8e8151010346c260717dc6ec1c54dd11823ebce884b16838045a1d2646c514d"
+            "sizeBytes": 7349,
+            "sha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f"
           },
           {
             "name": "runManifest",
@@ -113,7 +113,7 @@
       },
       {
         "path": "./sample-results/run-two/ruhroh-loop-result.json",
-        "sha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3",
+        "sha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
         "scenarioId": "simple-newsletter",
         "adapter": "agent-a",
         "runId": "sample-newsletter-agent-a-2",
@@ -152,8 +152,8 @@
             "name": "implementationRuns",
             "path": "./sample-results/run-two/ruhroh-loop-iterations.jsonl",
             "available": true,
-            "sizeBytes": 511,
-            "sha256": "5821c27bb0665e4120fad3e68604523fc8e11c8765ceeebe0f47540b39ad1366"
+            "sizeBytes": 409,
+            "sha256": "3d9b3814142e91963857753f9de32e03cac88db3d54ce487446ffda00b8cfd15"
           },
           {
             "name": "journey",
@@ -166,8 +166,8 @@
             "name": "result",
             "path": "./sample-results/run-two/ruhroh-loop-result.json",
             "available": true,
-            "sizeBytes": 8370,
-            "sha256": "7db2a1b4f9d3fe74012d6ec3c245f4ae0e0998a4a17af64e823ba6cfad8c7fd3"
+            "sizeBytes": 7554,
+            "sha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba"
           },
           {
             "name": "runManifest",
@@ -206,7 +206,9 @@
           }
         ]
       }
-    ]
+    ],
+    "evaluatorCalibrationReportPath": "./.generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
+    "evaluatorCalibrationReportSha256": "e4375a020979443fc03f95064fd2e018e94f14061195063ec2e88da9c757c3c9"
   },
   "scope": "suite",
   "publishable": false,
