@@ -1,13 +1,47 @@
 import { defineConfig } from "vitepress";
 
+const cleanSampleReports = new Set([
+  "/ruhroh/samples/ruhroh-workflow",
+  "/ruhroh/samples/ruhroh-report",
+  "/ruhroh/samples/ruhroh-review",
+  "/ruhroh/samples/ruhroh-eval-quality",
+  "/ruhroh/samples/ruhroh-compare",
+  "/ruhroh/samples/ruhroh-claims",
+  "/ruhroh/samples/ruhroh-publication/ruhroh-compare",
+  "/ruhroh/samples/ruhroh-publication/ruhroh-eval-quality",
+  "/ruhroh/samples/ruhroh-publication/ruhroh-review",
+]);
+
 export default defineConfig({
   title: "Ruhroh",
-  description: "Audit-first benchmark framework for real coding-agent delivery",
+  description: "Evidence-backed benchmarks for coding-agent delivery",
   base: "/ruhroh/",
   cleanUrls: true,
-  ignoreDeadLinks: [
-    /^\/ruhroh\/samples\//,
-  ],
+  vite: {
+    plugins: [{
+      name: "ruhroh-clean-sample-report-urls",
+      configureServer(server) {
+        server.middlewares.use((request, _response, next) => {
+          const originalUrl = request.url ?? "";
+          const [pathname, query] = originalUrl.split("?");
+          if (pathname !== undefined && cleanSampleReports.has(pathname)) {
+            request.url = `${pathname}.html${query === undefined ? "" : `?${query}`}`;
+          }
+          next();
+        });
+      },
+      configurePreviewServer(server) {
+        server.middlewares.use((request, _response, next) => {
+          const originalUrl = request.url ?? "";
+          const [pathname, query] = originalUrl.split("?");
+          if (pathname !== undefined && cleanSampleReports.has(pathname)) {
+            request.url = `${pathname}.html${query === undefined ? "" : `?${query}`}`;
+          }
+          next();
+        });
+      },
+    }],
+  },
   head: [
     ["link", { rel: "icon", href: "/ruhroh/ruhroh-badge.png" }],
     [
@@ -40,7 +74,7 @@ export default defineConfig({
           { text: "Core Concepts", link: "/concepts" },
           { text: "Add to Existing Project", link: "/add-to-existing-project" },
           { text: "Local Fixture Run", link: "/local-fixture-run" },
-          { text: "Benchmark Pack Tutorial", link: "/benchmark-pack-tutorial" },
+          { text: "Publish a Benchmark Result", link: "/benchmark-pack-tutorial" },
           { text: "Troubleshooting", link: "/troubleshooting" },
           { text: "FAQ", link: "/faq" },
         ],
@@ -48,27 +82,27 @@ export default defineConfig({
       {
         text: "Authoring",
         items: [
-          { text: "Write a Scenario", link: "/write-a-scenario" },
-          { text: "Scenario Format", link: "/scenario-format" },
-          { text: "Scenario Evolution", link: "/scenario-evolution" },
+          { text: "Write a Task", link: "/write-a-scenario" },
+          { text: "Task File Format", link: "/scenario-format" },
+          { text: "Task Versioning", link: "/scenario-evolution" },
           { text: "Benchmark Suites", link: "/benchmark-suites" },
           { text: "Benchmark Methodology", link: "/benchmark-methodology" },
-          { text: "Benchmark Pack Registry", link: "/benchmark-pack-registry" },
-          { text: "Write an Adapter", link: "/write-an-adapter" },
-          { text: "Adapter Examples", link: "/adapter-examples" },
-          { text: "Write an Evaluator", link: "/write-an-evaluator" },
-          { text: "Evaluator Cookbook", link: "/evaluator-cookbook" },
-          { text: "Custom Shell", link: "/custom-shell" },
+          { text: "Benchmark Suite Review", link: "/benchmark-pack-registry" },
+          { text: "Connect an Agent", link: "/write-an-adapter" },
+          { text: "Agent Connector Examples", link: "/adapter-examples" },
+          { text: "Write a Reviewer", link: "/write-an-evaluator" },
+          { text: "Reviewer Recipes", link: "/evaluator-cookbook" },
+          { text: "Run a Shell Agent", link: "/custom-shell" },
         ],
       },
       {
-        text: "Runtime",
+        text: "Evidence",
         items: [
           { text: "Architecture", link: "/architecture" },
           { text: "Harbor", link: "/harbor" },
-          { text: "Eval Agent", link: "/eval-agent" },
-          { text: "Adjudication", link: "/adjudication" },
-          { text: "Artifacts", link: "/artifacts" },
+          { text: "Reviewer Command", link: "/eval-agent" },
+          { text: "Human Review", link: "/adjudication" },
+          { text: "Evidence Files", link: "/artifacts" },
           { text: "Report Gallery", link: "/report-gallery" },
           { text: "Publish Claims", link: "/publish-claims" },
           { text: "Claim Registry", link: "/claim-registry" },
@@ -88,7 +122,7 @@ export default defineConfig({
         items: [
           { text: "CLI Reference", link: "/cli-reference" },
           { text: "Programmatic API", link: "/programmatic-api" },
-          { text: "Adapter Protocol", link: "/adapter-protocol" },
+          { text: "Agent Command Protocol", link: "/adapter-protocol" },
           { text: "Result JSON Reference", link: "/result-json-reference" },
           { text: "Contract Evolution", link: "/contract-evolution" },
           { text: "Public Repo Layout", link: "/public-repo-layout" },

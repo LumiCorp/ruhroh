@@ -44,7 +44,7 @@ Compatible changes:
 
 - adding optional fields;
 - adding new warning, advisory, or remediation codes;
-- adding new file roles to publication bundle manifests when existing required
+- adding new file roles to publication packet manifests when existing required
   roles are preserved;
 - adding new enum values only when old consumers can safely treat unknown
   values as review-required;
@@ -55,8 +55,8 @@ Breaking changes:
 - removing, renaming, or changing the meaning of required fields;
 - changing the binary score mapping for existing evaluator statuses;
 - changing sample identity semantics in run plans or run manifests;
-- changing source-hash meaning for claims, bundles, or registry records;
-- making a previously optional field required for already-archived artifacts.
+- changing source-hash meaning for claims, packets, or registry records;
+- making a previously optional field required for already-archived evidence.
 
 When a breaking change is needed, add a new version value instead of changing
 the meaning of the old one. Keep validators for old versions when archived
@@ -64,25 +64,25 @@ claims still need to be inspected.
 
 ## Producer Rules
 
-When Ruhroh emits artifacts:
+When Ruhroh emits evidence files:
 
 1. Include a top-level `version` field on every machine-readable object.
 2. Include a `$schema` URL when a structural schema is shipped.
-3. Preserve source paths and SHA-256 hashes for artifacts that support external
+3. Preserve source paths and SHA-256 hashes for evidence that supports external
    claims.
-4. Keep old raw artifacts available so summaries can be recomputed when report
+4. Keep old raw evidence available so summaries can be recomputed when report
    logic improves.
 5. Prefer additive optional fields over shape replacement.
 6. Document any new required field in
    [Result JSON Reference](./result-json-reference.md).
 
-If a generated sample artifact changes shape, regenerate the docs samples and
-publication bundle so reviewers can inspect the current contract in the report
+If a generated sample file changes shape, regenerate the docs samples and
+publication packet so reviewers can inspect the current contract in the report
 gallery.
 
 ## Consumer Rules
 
-When reading Ruhroh artifacts:
+When reading Ruhroh evidence:
 
 1. Branch on `version` before parsing a file.
 2. Validate with the shipped schema for that version when one exists.
@@ -109,15 +109,15 @@ Before changing an emitted contract:
 4. Add or update validation tests for the old and new shape.
 5. Update `docs/result-json-reference.md` and any workflow docs that name the
    field.
-6. Regenerate sample docs artifacts when report, claim, bundle, or registry
+6. Regenerate sample docs evidence when report, claim, packet, or registry
    outputs change.
 7. Run `validate-claim --verify-sources`, `validate-bundle`, and
-   `claim-index` against a sample publication bundle when publication contracts
+   `claim-index` against a sample publication packet when publication contracts
    are affected.
 
 Do not use a migration to make old weak claims look stronger. If a new
 methodology gate changes publishability, preserve the old claim and publish a
-new claim with a new run plan, refreshed artifacts, and a current
+new claim with a new run plan, refreshed evidence, and a current
 `publish-check` report.
 
 ## Archived Evidence
@@ -126,11 +126,11 @@ An archived Ruhroh publication should contain enough evidence to survive future
 contract changes:
 
 - the benchmark claim and benchmark summary;
-- the publication bundle manifest and `publish-check.json`;
-- the suite manifest and scenario version locks;
+- the publication packet manifest and `publish-check.json`;
+- the benchmark-suite manifest and task version locks;
 - the run plan and optional rerun ledger;
-- every referenced run result and run artifact inventory;
-- evaluator calibration, review, and eval-quality reports when present;
+- every referenced run result and saved evidence inventory;
+- reviewer calibration, review, and reviewer-quality reports when present;
 - copied source files plus hashes.
 
 That packet lets later tooling validate the old claim as an old claim. It does

@@ -10,11 +10,11 @@ depends_on:
   - src/cli.ts
 ---
 
-# Write an Evaluator
+# Write a Reviewer
 
-Evaluators are Ruhroh's trust boundary. They decide whether the final workspace
-actually delivers the user outcome, and their evidence becomes part of the
-benchmark claim.
+Reviewer commands are Ruhroh's trust boundary. They decide whether the final
+workspace actually delivers the user outcome, and their evidence becomes part
+of the benchmark claim.
 
 Start with a scaffold:
 
@@ -27,27 +27,27 @@ pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter custom-shell
 pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario simple-newsletter
 ```
 
-The generated evaluator writes valid `ruhroh_eval_result_v1` JSON, but returns
+The generated reviewer writes valid `ruhroh_eval_result_v1` JSON, but returns
 `status: "review"` until you replace the placeholder checks. That keeps fresh
 scaffolds from producing fake passing benchmark runs.
 Use `--template deterministic`, `--template model`, or `--template hybrid` when
-you already know the evaluator shape. See the
-[Evaluator Cookbook](./evaluator-cookbook.md).
+you already know the reviewer shape. See
+[Reviewer Recipes](./evaluator-cookbook.md).
 
 ## Inputs
 
-Command-backed evaluators receive:
+Command-backed reviewers receive:
 
-- `RUHROH_EVAL_INPUT_PATH`: stable JSON input with task, rubric, artifacts, and
-  evaluator context;
+- `RUHROH_EVAL_INPUT_PATH`: stable JSON input with task, rubric, evidence, and
+  reviewer context;
 - `RUHROH_EVAL_OUTPUT_PATH`: required output file for `ruhroh_eval_result_v1`;
 - `RUHROH_EVAL_WORKSPACE_PATH`: copied final workspace to inspect;
 - `RUHROH_EVAL_ORIGINAL_WORKSPACE_PATH`: original generated workspace;
 - `RUHROH_EVAL_JOURNEY_PATH`: implementation journey data;
 - `RUHROH_EVAL_CALIBRATION_CASES_JSON`: expected judgment anchors;
-- `RUHROH_EVAL_PRIVATE_ASSETS_JSON`: evaluator-only private files.
+- `RUHROH_EVAL_PRIVATE_ASSETS_JSON`: reviewer-only private files.
 
-The evaluator may inspect files, run commands, start a local app, or call a
+The reviewer may inspect files, run commands, start a local app, or call a
 model judge. It should not mutate the original implementation workspace.
 
 ## Output
@@ -65,26 +65,26 @@ Return `review` when evidence is ambiguous. Only `passed` maps to score `1`.
 
 ## Quality Bar
 
-Good evaluators verify delivered behavior, not source text shortcuts. Prefer
+Good reviewers verify delivered behavior, not source text shortcuts. Prefer
 checks that would catch a prose-only answer, a hard-coded happy path, missing
 workflow behavior, and incomplete persistence or export flows.
 
 Use calibration cases from the scenario to keep deterministic, model-backed,
-and human-assisted evaluators aligned. `ruhroh validate --json` includes a
+and human-assisted reviewers aligned. `ruhroh validate --json` includes a
 `calibration` summary with expected-status counts and missing anchors, which is
-the quick check that an evaluator has pass/fail/review examples to learn from.
-`ruhroh calibrate-evaluator` then runs the configured evaluator against those
+the quick check that a reviewer has pass/fail/review examples to learn from.
+`ruhroh calibrate-evaluator` then runs the configured reviewer against those
 anchors and fails when the returned `status` does not match `expectedStatus`.
 Inspect `.generated/ruhroh/evaluator-calibration/<scenario>/<case>/` when a
-case fails; it contains the synthetic workspace, eval input, and evaluator
+case fails; it contains the synthetic workspace, review input, and reviewer
 output for that anchor. The command also writes
 `.generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json`;
 `ruhroh workflow` uses that report to distinguish "calibration cases exist"
-from "the evaluator has actually been calibrated."
-Use private evaluator assets for held-out expected outputs without leaking them
+from "the reviewer has actually been calibrated."
+Use private reviewer files for held-out expected outputs without leaking them
 into the public prompt.
 
 After the evaluator passes calibration and you collect runs, `ruhroh report`,
 `ruhroh compare`, and
-`ruhroh publish-check` surface weak evaluator evidence as review items or
-claim-readiness blockers.
+`ruhroh publish-check` surface weak reviewer evidence as review items or
+publication blockers.

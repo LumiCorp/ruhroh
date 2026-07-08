@@ -10,10 +10,10 @@ depends_on:
   - src/cli.ts
 ---
 
-# Evaluator Cookbook
+# Reviewer Recipes
 
-Evaluators are the trust boundary for Ruhroh scores. Start from the template
-that matches the evidence you can defend:
+Reviewer commands are the trust boundary for Ruhroh scores. Start from the
+template that matches the evidence you can defend:
 
 ```bash
 pnpm exec ruhroh new-evaluator deterministic-eval --template deterministic
@@ -22,7 +22,7 @@ pnpm exec ruhroh new-evaluator hybrid-eval --template hybrid
 ```
 
 All templates write valid `ruhroh_eval_result_v1` JSON and avoid false passes
-before you configure scenario-specific checks.
+before you configure task-specific checks.
 
 ## Deterministic
 
@@ -84,15 +84,15 @@ simple deterministic check would miss meaningful user-outcome quality.
 
 ## Publication Bar
 
-Before using any evaluator for a claim:
+Before using any reviewer for a claim:
 
 1. Run `ruhroh validate --json` and inspect the scenario `calibration` summary.
 2. Run `ruhroh calibrate-evaluator --scenario <id>` and fix any mismatched
    anchors.
 3. Run one fixture or local sample and inspect `ruhroh report`.
-4. Use `ruhroh review` to adjudicate weak evidence or judge disagreement.
+4. Use `ruhroh review` to resolve weak evidence or judge disagreement.
 5. Use `ruhroh publish-check` before citing the result.
 
 Ruhroh treats weak evidence, missing judge metadata, disagreement, and required
 human review as publication risks because the benchmark score is only as
-credible as the evaluator that produced it.
+credible as the reviewer that produced it.

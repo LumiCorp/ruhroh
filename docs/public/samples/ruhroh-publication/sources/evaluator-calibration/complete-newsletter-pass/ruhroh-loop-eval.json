@@ -23,7 +23,7 @@
   "criteriaResults": [
     {
       "id": "calibration-anchor",
-      "description": "Evaluator calibration anchor.",
+      "description": "Reviewer calibration anchor.",
       "status": "passed",
       "score": 1,
       "evidenceRefs": [

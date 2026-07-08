@@ -94,7 +94,7 @@
       "id": "ruhroh-sample",
       "title": "Ruhroh Sample Evidence Pack",
       "suiteVersion": "0.1.0",
-      "description": "Small docs sample that demonstrates compare, claim readiness, and artifact links.",
+      "description": "Small docs sample that demonstrates comparison, publish blockers, and evidence links.",
       "scenarioIds": [
         "simple-newsletter"
       ],
@@ -116,12 +116,12 @@
           "0.1.0: Initial docs sample."
         ],
         "acceptanceCriteria": [
-          "Demonstrate artifact-backed compare output."
+          "Demonstrate evidence-backed compare output."
         ],
-        "contaminationReview": "Docs sample uses synthetic fixture artifacts.",
+        "contaminationReview": "Docs sample uses synthetic example evidence.",
         "rewardHackingReview": "Docs sample is not a publishable benchmark claim.",
         "reviewChecklist": [
-          "Inspect report links, claim readiness, and remediation output."
+          "Inspect report links, publish blockers, and next actions."
         ],
         "deprecationPolicy": "Regenerate with scripts/generate-docs-samples.mjs when report contracts change."
       }
@@ -177,7 +177,7 @@
         },
         "source": {
           "suitePath": "./ruhroh/suites/ruhroh-sample/suite.json",
-          "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014"
+          "suiteSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc"
         }
       },
       "generated": {
@@ -826,9 +826,9 @@
       "source": {
         "resultsPath": "sources/results",
         "suitePath": "sources/suite/suite.json",
-        "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014",
+        "suiteSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc",
         "runPlanPath": "sources/ruhroh-run-plan.json",
-        "runPlanSha256": "228a4d51f02bd04ce3f50aed58ed87f121e4757c07ed4b69f7ebd9f8c9ef0ccc",
+        "runPlanSha256": "9e10eef98e2e33762d08e63162727ca1f7dc2bbab108e28f9134f421c06c1ccf",
         "htmlPath": "ruhroh-compare.html",
         "benchmarkClaimPath": "benchmark-claim.json",
         "benchmarkSummaryPath": "benchmark-summary.json",
@@ -1206,9 +1206,9 @@
       "source": {
         "resultsPath": "sources/results",
         "suitePath": "sources/suite/suite.json",
-        "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014",
+        "suiteSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc",
         "runPlanPath": "sources/ruhroh-run-plan.json",
-        "runPlanSha256": "228a4d51f02bd04ce3f50aed58ed87f121e4757c07ed4b69f7ebd9f8c9ef0ccc",
+        "runPlanSha256": "9e10eef98e2e33762d08e63162727ca1f7dc2bbab108e28f9134f421c06c1ccf",
         "htmlPath": "ruhroh-compare.html",
         "benchmarkClaimPath": "benchmark-claim.json",
         "benchmarkSummaryPath": "benchmark-summary.json",
@@ -1550,10 +1550,10 @@
           "transcriptsTarball": "./sample-results/run-two/ruhroh-loop-transcripts.tar.gz"
         },
         "transcriptPaths": [
-          "./sample-results/run-two/transcript.log"
+          "sources/results/run-2/transcript.log"
         ],
         "eventLogPaths": [
-          "./sample-results/run-two/events.jsonl"
+          "sources/results/run-2/events.jsonl"
         ]
       }
     ],
@@ -1668,16 +1668,16 @@
         "name": "suite",
         "status": "ok",
         "path": "sources/suite/suite.json",
-        "expectedSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014",
-        "actualSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014",
+        "expectedSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc",
+        "actualSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc",
         "details": "source.suitePath hash matches"
       },
       {
         "name": "runPlan",
         "status": "ok",
         "path": "sources/ruhroh-run-plan.json",
-        "expectedSha256": "68266e8bccf7356d06ccd82e49c09caa134bde80ca48f3a2307c8452109a2b63",
-        "actualSha256": "68266e8bccf7356d06ccd82e49c09caa134bde80ca48f3a2307c8452109a2b63",
+        "expectedSha256": "9b06eb31195f297851e22b67024aa9d1641f67c577f9fde78be8311def2077e3",
+        "actualSha256": "9b06eb31195f297851e22b67024aa9d1641f67c577f9fde78be8311def2077e3",
         "details": "source.runPlanPath hash matches"
       },
       {

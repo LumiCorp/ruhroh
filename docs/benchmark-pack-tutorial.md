@@ -12,13 +12,13 @@ depends_on:
   - docs/publish-claims.md
 ---
 
-# Benchmark Pack Tutorial
+# Publish a Benchmark Result
 
 This tutorial is the shortest complete path from a local Ruhroh starter to an
-audit-ready benchmark pack. It shows the intended progression:
+audit-ready benchmark result. It shows the intended progression:
 
 ```text
-fixture proof -> scenario -> evaluator -> suite -> run plan -> five runs -> claim packet
+setup check -> task -> reviewer -> benchmark suite -> run plan -> five runs -> publication packet
 ```
 
 Use the fixture pieces first. They prove Ruhroh is wired correctly before you
@@ -35,7 +35,7 @@ pnpm exec ruhroh first-run
 pnpm exec ruhroh workflow --html ruhroh-workflow.html
 ```
 
-Wire the credential-free fixture adapter and evaluator:
+Wire the credential-free fixture agent and reviewer:
 
 ```bash
 export RUHROH_RUN_AGENT_COMMAND="$PWD/ruhroh/adapters/fixture-newsletter/run.sh"
@@ -58,7 +58,7 @@ pnpm exec ruhroh validate \
   --suite ruhroh-smoke
 ```
 
-Preview the run without writing tasks, a run plan, or artifacts:
+Preview the run without writing tasks, a run plan, or saved evidence:
 
 ```bash
 pnpm exec ruhroh run \
@@ -80,7 +80,7 @@ pnpm exec ruhroh run \
 Rerun `workflow` after the real loop so the guide can see the preserved
 `ruhroh-loop-result.json` and advance to authoring.
 
-## 2. Author A Scenario
+## 2. Write A Task
 
 Create a new task that reads like a real user request:
 
@@ -100,7 +100,7 @@ Then edit `scenario.json`:
 - add pass, fail, and review calibration anchors when the task is moving toward
   a shared pack.
 
-Validate before writing an evaluator:
+Validate before writing a reviewer:
 
 ```bash
 pnpm exec ruhroh validate \
@@ -108,19 +108,19 @@ pnpm exec ruhroh validate \
   --scenario csv-cleanup
 ```
 
-## 3. Write And Calibrate The Evaluator
+## 3. Write And Check The Reviewer
 
-Scaffold an evaluator:
+Scaffold a reviewer command:
 
 ```bash
 pnpm exec ruhroh new-evaluator csv-cleanup-evaluator --template deterministic
 export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/csv-cleanup-evaluator/run.sh"
 ```
 
-The generated evaluator is intentionally conservative. Edit `run.sh` so it
+The generated reviewer is intentionally conservative. Edit `run.sh` so it
 inspects the final workspace and writes evidence-rich `ruhroh_eval_result_v1`
-JSON. Good evaluators cite files, commands, transcripts, screenshots, or
-workspace artifacts that prove the delivered outcome.
+JSON. Good reviewers cite files, commands, transcripts, screenshots, or
+workspace evidence that prove the delivered outcome.
 
 Run calibration before collecting repeated samples:
 
@@ -136,11 +136,11 @@ Keep the generated calibration report:
 .generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json
 ```
 
-`workflow`, `publish-check`, and reviewers use that report to distinguish an
-evaluator that was merely configured from one whose pass/fail/review behavior
+`workflow`, `publish-check`, and reviewers use that report to distinguish a
+reviewer that was merely configured from one whose pass/fail/review behavior
 was tested against scenario anchors.
 
-## 4. Freeze A Suite
+## 4. Freeze A Benchmark Suite
 
 Create a version-locked suite with at least five runs for a smoke claim:
 
@@ -177,9 +177,9 @@ Fix blockers before live collection. The strict command above turns placeholder
 contamination or reward-hacking review into blockers so a public pack cannot be
 accepted on metadata placeholders alone.
 
-## 5. Select An Adapter
+## 5. Connect An Agent
 
-Use the fixture adapter for local mechanics, or scaffold a live wrapper:
+Use the fixture connector for local mechanics, or scaffold a live wrapper:
 
 ```bash
 pnpm exec ruhroh examples
@@ -191,8 +191,8 @@ pnpm exec ruhroh doctor \
   --adapter ./ruhroh/adapters/codex-local/run.sh
 ```
 
-Before repeated live runs, `doctor` should report adapter metadata as ready for
-comparison: `adapterVersion`, model identity, and artifact paths should be
+Before repeated live runs, `doctor` should report connector metadata as ready for
+comparison: `adapterVersion`, model identity, and evidence paths should be
 available from the wrapper result file.
 
 ## 6. Plan And Collect Five Runs
@@ -209,8 +209,8 @@ pnpm exec ruhroh plan \
   --json
 ```
 
-Preserve `.generated/ruhroh/ruhroh-run-plan.json`. It is the intended
-scenario, adapter, sample, and seed matrix for the claim.
+Preserve `.generated/ruhroh/ruhroh-run-plan.json`. It is the intended task,
+agent connector, sample, and seed matrix for the claim.
 
 Collect the planned cohort:
 
@@ -224,7 +224,7 @@ pnpm exec ruhroh run \
 ```
 
 For expensive runs, split the same planned cohort across workers with
-`--shard <index>/<total>`, then merge the preserved artifact directories before
+`--shard <index>/<total>`, then merge the saved evidence directories before
 comparison.
 
 ## 7. Inspect Evidence Before Publishing
@@ -243,8 +243,8 @@ pnpm exec ruhroh compare ./path/to/results \
   --html ruhroh-compare.html
 ```
 
-Do not cite the score yet. These commands are for inspection: missing artifacts,
-review items, evaluator-quality warnings, mixed scenario versions, or run-plan
+Do not cite the score yet. These commands are for inspection: missing evidence,
+review items, reviewer-quality warnings, mixed task versions, or run-plan
 mismatches should be fixed first.
 
 ## 8. Publish-Check The Claim
@@ -275,8 +275,8 @@ pnpm exec ruhroh claim-index ruhroh-publication \
   --json > claim-index.json
 ```
 
-The bundle is the evidence artifact to share with reviewers. It contains the
-claim, summary, compare report, review queue, eval-quality report, manifest,
+The publication packet is the evidence to share with reviewers. It contains the
+claim, summary, compare report, review queue, reviewer-quality report, manifest,
 README, copied source evidence, hashes, run plan, and calibration report when
 present.
 
@@ -284,14 +284,14 @@ present.
 
 Before sharing a score, you should be able to answer yes to each question:
 
-- Did the scenario describe a real outcome rather than a source-text proxy?
-- Did the evaluator pass calibration anchors?
-- Did the suite freeze scenario versions and methodology?
-- Did every planned sample either produce artifacts or appear in an accepted
+- Did the task describe a real outcome rather than a source-text proxy?
+- Did the reviewer pass calibration anchors?
+- Did the benchmark suite freeze task versions and methodology?
+- Did every planned sample either produce evidence or appear in an accepted
   rerun ledger?
 - Did `compare --run-plan` report no cohort mismatch?
 - Did `publish-check --verify-sources` pass without blockers?
-- Can a reviewer open the publication bundle and inspect the sources behind the
+- Can a reviewer open the publication packet and inspect the sources behind the
   score without the original workspace?
 
 If not, keep the result private or experimental until the missing evidence is

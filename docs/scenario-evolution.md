@@ -11,13 +11,13 @@ depends_on:
   - src/suites.ts
 ---
 
-# Scenario Evolution
+# Task Versioning
 
-Scenario versions are part of Ruhroh's evidence model. A benchmark claim is only
+Task versions are part of Ruhroh's evidence model. A benchmark claim is only
 defensible when readers can tell which prompt, assets, rubric, calibration
-cases, private evaluator material, and governance notes were used.
+cases, private reviewer files, and governance notes were used.
 
-Use `metadata.scenarioVersion` for the scenario content version. This is
+Use `metadata.scenarioVersion` for the task content version. This is
 separate from `version: "ruhroh_scenario_v2"`, which is the schema version.
 For JSON artifact compatibility and schema migration policy, see
 [Contract Evolution](./contract-evolution.md).
@@ -42,8 +42,8 @@ Major version:
 
 - a materially different user task;
 - changed pass/fail boundary that makes old results misleading;
-- replacing public evaluator expectations with held-out/private expectations;
-- changes that make old run artifacts unsuitable for comparison.
+- replacing public reviewer expectations with held-out/private expectations;
+- changes that make old saved results unsuitable for comparison.
 
 Retire or deprecate instead of bumping when the scenario is flawed, leaked,
 obsolete, or no longer representative. Use `metadata.lifecycle` with a reason,
@@ -66,13 +66,13 @@ version:
 }
 ```
 
-`ruhroh validate` warns when a scenario changelog exists but does not mention
+`ruhroh validate` warns when a task changelog exists but does not mention
 the current `metadata.scenarioVersion`.
 
-## Suite Locks
+## Benchmark Suite Locks
 
-Suites freeze scenario membership with `scenarioVersions`. When a scenario
-version changes, create or update the suite intentionally:
+Benchmark suites freeze task membership with `scenarioVersions`. When a task version
+changes, create or update the benchmark suite intentionally:
 
 ```bash
 pnpm exec ruhroh new-suite local-smoke \
@@ -82,23 +82,23 @@ pnpm exec ruhroh new-suite local-smoke \
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-smoke
 ```
 
-`ruhroh validate` reports an error when a suite lock no longer matches the
-scenario's `metadata.scenarioVersion`. `ruhroh compare --suite <id>` reports
-when collected run artifacts mix versions or omit the suite-locked version.
+`ruhroh validate` reports an error when a benchmark-suite lock no longer matches the
+task's `metadata.scenarioVersion`. `ruhroh compare --suite <id>` reports when
+collected results mix versions or omit the benchmark-suite-locked version.
 
 ## Publication Checklist
 
-Before publishing a claim after scenario changes:
+Before publishing a claim after task changes:
 
 1. Update `metadata.scenarioVersion`.
 2. Add a matching `metadata.changelog` entry.
 3. Re-run `ruhroh validate`.
-4. Update suite `scenarioVersions` only when the benchmark pack should move to
-   the new scenario.
-5. Re-run the planned samples; do not mix old and new scenario versions in the
+4. Update suite `scenarioVersions` only when the benchmark should move to
+   the new task.
+5. Re-run the planned samples; do not mix old and new task versions in the
    same claim.
 6. Use `ruhroh publish-check` with the run plan and suite before citing the
    result.
 
-Old claims can stay archived if their `benchmarkClaim` includes the old suite,
-scenario version locks, run plan, source hashes, and result artifact hashes.
+Old claims can stay archived if their `benchmarkClaim` includes the old task
+set, task version locks, run plan, source hashes, and result evidence hashes.

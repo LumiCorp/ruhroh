@@ -3,7 +3,7 @@
   "id": "ruhroh-sample",
   "title": "Ruhroh Sample Evidence Pack",
   "suiteVersion": "0.1.0",
-  "description": "Small docs sample that demonstrates compare, claim readiness, and artifact links.",
+  "description": "Small docs sample that demonstrates comparison, publish blockers, and evidence links.",
   "scenarioIds": [
     "simple-newsletter"
   ],
@@ -25,12 +25,12 @@
       "0.1.0: Initial docs sample."
     ],
     "acceptanceCriteria": [
-      "Demonstrate artifact-backed compare output."
+      "Demonstrate evidence-backed compare output."
     ],
-    "contaminationReview": "Docs sample uses synthetic fixture artifacts.",
+    "contaminationReview": "Docs sample uses synthetic example evidence.",
     "rewardHackingReview": "Docs sample is not a publishable benchmark claim.",
     "reviewChecklist": [
-      "Inspect report links, claim readiness, and remediation output."
+      "Inspect report links, publish blockers, and next actions."
     ],
     "deprecationPolicy": "Regenerate with scripts/generate-docs-samples.mjs when report contracts change."
   }

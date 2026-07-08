@@ -12,12 +12,12 @@ depends_on:
   - ../../examples/adapters/aider/run.sh
 ---
 
-# Custom-Shell Adapter
+# Run a Shell Agent
 
 `custom-shell` is the public escape hatch for agents that can run from a shell
 and write files in a workspace.
 
-Configure it with the generic command adapter protocol:
+Configure it with the generic agent-command protocol:
 
 ```bash
 export RUHROH_RUN_AGENT_COMMAND=examples/adapters/fixture-newsletter/run.sh
@@ -32,7 +32,7 @@ interpreted. If a wrapper truly needs shell expansion, set
 `ruhroh doctor` reports a `command-safety` warning for shell opt-ins and for
 no-shell command strings that contain shell operators.
 
-The current adapter invokes the command with:
+Ruhroh invokes the command with:
 
 - `RUHROH_MESSAGE`
 - `RUHROH_ITERATION`
@@ -63,10 +63,10 @@ The example Codex CLI, Claude Code, Gemini, and Aider wrappers also write the
 `ruhroh_run_agent_result_v1` result file at `RUHROH_RESULT_PATH`. That file can
 include `adapterVersion`, `model`, `usage`, and `artifacts`; Ruhroh copies those
 fields into the run manifest so compare reports can group runs by the actual
-adapter/model identity.
+agent connector and model identity.
 
-For repeated comparisons, treat `adapterVersion`, model identity, and transcript
-or artifact paths as required evidence. `usage` is optional but recommended
+For repeated comparisons, treat connector version, model identity, and transcript
+or evidence paths as required evidence. `usage` is optional but recommended
 when the agent exposes cost or token data. Run `ruhroh doctor --adapter
 custom-shell` before collecting live samples; the `adapter-metadata` check
 reports whether the wrapper is ready for repeated comparisons or still too thin
@@ -74,6 +74,6 @@ for defensible cohort metadata.
 
 For a credential-free smoke path, pair
 `examples/adapters/fixture-newsletter/run.sh` with
-`examples/evaluators/fixture-newsletter/run.sh`. The adapter writes a small
-newsletter page; the evaluator checks the copied eval workspace and returns a
+`examples/evaluators/fixture-newsletter/run.sh`. The connector writes a small
+newsletter page; the reviewer checks the copied workspace and returns a
 normal structured judgment.

@@ -5,36 +5,36 @@ Generated: 2026-07-08T12:00:00.000Z
 Results: sources/results
 Suite: ruhroh-sample
 Run plan: sources/ruhroh-run-plan.json
-Evaluator calibration report: sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json
+Reviewer calibration report: sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json
 
 ## Review Order
 
 - Open ruhroh-compare.html for the aggregate outcome, intervals, blockers, and evidence browser.
-- Open ruhroh-eval-quality.html to inspect evaluator evidence warnings before citing the claim.
-- Open ruhroh-review.html for the human adjudication queue and required review items.
-- Inspect sources/ for the hashed run plan, calibration report, result JSON, transcripts, eval outputs, and preserved artifact inventory.
+- Open ruhroh-eval-quality.html to inspect reviewer evidence warnings before citing the claim.
+- Open ruhroh-review.html for the human review queue and required review items.
+- Inspect sources/ for the hashed run plan, reviewer check report, result JSON, transcripts, review outputs, and saved evidence inventory.
 
 ## Files
 
-- manifest.json: Versioned inventory for this publication bundle.
+- manifest.json: Inventory for this publication packet.
 - publish-check.json: Publishability verdict, blockers, remediation, compare output, and optional source verification.
 - ruhroh-compare.html: Static aggregate report for human inspection.
 - benchmark-claim.json: Compact benchmark claim JSON for archival and downstream publication.
 - benchmark-summary.json: Row-oriented benchmark summary JSON for reports or leaderboard ingestion.
-- ruhroh-review.json: Human adjudication queue derived from the claim's result artifacts.
+- ruhroh-review.json: Human review queue derived from the claim's saved results.
 - ruhroh-review.html: Static human review queue for audit before citation.
-- ruhroh-eval-quality.json: Evaluator evidence quality report for the claim's result artifacts.
-- ruhroh-eval-quality.html: Static evaluator evidence quality packet for audit before citation.
+- ruhroh-eval-quality.json: Reviewer evidence quality report for the claim's saved results.
+- ruhroh-eval-quality.html: Static reviewer evidence report for audit before citation.
 - README.md: Human-readable bundle summary.
 - sources/suite/suite.json: Suite manifest hashed by this claim.
 - sources/ruhroh-run-plan.json: Run plan hashed by this claim.
-- sources/evaluator-calibration/complete-newsletter-pass/ruhroh-eval-calibration-input.json: Evaluator calibration input for complete-newsletter-pass.
-- sources/evaluator-calibration/complete-newsletter-pass/ruhroh-loop-eval.json: Evaluator calibration output for complete-newsletter-pass.
-- sources/evaluator-calibration/missing-page-failure/ruhroh-eval-calibration-input.json: Evaluator calibration input for missing-page-failure.
-- sources/evaluator-calibration/missing-page-failure/ruhroh-loop-eval.json: Evaluator calibration output for missing-page-failure.
-- sources/evaluator-calibration/partial-signup-review/ruhroh-eval-calibration-input.json: Evaluator calibration input for partial-signup-review.
-- sources/evaluator-calibration/partial-signup-review/ruhroh-loop-eval.json: Evaluator calibration output for partial-signup-review.
-- sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json: Evaluator calibration report hashed by this claim.
+- sources/evaluator-calibration/complete-newsletter-pass/ruhroh-eval-calibration-input.json: Reviewer calibration input for complete-newsletter-pass.
+- sources/evaluator-calibration/complete-newsletter-pass/ruhroh-loop-eval.json: Reviewer calibration output for complete-newsletter-pass.
+- sources/evaluator-calibration/missing-page-failure/ruhroh-eval-calibration-input.json: Reviewer calibration input for missing-page-failure.
+- sources/evaluator-calibration/missing-page-failure/ruhroh-loop-eval.json: Reviewer calibration output for missing-page-failure.
+- sources/evaluator-calibration/partial-signup-review/ruhroh-eval-calibration-input.json: Reviewer calibration input for partial-signup-review.
+- sources/evaluator-calibration/partial-signup-review/ruhroh-loop-eval.json: Reviewer calibration output for partial-signup-review.
+- sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json: Reviewer calibration report hashed by this claim.
 - sources/results/run-1/ruhroh-loop-result.json: Result artifact 1 hashed by this claim.
 - sources/results/run-1/ruhroh-loop-eval-input.json: Run artifact evalInput for result 1.
 - sources/results/run-1/ruhroh-loop-eval.json: Run artifact evalResult for result 1.

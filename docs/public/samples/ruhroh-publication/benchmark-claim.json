@@ -9,9 +9,9 @@
   "source": {
     "resultsPath": "sources/results",
     "suitePath": "sources/suite/suite.json",
-    "suiteSha256": "0efface2e993fe5644b604d24914b99257aed8f5488514b03369eb73d6ded014",
+    "suiteSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc",
     "runPlanPath": "sources/ruhroh-run-plan.json",
-    "runPlanSha256": "228a4d51f02bd04ce3f50aed58ed87f121e4757c07ed4b69f7ebd9f8c9ef0ccc",
+    "runPlanSha256": "9e10eef98e2e33762d08e63162727ca1f7dc2bbab108e28f9134f421c06c1ccf",
     "htmlPath": "ruhroh-compare.html",
     "benchmarkClaimPath": "benchmark-claim.json",
     "benchmarkSummaryPath": "benchmark-summary.json",

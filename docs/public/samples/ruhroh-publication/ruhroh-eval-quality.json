@@ -1,7 +1,7 @@
 {
   "version": "ruhroh_eval_quality_v1",
   "source": {
-    "resultsPath": "./sample-results",
+    "resultsPath": "sources/results",
     "resultCount": 2
   },
   "ok": false,
@@ -12,7 +12,7 @@
   "humanReviewRequiredCount": 0,
   "runs": [
     {
-      "resultPath": "./sample-results/run-one/ruhroh-loop-result.json",
+      "resultPath": "sources/results/run-1/ruhroh-loop-result.json",
       "scenarioId": "simple-newsletter",
       "adapter": "agent-a",
       "runId": "sample-newsletter-agent-a-1",
@@ -31,7 +31,7 @@
       "humanReviewRequired": false
     },
     {
-      "resultPath": "./sample-results/run-two/ruhroh-loop-result.json",
+      "resultPath": "sources/results/run-2/ruhroh-loop-result.json",
       "scenarioId": "simple-newsletter",
       "adapter": "agent-a",
       "runId": "sample-newsletter-agent-a-2",

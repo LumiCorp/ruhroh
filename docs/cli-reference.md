@@ -181,13 +181,13 @@ pnpm exec ruhroh workflow ./results --html ruhroh-workflow.html
 ```
 
 `workflow` is read-only. It inspects the local fixture scaffold, scenario and
-suite authoring roots, evaluator wiring and calibration anchors, strict
+suite authoring roots, reviewer wiring and calibration anchors, strict
 benchmark-pack preflight, run-plan presence, discovered
-`ruhroh-loop-result.json` artifacts, and publication claim or bundle outputs.
+`ruhroh-loop-result.json` saved results, and publication claim or packet outputs.
 It prints the current stage plus the concrete commands for the next step: first
-fixture loop, scenario/suite authoring, evaluator quality, calibrated and
-risk-reviewed pack preflight, planned repeated runs, artifact-backed
-comparison, and `publish-check`.
+local example, task/benchmark-suite authoring, reviewer quality, calibrated and
+risk-reviewed pack preflight, planned repeated runs, evidence-backed comparison,
+and `publish-check`.
 The text and JSON output include a top-level `nextAction` so users and setup
 scripts can act without scanning every stage.
 
@@ -223,14 +223,14 @@ pnpm exec ruhroh new-evaluator local-evaluator --template deterministic
 pnpm exec ruhroh new-evaluator local-evaluator --json
 ```
 
-The generated `run.sh` reads the eval-agent environment, writes
+The generated `run.sh` reads the reviewer-command environment, writes
 `ruhroh_eval_result_v1` JSON to `RUHROH_EVAL_OUTPUT_PATH`, and returns
 `status: "review"` until you replace the placeholder checks with
-scenario-specific outcome verification. This keeps fresh evaluator scaffolds
+task-specific outcome verification. This keeps fresh reviewer scaffolds
 from creating fake passing benchmark runs. The generated README shows the
 matching `RUHROH_EVAL_COMMAND`, `doctor`, and validation checks.
 Templates are `review`, `deterministic`, `model`, and `hybrid`; see the
-[Evaluator Cookbook](./evaluator-cookbook.md).
+[Reviewer Recipes](./evaluator-cookbook.md).
 
 ## `ruhroh calibrate-evaluator`
 
@@ -372,8 +372,8 @@ Options:
   scenario/adapter/sample matrix. Sample ids and `RUHROH_RUN_COUNT` still use
   the full `--runs` value, so workers running `1/4`, `2/4`, `3/4`, and `4/4`
   produce disjoint artifacts that compare against one intended run plan.
-- `--adapter <id-or-command>` selects a run-agent adapter. Repeat the option to
-  run the same scenario selection across multiple adapters.
+- `--adapter <id-or-command>` selects an agent connector. Repeat the option to
+  run the same task selection across multiple agents.
 - `--generated-dir <path>` changes the generated Harbor task root and run-plan
   output location.
 - `--harbor-bin <path>` changes the Harbor executable.
@@ -439,7 +439,7 @@ packet is valid and publishable, `1` when the packet is malformed, and `2` when
 the packet is structurally valid but blocked by the embedded publishability
 verdict.
 
-`claim-index <path>` scans one benchmark claim, one publication bundle, or a
+`claim-index <path>` scans one benchmark claim, one publication packet, or a
 directory of exported `benchmark-claim.json` files and emits a local claim
 catalog. JSON output is versioned as `ruhroh_claim_index_v1`, includes a root
 `$schema` URL, and can be validated with
@@ -459,18 +459,18 @@ implementation/evaluator files, and basic cross-artifact consistency such as
 run id agreement. It exits non-zero when any required artifact is missing or
 malformed, and reports warnings for older otherwise-readable artifacts that do
 not yet include `$schema`.
-`--html` writes a self-contained static artifact
-viewer with run metadata, implementation timeline, evaluator judge agreement,
-criteria, evidence, commands, artifact paths, and a `reviewQueue` for runs that
-need audit. `eval-quality` checks evaluator evidence across one result file,
+`--html` writes a self-contained static evidence viewer with run metadata,
+implementation timeline, reviewer judge agreement, criteria, evidence,
+commands, evidence paths, and a `reviewQueue` for runs that need audit.
+`eval-quality` checks reviewer evidence across one result file,
 one run directory, or a recursive result root and emits
-`ruhroh_eval_quality_v1` JSON. `--html` writes a static evaluator-quality
+`ruhroh_eval_quality_v1` JSON. `--html` writes a static reviewer-quality
 report with warning counts, next actions, per-run evidence counts, judge
-metadata, and result links. It exits `0` when evaluator judgments are
-audit-ready, `1` for invalid input, and `2` when valid runs have evaluator
-warnings or human-review requirements. `review` extracts the adjudication queue
+metadata, and result links. It exits `0` when reviewer judgments are
+audit-ready, `1` for invalid input, and `2` when valid runs have reviewer
+warnings or human-review requirements. `review` extracts the human-review queue
 from one result file, one run directory, or a recursive result root and emits
-`ruhroh_review_queue_v1` JSON or a static HTML adjudication packet. Use it when
+`ruhroh_review_queue_v1` JSON or a static HTML review packet. Use it when
 the immediate task is to inspect required and recommended human-review items
 before publishing. `compare` groups
 repeated runs by scenario and adapter, then puts a scenario-by-adapter matrix in
@@ -506,15 +506,15 @@ remain; compare output also includes
 `claimReadiness`, a
 publishability summary with `scope`, `publishable`, `blockers`, and
 `advisories`; use it before turning aggregate numbers into benchmark claims.
-Eval-quality warnings, such as missing evidence, missing criteria results, or
-missing judge metadata, are blockers for publishable claims until reviewed or
-fixed.
+Reviewer-quality warnings, such as missing evidence, missing criteria results,
+or missing judge metadata, are blockers for publishable claims until reviewed
+or fixed.
 Add `--require-publishable` to make `compare` return exit code 2 after writing
 the report when `claimReadiness.publishable` is false.
 `compare --run-plan <path>` checks the result set against the intended sample
 matrix and reports `runPlanWarnings` for missing planned samples, results
 without sample ids, or sample ids that were not in the plan. Those warnings are
-claim-readiness blockers.
+publication blockers.
 Add `--rerun-ledger <path>` with `--run-plan` to account for planned samples
 excluded because of infrastructure failures. The ledger must be versioned
 `ruhroh_rerun_ledger_v1`; entries with `decision: "exclude"` and

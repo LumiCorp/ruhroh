@@ -12,21 +12,22 @@ depends_on:
   - examples/adapters/fixture-newsletter/run.sh
 ---
 
-# Adapter Examples
+# Agent Connector Examples
 
-Use `ruhroh examples` to see the packaged scenarios, adapters, and evaluators:
+Use `ruhroh examples` to see the packaged tasks, agent connectors, and
+reviewer commands:
 
 ```bash
 pnpm exec ruhroh examples
 pnpm exec ruhroh examples --json
 ```
 
-The adapter model has two levels:
+Ruhroh has two ways to call an agent:
 
 - `custom-shell` is the supported public path for most users. It runs a command
   wrapper with Ruhroh environment variables and reads the wrapper's completion
   line or `RUHROH_RESULT_PATH` result file.
-- The TypeScript adapter lifecycle is the advanced extension point for native
+- The TypeScript connector lifecycle is the advanced extension point for native
   integrations. Use it only when a command wrapper cannot preserve the agent
   behavior or metadata you need.
 
@@ -36,7 +37,7 @@ Credential-free examples:
 - `examples/evaluators/fixture-newsletter/run.sh`
 - `examples/scenarios/simple-newsletter`
 
-Live-agent wrapper examples:
+Live-agent connector examples:
 
 - `examples/adapters/codex-cli/run.sh`
 - `examples/adapters/claude-code/run.sh`
@@ -65,6 +66,6 @@ pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapt
 Use `--template generic` for a safe fail-fast skeleton, or choose `codex-cli`,
 `claude-code`, `gemini-cli`, `aider`, or `fixture` to copy one of the
 maintained example wrappers into your project. The generic scaffold is
-intentionally not a passing benchmark adapter. It writes the expected result
+intentionally not a passing benchmark connector. It writes the expected result
 shape and fails fast until the placeholder command is replaced with a real
 agent invocation.

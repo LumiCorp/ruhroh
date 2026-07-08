@@ -18,7 +18,7 @@ file-based: teams can keep it in a repo, attach it to a release, publish it as a
 static site, or feed it into a leaderboard importer without losing the evidence
 contract behind each score.
 
-The minimum registry-ready unit is a validated publication bundle:
+The minimum registry-ready unit is a validated publication packet:
 
 ```bash
 pnpm exec ruhroh publish-check ./path/to/results \
@@ -96,11 +96,11 @@ For a registry entry to be credible:
 - the claim must be suite-scoped, not an ad hoc comparison;
 - `publish-check` must have no blockers;
 - the matching run plan must be present and source-verified;
-- evaluator-quality warnings and required review items must be resolved or
+- reviewer-quality warnings and required review items must be resolved or
   explicitly captured as blockers;
-- every bundle should keep its copied `sources/` evidence with the claim;
-- scenario and suite version changes should create a new claim, not overwrite an
+- every packet should keep its copied `sources/` evidence with the claim;
+- task and benchmark-suite version changes should create a new claim, not overwrite an
   older one.
 
-Use [Scenario Evolution](./scenario-evolution.md) when scenario content changes,
+Use [Task Versioning](./scenario-evolution.md) when task content changes,
 and [Publish Claims](./publish-claims.md) for the source-verification workflow.

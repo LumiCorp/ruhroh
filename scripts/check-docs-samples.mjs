@@ -19,6 +19,7 @@ if (!existsSync(cliPath)) {
 
 run(process.execPath, ["scripts/generate-docs-samples.mjs"]);
 validateSampleLinks();
+validateGeneratedSampleHtmlLinks();
 
 const diff = run("git", ["diff", "--exit-code", "--", samplePath], { allowFailure: true });
 const untracked = run("git", ["ls-files", "--others", "--exclude-standard", "--", samplePath], { capture: true });
@@ -58,9 +59,22 @@ function validateSampleLinks() {
     }
     for (const match of findSampleLinks(text)) {
       const targetPath = path.join(repoRoot, "docs", "public", "samples", match.href.slice(samplePublicPrefix.length));
-      if (!existsSync(targetPath)) {
+      const cleanTargetPath = `${targetPath}.html`;
+      const routePath = path.join(repoRoot, "docs", `${match.href.slice(1)}.md`);
+      const hasExtension = path.extname(match.href).length > 0;
+      const targetExists = existsSync(targetPath) || (!hasExtension && existsSync(cleanTargetPath));
+      if (!targetExists) {
         const relativePath = path.relative(repoRoot, markdownPath);
         errors.push(`${relativePath}:${lineNumberForIndex(text, match.index)} sample link target is missing: ${match.href}`);
+        continue;
+      }
+      if (!path.extname(match.href) && !existsSync(routePath)) {
+        const relativePath = path.relative(repoRoot, markdownPath);
+        errors.push(`${relativePath}:${lineNumberForIndex(text, match.index)} clean sample route is missing: ${path.relative(repoRoot, routePath)}`);
+      }
+      if (existsSync(targetPath) && statSync(targetPath).isDirectory() && !existsSync(path.join(targetPath, "index.html"))) {
+        const relativePath = path.relative(repoRoot, markdownPath);
+        errors.push(`${relativePath}:${lineNumberForIndex(text, match.index)} sample link target is a directory without index.html: ${match.href}`);
       }
     }
   }
@@ -71,6 +85,40 @@ function validateSampleLinks() {
     ].join("\n"));
     process.exit(1);
   }
+}
+
+function validateGeneratedSampleHtmlLinks() {
+  const errors = [];
+  const sampleRoot = path.join(repoRoot, samplePath);
+  for (const htmlPath of listFilesByExtension(sampleRoot, ".html")) {
+    const text = readFileSync(htmlPath, "utf8");
+    const basePath = htmlBasePath(htmlPath, text);
+    for (const match of findLocalHtmlLinks(text)) {
+      const targetPath = path.resolve(basePath, match.href);
+      if (!existsSync(targetPath)) {
+        errors.push(`${path.relative(repoRoot, htmlPath)}:${lineNumberForIndex(text, match.index)} generated sample link target is missing: ${match.rawHref}`);
+        continue;
+      }
+      if (statSync(targetPath).isDirectory() && !existsSync(path.join(targetPath, "index.html"))) {
+        errors.push(`${path.relative(repoRoot, htmlPath)}:${lineNumberForIndex(text, match.index)} generated sample link targets a directory without index.html: ${match.rawHref}`);
+      }
+    }
+  }
+  if (errors.length > 0) {
+    console.error([
+      "[docs-samples] generated sample HTML contains broken local links.",
+      ...errors,
+    ].join("\n"));
+    process.exit(1);
+  }
+}
+
+function htmlBasePath(htmlPath, text) {
+  const match = text.match(/<base\s+href="([^"]+)"/iu);
+  if (match?.[1] === undefined) {
+    return path.dirname(htmlPath);
+  }
+  return path.resolve(path.dirname(htmlPath), match[1]);
 }
 
 function findSampleLinks(text) {
@@ -101,6 +149,24 @@ function findDeployedSampleLinks(text) {
   return links;
 }
 
+function findLocalHtmlLinks(text) {
+  const links = [];
+  const pattern = /href="([^"]+)"/gu;
+  for (const match of text.matchAll(pattern)) {
+    const rawHref = match[1];
+    if (rawHref === undefined || rawHref.startsWith("#") || /^[a-z][a-z0-9+.-]*:/iu.test(rawHref)) {
+      continue;
+    }
+    const href = rawHref.split("#")[0].split("?")[0];
+    try {
+      links.push({ rawHref, href: decodeURIComponent(href), index: match.index ?? 0 });
+    } catch {
+      links.push({ rawHref, href, index: match.index ?? 0 });
+    }
+  }
+  return links;
+}
+
 function listMarkdownFiles(root) {
   const files = [];
   for (const entry of readdirSync(root, { withFileTypes: true })) {
@@ -113,6 +179,21 @@ function listMarkdownFiles(root) {
       continue;
     }
     if (entry.isFile() && entry.name.endsWith(".md")) {
+      files.push(entryPath);
+    }
+  }
+  return files.sort((left, right) => left.localeCompare(right));
+}
+
+function listFilesByExtension(root, extension) {
+  const files = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const entryPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listFilesByExtension(entryPath, extension));
+      continue;
+    }
+    if (entry.isFile() && entry.name.endsWith(extension)) {
       files.push(entryPath);
     }
   }

@@ -171,7 +171,7 @@ The returned object is versioned as `ruhroh_publish_check_v1` and includes the
 same `blockers`, `advisories`, `remediation`, embedded compare output, and
 optional source-verification report used by `ruhroh publish-check --json`.
 This API is intentionally side-effect-free. Use the CLI when you need to write
-claim files, summaries, HTML, Markdown, or a relocatable publication bundle.
+claim files, summaries, HTML, Markdown, or a portable publication packet.
 
 ## Verify Published Evidence
 
@@ -220,8 +220,8 @@ if (shape.errors.length > 0 || sources.errors.length > 0) {
 ```
 
 Source verification resolves relative paths from the claim file location. Claims
-inside publication bundles therefore verify against bundle-local `sources/`
-paths, including evaluator calibration reports copied by `publish-check`.
+inside publication packets therefore verify against packet-local `sources/`
+paths, including reviewer calibration reports copied by `publish-check`.
 
 ## Validate Rerun Ledgers
 
@@ -286,7 +286,7 @@ const report = buildRuhrohRunResultsReport({
 console.log(report.benchmarkSummary.rows);
 ```
 
-For publication bundles, prefer the CLI workflow:
+For publication packets, prefer the CLI workflow:
 
 ```bash
 pnpm exec ruhroh publish-check ./path/to/results \

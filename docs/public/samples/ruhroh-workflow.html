@@ -34,16 +34,16 @@
     <main>
       <header>
         <h1>Ruhroh workflow guide</h1>
-        <p class="muted">A read-only path from first local fixture run to artifact-backed comparison and audit-ready publication.</p>
+        <p class="muted">A read-only path from the built-in local example to evidence-backed comparison and audit-ready publication.</p>
       </header>
       <section class="grid" aria-label="Workflow overview">
-        <div class="metric"><strong>Current stage</strong><span>Publish an audit-ready claim</span></div>
-        <div class="metric"><strong>Next action</strong><span class="fail">Publish an audit-ready claim</span></div>
+        <div class="metric"><strong>Current stage</strong><span>Publish an audit-ready benchmark result</span></div>
+        <div class="metric"><strong>Next action</strong><span class="fail">Publish an audit-ready benchmark result</span></div>
         <div class="metric"><strong>Ready stages</strong><span>6/7</span></div>
         <div class="metric"><strong>Root</strong><span>.</span></div>
       </section>
-      <section><h2>Next Action</h2><p>Publish an audit-ready claim: bundle-validation: Publication bundle is structurally valid but embedded publish-check or claim readiness is blocked.</p><p><code>pnpm exec ruhroh publish-check sample-results --suite-dir ruhroh/suites --suite ruhroh-sample --run-plan ruhroh-run-plan.json --bundle ruhroh-publication --verify-sources</code></p><p class="muted">Docs: publish-claims, claim-registry, result-json-reference, benchmark-methodology</p></section>
-      <section><h2>Project Paths</h2><table><thead><tr><th>Name</th><th>Path</th></tr></thead><tbody><tr><td>Scenario directory</td><td><a href="./ruhroh/scenarios">./ruhroh/scenarios</a></td></tr><tr><td>Suite directory</td><td><a href="./ruhroh/suites">./ruhroh/suites</a></td></tr><tr><td>Generated directory</td><td><a href=".generated/ruhroh">.generated/ruhroh</a></td></tr></tbody></table></section>
+      <section><h2>Next Action</h2><p>Publish an audit-ready benchmark result: bundle-validation: Publication packet is valid but embedded publish-check or ready-to-publish checks are blocked.</p><p><code>pnpm exec ruhroh publish-check sample-results --suite-dir ruhroh/suites --suite ruhroh-sample --run-plan ruhroh-run-plan.json --bundle ruhroh-publication --verify-sources</code></p><p class="muted">Docs: publish-claims, claim-registry, result-json-reference, benchmark-methodology</p></section>
+      <section><h2>Project Paths</h2><table><thead><tr><th>Name</th><th>Path</th></tr></thead><tbody><tr><td>Scenario directory</td><td>./ruhroh/scenarios</td></tr><tr><td>Suite directory</td><td>./ruhroh/suites</td></tr><tr><td>Generated directory</td><td>.generated/ruhroh</td></tr></tbody></table></section>
       <section class="stage ready">
         <h2>First local fixture loop</h2>
         <p><strong>Status:</strong> <span class="pass">ready</span></p>
@@ -63,11 +63,11 @@
       </section><section class="stage ready">
         <h2>Make evaluator quality operational</h2>
         <p><strong>Status:</strong> <span class="pass">ready</span></p>
-        <p>Evaluator wiring and calibration evidence are ready for repeated benchmark runs.</p>
+        <p>Reviewer wiring and calibration evidence are ready for repeated benchmark runs.</p>
         <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>evaluator-command</td><td><span class="pass">ok</span></td><td>local evaluator exists at ruhroh/evaluators/fixture-newsletter/run.sh</td></tr><tr><td>calibration-cases</td><td><span class="pass">ok</span></td><td>3 evaluator calibration case(s) are defined for simple-newsletter</td></tr><tr><td>calibration-report</td><td><span class="pass">ok</span></td><td>Calibration report passed 3 case(s).</td></tr></tbody></table>
         <h3>Commands</h3>
         <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario simple-newsletter --generated-dir .generated/ruhroh --json</code></td></tr><tr><td><code>pnpm exec ruhroh new-evaluator local-evaluator --template hybrid</code></td></tr><tr><td><code>export RUHROH_EVAL_COMMAND=&quot;$PWD/ruhroh/evaluators/local-evaluator/run.sh&quot;</code></td></tr></tbody></table>
-        <p class="muted">Docs: write-an-evaluator, evaluator-cookbook, adjudication</p>
+        <p class="muted">Docs: write-an-evaluator, evaluator-cookbook, human-review</p>
       </section><section class="stage ready">
         <h2>Preflight benchmark pack credibility</h2>
         <p><strong>Status:</strong> <span class="pass">ready</span></p>
@@ -87,16 +87,16 @@
       </section><section class="stage ready">
         <h2>Compare agents with evidence</h2>
         <p><strong>Status:</strong> <span class="pass">ready</span></p>
-        <p>Run results and a plan are available for artifact-backed comparison.</p>
+        <p>Run results and a plan are available for evidence-backed comparison.</p>
         <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>run-results</td><td><span class="pass">ok</span></td><td>2 ruhroh-loop-result.json file(s) found</td></tr><tr><td>run-plan</td><td><span class="pass">ok</span></td><td>./ruhroh-run-plan.json exists</td></tr></tbody></table>
         <h3>Commands</h3>
         <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh compare sample-results --suite-dir ruhroh/suites --suite ruhroh-sample --run-plan ruhroh-run-plan.json --html ruhroh-compare.html</code></td></tr><tr><td><code>pnpm exec ruhroh review sample-results --json</code></td></tr><tr><td><code>pnpm exec ruhroh eval-quality sample-results --html ruhroh-eval-quality.html --json</code></td></tr></tbody></table>
         <p class="muted">Docs: artifacts, report-gallery, benchmark-methodology</p>
       </section><section class="stage needs_action">
-        <h2>Publish an audit-ready claim</h2>
+        <h2>Publish an audit-ready benchmark result</h2>
         <p><strong>Status:</strong> <span class="fail">needs_action</span></p>
-        <p>Validate the publication bundle and registry index before making external claims.</p>
-        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>publish-inputs</td><td><span class="pass">ok</span></td><td>Run results and run plan are available for publish-check.</td></tr><tr><td>claim-or-bundle</td><td><span class="pass">ok</span></td><td>publication bundle manifest exists</td></tr><tr><td>bundle-validation</td><td><span class="fail">failed</span></td><td>Publication bundle is structurally valid but embedded publish-check or claim readiness is blocked.</td></tr><tr><td>registry-index</td><td><span class="fail">failed</span></td><td>claim-index.json exists but registry is blocked: blocked claim ./ruhroh-publication: agent-a: suite minimum runs or scenario coverage not satisfied</td></tr></tbody></table>
+        <p>Validate the publication packet and claim index before making external claims.</p>
+        <table><thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead><tbody><tr><td>publish-inputs</td><td><span class="pass">ok</span></td><td>Run results and run plan are available for publish-check.</td></tr><tr><td>claim-or-bundle</td><td><span class="pass">ok</span></td><td>publication packet inventory exists</td></tr><tr><td>bundle-validation</td><td><span class="fail">failed</span></td><td>Publication packet is valid but embedded publish-check or ready-to-publish checks are blocked.</td></tr><tr><td>registry-index</td><td><span class="fail">failed</span></td><td>claim-index.json exists but registry is blocked: blocked claim ./ruhroh-publication: agent-a: suite minimum runs or scenario coverage not satisfied</td></tr></tbody></table>
         <h3>Commands</h3>
         <table><thead><tr><th>Command</th></tr></thead><tbody><tr><td><code>pnpm exec ruhroh publish-check sample-results --suite-dir ruhroh/suites --suite ruhroh-sample --run-plan ruhroh-run-plan.json --bundle ruhroh-publication --verify-sources</code></td></tr><tr><td><code>pnpm exec ruhroh validate-bundle ruhroh-publication --json</code></td></tr><tr><td><code>pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html --json &gt; claim-index.json</code></td></tr></tbody></table>
         <p class="muted">Docs: publish-claims, claim-registry, result-json-reference, benchmark-methodology</p>

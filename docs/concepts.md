@@ -15,76 +15,83 @@ depends_on:
 Ruhroh asks one benchmark question: did the agent deliver the intended software
 outcome, and can that judgment be inspected later?
 
+If you are new to agent evaluation, read the terms below as Ruhroh labels for
+ordinary workflow pieces: a task, a set of repeated tasks, a way to call an
+agent, a reviewer, saved evidence, and a final publish-or-block decision.
+
 ## Lifecycle
 
 ```mermaid
 flowchart LR
-  scenario["Scenario<br/>real user request + rubric"] --> suite["Suite<br/>version-locked benchmark pack"]
-  suite --> adapter["Adapter run<br/>agent attempts the task"]
-  adapter --> artifacts["Artifacts<br/>journey + workspace + eval"]
-  artifacts --> compare["Compare<br/>repeat runs across agents"]
-  compare --> publish["Publish check<br/>claim readiness + evidence"]
+  scenario["Task<br/>the request + success rules"] --> suite["Benchmark suite<br/>repeatable evaluation"]
+  suite --> adapter["Agent connector<br/>how Ruhroh calls the agent"]
+  adapter --> artifacts["Evidence files<br/>what happened + reviewed result"]
+  artifacts --> compare["Compare<br/>side-by-side results"]
+  compare --> publish["Publish check<br/>ready to cite or blocked"]
 ```
 
-1. A `scenario` describes a realistic user request, runtime requirements, and
-   evaluator rubric.
-2. A `suite` freezes an ordered set of scenario ids and scenario versions for
-   repeatable comparison.
-3. An `adapter` connects Ruhroh to the coding agent you want to test.
-4. A run preserves the implementation journey, final workspace evidence, eval
-   input, eval result, transcripts, run manifest, and workspace summary.
-5. `compare` aggregates repeated runs across scenarios and adapters.
-6. `publish-check` decides whether the aggregate is ready to cite publicly.
+1. A task, stored as a `scenario`, is one realistic user request plus the rules
+   for judging it.
+2. A benchmark suite, stored as a `suite`, is a named group of tasks you want to run
+   repeatedly.
+3. An agent connector, configured with `--adapter`, is the small command or integration that lets Ruhroh call the
+   coding agent you want to test.
+4. A run saves the agent's attempts, the finished project, the reviewer input
+   and output, transcripts, and metadata needed to reproduce the result.
+5. `compare` rolls repeated runs into side-by-side results.
+6. `publish-check` decides whether the result is ready to cite publicly or
+   should stay blocked.
 
 ## Glossary
 
-| Term | What it owns | First command |
+| Term | Plain meaning | First command |
 | --- | --- | --- |
-| `scenario` | User task, assets, runtime requirements, evaluator context, rubric, evidence guidance, and calibration anchors. | `ruhroh new-scenario` |
-| `suite` | Scenario membership, scenario-version locks, minimum runs, methodology, and governance notes. | `ruhroh new-suite` |
-| `adapter` | The bridge from Ruhroh to the coding agent under test. | `ruhroh new-adapter` |
-| `evaluator` | The terminal reviewer that inspects the final workspace and emits `ruhroh_eval_result_v1`. | `ruhroh new-evaluator` |
-| `calibration` | Pass, fail, and review anchors that test evaluator behavior before repeated runs. | `ruhroh calibrate-evaluator` |
-| `run plan` | The intended scenario, adapter, sample, and seed matrix for a cohort. | `ruhroh plan` |
-| `artifacts` | Result JSON, manifests, eval inputs/outputs, journeys, transcripts, events, workspace summaries, and archives. | `ruhroh report` |
-| `compare` | Aggregate pass rates, confidence intervals, pass@k, review queues, and claim-readiness signals. | `ruhroh compare` |
-| `claim` | A suite-scoped result plus source evidence that can be validated after relocation. | `ruhroh publish-check` |
+| `scenario` | Ruhroh's file name for one realistic task, the files it needs, and the rules for deciding success. | `ruhroh new-scenario` |
+| `suite` | Ruhroh's file name for a repeatable benchmark suite. | `ruhroh new-suite` |
+| `adapter` | Ruhroh's option name for the connector that calls a coding agent. | `ruhroh new-adapter` |
+| `evaluator` | Ruhroh's file name for the reviewer command that inspects the finished project and returns pass, fail, or review. | `ruhroh new-evaluator` |
+| `calibration` | Known pass/fail/review examples used to test whether the reviewer behaves sensibly. | `ruhroh calibrate-evaluator` |
+| `run plan` | The checklist of tasks, agents, samples, and seeds you intended to run. | `ruhroh plan` |
+| `artifacts` | Saved evidence: result JSON, transcripts, reviewer input/output, timeline, project summary, and archives. | `ruhroh report` |
+| `compare` | Side-by-side results across repeated runs. | `ruhroh compare` |
+| `claim` | A benchmark result plus the evidence needed for another person to verify it. | `ruhroh publish-check` |
 
-## Scenario
+## Task
 
-A scenario lives under `ruhroh/scenarios/<id>/` with a `scenario.json`,
-`instruction.md`, and optional assets. The prompt should read like a real user
-request. The evaluator rubric should name outcome behavior and evidence the
-reviewer must inspect.
+Each task lives under `ruhroh/scenarios/<id>/` with a `scenario.json`,
+`instruction.md`, and optional files. The prompt should read like a real user
+request. The review rules should name the behavior that matters and the
+evidence the reviewer must inspect.
 
-## Suite
+## Benchmark Suite
 
-A suite lives under `ruhroh/suites/<id>/suite.json`. It locks scenario
-membership, scenario versions, minimum run counts, methodology, and governance
-notes so later results can be compared against the same benchmark pack.
+Each benchmark suite lives under `ruhroh/suites/<id>/suite.json`. It locks which tasks
+belong in the benchmark, which versions are allowed, and how many runs are
+needed so later results are compared against the same benchmark suite.
 
-## Adapter
+## Agent Connector
 
-An adapter is the bridge to a coding agent. Most users should start with a
-command-backed adapter created by `ruhroh new-adapter` or provided through
-`RUHROH_RUN_AGENT_COMMAND`. The TypeScript adapter protocol is an advanced
-extension point for tighter runtime integrations.
+An agent connector is how Ruhroh calls a coding agent. Most users should start
+with a command wrapper created by `ruhroh new-adapter` or provided through
+`RUHROH_RUN_AGENT_COMMAND`. Advanced users can build deeper TypeScript
+integrations later.
 
-## Eval Agent
+## Reviewer Command
 
-The eval agent runs after the implementation loop. It receives a copied final
-workspace, scenario context, rubric, journey data, transcripts, and stop reason.
-It returns a structured `ruhroh_eval_result_v1`; only `passed` maps to score 1.
+The reviewer command runs after the coding agent stops. It inspects a copy of
+the finished project, reads the task rules and transcript, and returns
+`passed`, `failed`, or `review`. Only `passed` maps to score 1.
 
-## Artifacts
+## Evidence Files
 
-Artifacts are the audit trail. A publishable Ruhroh claim should point back to
-result JSON, run manifests, run plans, eval input/output, journeys, transcripts,
-workspace summaries, and workspace archives where available.
+Evidence files are what Ruhroh saves for later inspection. A publishable Ruhroh
+result should point back to the result JSON, run metadata, run plan, reviewer
+input/output, timeline, transcripts, project summary, and project archive where
+available.
 
-## Claim Readiness
+## Publication Readiness
 
-Claim readiness is Ruhroh's publication gate. A claim is not ready just because
-some runs passed. It must satisfy suite coverage, minimum run counts,
-artifact-validation checks, run-plan coverage, evaluator-quality checks, and
-comparability checks.
+Publication readiness is Ruhroh's final gate. A result is not ready just
+because some runs passed. It must cover the expected benchmark suite, include enough
+runs, keep the evidence files intact, match the run plan, pass reviewer-quality
+checks, and compare like with like.

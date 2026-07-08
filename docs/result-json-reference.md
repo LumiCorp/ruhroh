@@ -21,40 +21,40 @@ of inferring outcomes from filenames.
 
 | Object | Where It Appears | Purpose |
 | --- | --- | --- |
-| `ruhroh_loop_result_v1` | `ruhroh-loop-result.json` | Harbor-facing final result plus embedded run/eval metadata. |
+| `ruhroh_loop_result_v1` | `ruhroh-loop-result.json` | Harbor-facing final result plus embedded run/review metadata. |
 | `ruhroh_run_manifest_v1` | `ruhroh-run-manifest.json`, `runManifest` | Reproducibility metadata for one run. |
-| `ruhroh_eval_input_v1` | `ruhroh-loop-eval-input.json` | Stable context file for command-backed evaluators. |
-| `ruhroh_eval_result_v1` | `ruhroh-loop-eval.json`, `evalResult` | Terminal evaluator judgment. |
-| `ruhroh_compare_v1` | `ruhroh compare --json` | Aggregated scenario/adapter comparison. |
-| `ruhroh_publish_check_v1` | `ruhroh publish-check --json`, `publish-check.json` in bundles | Publication verdict, remediation, compare output, and optional source verification. |
-| `ruhroh_publish_bundle_v1` | `manifest.json` in `publish-check --bundle` output | Bundle inventory for every file in an audit-ready publication packet. |
+| `ruhroh_eval_input_v1` | `ruhroh-loop-eval-input.json` | Stable context file for command-backed reviewers. |
+| `ruhroh_eval_result_v1` | `ruhroh-loop-eval.json`, `evalResult` | Reviewer judgment. |
+| `ruhroh_compare_v1` | `ruhroh compare --json` | Aggregated task/agent comparison. |
+| `ruhroh_publish_check_v1` | `ruhroh publish-check --json`, `publish-check.json` in publication packets | Publication verdict, remediation, compare output, and optional source verification. |
+| `ruhroh_publish_bundle_v1` | `manifest.json` in `publish-check --bundle` output | Packet inventory for every file in an audit-ready publication packet. |
 | `ruhroh_benchmark_claim_v1` | `benchmarkClaim` in `ruhroh compare --json` | Compact archive/export record for a benchmark claim. |
 | `ruhroh_benchmark_summary_v1` | `benchmarkSummary` in `ruhroh compare --json` | Row-oriented summary derived from a benchmark claim for reports or leaderboards. |
-| `ruhroh_run_results_report_v1` | `buildRuhrohRunResultsReport()` | Programmatic preserved-result report with artifacts, summaries, aggregates, review queue, claim readiness, claim, and summary. |
+| `ruhroh_run_results_report_v1` | `buildRuhrohRunResultsReport()` | Programmatic preserved-result report with saved evidence, summaries, aggregates, review queue, publication readiness, claim, and summary. |
 | `ruhroh_claim_source_verification_v1` | `verifyRuhrohBenchmarkClaimSources()` | Read-only source hash verification for archived benchmark claims. |
-| `ruhroh_publish_bundle_validation_report_v1` | `validateRuhrohPublishBundle()` | Read-only structural, cross-reference, and bundle-local source validation for publication bundles. |
-| `ruhroh_run_plan_v1` | `.generated/ruhroh/ruhroh-run-plan.json` | Intended scenario/adapter/sample matrix. |
+| `ruhroh_publish_bundle_validation_report_v1` | `validateRuhrohPublishBundle()` | Read-only structural, cross-reference, and packet-local source validation for publication packets. |
+| `ruhroh_run_plan_v1` | `.generated/ruhroh/ruhroh-run-plan.json` | Intended task/agent/sample matrix. |
 | `ruhroh_rerun_ledger_v1` | user-authored `--rerun-ledger` file | Sample-level rerun/exclusion decisions checked against a run plan. |
-| `ruhroh_scenario_list_v1` | `ruhroh list --json` | Machine-readable scenario catalog for docs, registries, and authoring tools. |
-| `ruhroh_suite_list_v1` | `ruhroh list-suites --json` | Machine-readable benchmark suite catalog. |
-| `ruhroh_benchmark_pack_inspection_v1` | `ruhroh inspect-pack --json` | Pack-level authoring and registry preflight across scenarios, suites, validation, and calibration. |
+| `ruhroh_scenario_list_v1` | `ruhroh list --json` | Machine-readable task catalog for docs, registries, and authoring tools. |
+| `ruhroh_suite_list_v1` | `ruhroh list-suites --json` | Machine-readable benchmark-suite catalog. |
+| `ruhroh_benchmark_pack_inspection_v1` | `ruhroh inspect-pack --json` | Authoring and registry preflight across tasks, benchmark suites, validation, and calibration. |
 
 Unknown optional fields should be ignored by consumers. Missing required fields
 should be treated as invalid input for publishing benchmark claims.
-Newly emitted artifacts include a root `$schema` URL for the matching shipped
+Newly emitted evidence files include a root `$schema` URL for the matching shipped
 JSON Schema so archived files can be validated without guessing their contract.
 For compatibility rules, migration guidance, and consumer expectations across
 these versioned objects, see [Contract Evolution](./contract-evolution.md).
 
 ## Loop Result
 
-`ruhroh-loop-result.json` is the canonical run artifact read by `ruhroh report`
+`ruhroh-loop-result.json` is the canonical run evidence file read by `ruhroh report`
 and `ruhroh compare`.
 
 Required top-level fields:
 
 - `version`: `ruhroh_loop_result_v1`.
-- `adapter`: benchmark runtime adapter label, usually `ruhroh-harbor`.
+- `adapter`: benchmark runner label, usually `ruhroh-harbor`.
 - `dataset`: dataset or benchmark package label.
 - `scenarioId` and `task_id`: scenario identity.
 - `status`: `completed` or `failed`.
@@ -74,8 +74,8 @@ Optional fields:
 - `evalResult`: embedded `ruhroh_eval_result_v1`.
 - `artifactPaths`: paths to preserved result files, transcripts, events,
   workspace summaries/snapshots, and adapter artifacts.
-- `failure_details`: runtime failure detail when the loop failed before a clean
-  evaluator judgment.
+- `failure_details`: run failure detail when the loop failed before a clean
+  reviewer judgment.
 
 `artifactPaths.workspaceSummary` points to `ruhroh-workspace-summary.json`, a
 compact final workspace inventory with top-level entries, project markers,
@@ -85,7 +85,7 @@ structural schema for loop results at
 workspace-summary schema at
 `node_modules/@kestrel-agents/ruhroh/schemas/workspace-summary-v1.schema.json`;
 `ruhroh init` also copies both schemas under `ruhroh/schemas/` for CI checks on
-preserved run artifacts.
+preserved run evidence.
 
 Consumers should prefer `runManifest.sample.id` over directory names when
 matching results to a run plan.
@@ -154,15 +154,15 @@ missing pass/fail/review calibration anchors; use `--require-risk-reviewed`
 when missing or placeholder contamination and reward-hacking review should fail
 registry ingestion; use `publish-check` before citing a score.
 
-## Eval Result
+## Reviewer Result
 
-`ruhroh_eval_result_v1` is produced by the evaluator command or fixture and then
+`ruhroh_eval_result_v1` is produced by the reviewer command or fixture and then
 normalized by Ruhroh.
 
 The package ships a structural JSON Schema for this artifact at
 `node_modules/@kestrel-agents/ruhroh/schemas/eval-result-v1.schema.json`;
 `ruhroh init` also copies it to `ruhroh/schemas/eval-result-v1.schema.json` so
-evaluator fixtures and external judge adapters can be checked before
+reviewer fixtures and external judge commands can be checked before
 publication.
 
 Required fields:
@@ -175,7 +175,7 @@ Required fields:
 - `unmetCriteria`: failed or incomplete rubric criteria.
 - `evidenceRefs`: top-level evidence references.
 - `commandsRun`: command evidence with `command`, `exitCode`, and `summary`.
-- `artifacts`: evaluator artifact paths keyed by stable names.
+- `artifacts`: reviewer evidence paths keyed by stable names.
 - `finalSummary`: concise audit summary.
 
 Optional fields:
@@ -185,7 +185,7 @@ Optional fields:
   optional `weight`, `evidenceRefs`, and optional `notes`.
 - `subscores`: named dimensions such as `functionality`, `workflow`,
   `buildRun`, `persistence`, `constraintCompliance`, and `evidenceQuality`.
-- `judge`: evaluator identity with `kind`, optional `model`, and optional
+- `judge`: reviewer identity with `kind`, optional `model`, and optional
   `version`.
 - `judgeVotes`: optional multi-judge votes. Each vote includes `judge`,
   `status`, `confidence`, `rationale`, `evidenceRefs`, and optional `weight`.
@@ -193,16 +193,16 @@ Optional fields:
   vote count, unanimity, status counts, optional majority status, and dissenting
   judge labels.
 
-For publishable comparisons, evaluators should include evidence, criteria
+For publishable comparisons, reviewers should include evidence, criteria
 results, command evidence, judge metadata, and, for model-backed or high-stakes
-judgments, multi-judge votes. Ruhroh reports weaker evaluator outputs and
-judge disagreement as eval-quality warnings.
+judgments, multi-judge votes. Ruhroh reports weaker reviewer outputs and
+judge disagreement as reviewer-quality warnings.
 
-## Evaluator Calibration Report
+## Reviewer Calibration Report
 
 `ruhroh_eval_calibration_report_v1` is produced by
-`ruhroh calibrate-evaluator`. It records whether the configured evaluator
-matched each scenario calibration anchor before live benchmark scores are
+`ruhroh calibrate-evaluator`. It records whether the configured reviewer
+matched each task calibration anchor before live benchmark scores are
 trusted. The command prints the report when `--json` is used and also writes it
 to `.generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json`.
 
@@ -216,21 +216,21 @@ Required fields:
 
 - `$schema`: `https://lumicorp.github.io/ruhroh/schemas/eval-calibration-report-v1.schema.json`.
 - `version`: `ruhroh_eval_calibration_report_v1`.
-- `source`: scenario directory, generated calibration directory, evaluator
+- `source`: task directory, generated calibration directory, reviewer
   command, and report path.
 - `ok`: true only when at least one calibration case ran, every returned status
   matched the expected status, and no infrastructure failures occurred.
 - `scenarioCount`, `caseCount`, `matchedCount`, `mismatchCount`, and
-  `infraFailedCount`: evaluator calibration rollups.
+  `infraFailedCount`: reviewer calibration rollups.
 - `warnings` and `nextActions`: operator-facing follow-up guidance.
 - `results`: one row per calibration case with scenario id, case id, expected
   and actual status, match boolean, paths to the synthetic input/output and
   workspace, process exit code when available, and captured stdout/stderr.
 
-## Eval Input
+## Reviewer Input
 
 `ruhroh-loop-eval-input.json` is the stable input file for command-backed
-evaluators. It includes:
+reviewers. It includes:
 
 - `version`: `ruhroh_eval_input_v1`.
 - `scenarioId`.
@@ -239,9 +239,9 @@ evaluators. It includes:
 - `scenarioContext`, `goalRubric`, and `evidenceGuidance`.
 - `calibrationCases`: expected judgment anchors with `id`, `inputSummary`,
   `expectedStatus`, and `rationale`.
-- `privateAssets`: evaluator-only asset paths.
+- `privateAssets`: reviewer-only file paths.
 
-Evaluators should read this file instead of reconstructing context from the
+Reviewers should read this file instead of reconstructing context from the
 generated Harbor directory.
 
 ## Run Manifest
@@ -260,26 +260,26 @@ Required fields:
 - `runId`.
 - `scenario`: `id`, optional `scenarioVersion`, optional `runMode`, and
   optional scenario metadata.
-- `benchmark`: dataset/runtime labels and optional Harbor agent identity.
+- `benchmark`: dataset/runner labels and optional Harbor agent identity.
 - `timing`: `startedAt`, optional `endedAt`, and `durationMs`.
 - `loop`: `maxIterations`, `implementationIterationsUsed`, and
   `stoppedReason`.
-- `runAgent`: adapter id, continuity level, session handle, run ids, and
-  optional adapter/model/usage/command metadata.
+- `runAgent`: connector id, continuity level, session handle, run ids, and
+  optional connector/model/usage/command metadata.
 
 Optional fields used by aggregate reports:
 
 - `sample`: `id`, `index`, `count`, and `seed`.
-- `evaluator`: evaluator command hash, fixture flag, input-summary counts,
+- `evaluator`: reviewer command hash, fixture flag, input-summary counts,
   private asset path hashes, judge metadata, and model metadata.
-- `environment`: OS/runtime details, sample indexes, and optional
+- `environment`: OS/runner details, sample indexes, and optional
   `fingerprint` with `method`, `sha256`, and canonical `components`.
 - `env`: forwarded env key names and secret key names that were present.
 - `usage`: `costUsd`, `inputTokens`, `outputTokens`, and `totalTokens`.
 - `artifactPaths`: manifest-level artifact index.
 - `failureDetails`.
 
-Secret values are not stored. Command-backed adapter and evaluator commands are
+Secret values are not stored. Command-backed agent and reviewer commands are
 represented by hashes so runs can be compared without exposing local paths or
 credentials. Command manifests also include `shellEnabled` so reviewers can
 distinguish default no-shell execution from explicit shell opt-in.
@@ -298,14 +298,14 @@ for comparison; older manifests fall back to platform/Python/container strings.
 `summary` includes outcome fields, selected manifest metadata, implementation
 timeline, criteria results, evidence refs, commands run, evaluator judge
 metadata, judge votes, judge agreement, artifact paths, `artifactInventory`,
-artifact-completeness warnings, usage, sample data, and eval-quality warnings.
+missing-evidence warnings, usage, sample data, and reviewer-quality warnings.
 `artifactInventory` is sorted by artifact name and records path, availability,
 size, SHA-256 digest, and missing/not-file/unreadable errors for each non-empty
 entry in `artifactPaths`.
 
-## Eval Quality JSON
+## Reviewer Evidence JSON
 
-`ruhroh eval-quality <results-dir> --json` emits an evaluator evidence gate:
+`ruhroh eval-quality <results-dir> --json` emits a reviewer evidence check:
 
 - `version`: `ruhroh_eval_quality_v1`.
 - `source`: input path and result count.
@@ -313,7 +313,7 @@ entry in `artifactPaths`.
 - `runs`: per-run evaluator evidence counts, criteria counts, command counts,
   judge metadata, judge-vote counts, agreement summary, warnings, and result
   path.
-- `nextActions`: remediation hints for strengthening evaluator evidence.
+- `nextActions`: remediation hints for strengthening reviewer evidence.
 - `htmlPath`: present when `--html` is also supplied.
 
 ## Compare JSON
@@ -405,12 +405,12 @@ Required fields:
 - `sourceVerification`: optional `ruhroh_claim_source_verification_v1` report
   when `--verify-sources` was used.
 
-## Publication Bundle Manifest
+## Publication Packet Manifest
 
 `ruhroh_publish_bundle_v1` is the inventory file written to `manifest.json`
 when `publish-check --bundle <dir>` creates a publication packet. It records the
-source result directory, bundle-relative file paths, publishability counts, and
-the role of each bundled artifact so reviewers and registries can inspect a
+source result directory, packet-relative file paths, publishability counts, and
+the role of each included evidence file so reviewers and registries can inspect a
 packet without inferring layout conventions from filenames.
 
 The package ships a structural JSON Schema for this manifest at
@@ -528,7 +528,7 @@ external reports or lightweight leaderboards.
 ## Claim Index JSON
 
 `claim-index <path> --json` emits a registry-oriented catalog over one
-benchmark claim, one publication bundle, or a directory of bundles. It is the
+benchmark claim, one publication packet, or a directory of packets. It is the
 machine-readable companion to the static claim index HTML and is intended for
 local registries, dashboards, and publication pipelines that need to ingest
 multiple archived claims without losing claim-level blockers.
@@ -592,8 +592,8 @@ samples, results without sample ids, extra result samples outside the intended
 matrix, and result samples whose scenario id, adapter id, seed, run index, or
 run count contradicts the planned row. When a suite comparison uses a run plan,
 Ruhroh also verifies that the plan's suite id, `suiteVersion`, and suite
-manifest hash match the suite selected for comparison. Those warnings are
-claim-readiness blockers.
+manifest hash match the suite selected for comparison. Those warnings block
+publication.
 
 ## Rerun Ledger
 

@@ -29,7 +29,7 @@ writeJson(path.join(suiteDir, "suite.json"), {
   id: "ruhroh-sample",
   title: "Ruhroh Sample Evidence Pack",
   suiteVersion: "0.1.0",
-  description: "Small docs sample that demonstrates compare, claim readiness, and artifact links.",
+  description: "Small docs sample that demonstrates comparison, publish blockers, and evidence links.",
   scenarioIds: ["simple-newsletter"],
   scenarioVersions: { "simple-newsletter": "1.0.0" },
   methodology: {
@@ -44,10 +44,10 @@ writeJson(path.join(suiteDir, "suite.json"), {
     createdAt: "2026-07-08",
     updatedAt: "2026-07-08",
     changelog: ["0.1.0: Initial docs sample."],
-    acceptanceCriteria: ["Demonstrate artifact-backed compare output."],
-    contaminationReview: "Docs sample uses synthetic fixture artifacts.",
+    acceptanceCriteria: ["Demonstrate evidence-backed compare output."],
+    contaminationReview: "Docs sample uses synthetic example evidence.",
     rewardHackingReview: "Docs sample is not a publishable benchmark claim.",
-    reviewChecklist: ["Inspect report links, claim readiness, and remediation output."],
+    reviewChecklist: ["Inspect report links, publish blockers, and next actions."],
     deprecationPolicy: "Regenerate with scripts/generate-docs-samples.mjs when report contracts change.",
   },
 });
@@ -516,7 +516,7 @@ function writeSampleCalibrationCase(calibrationCase) {
     finalSummary: calibrationCase.rationale,
     criteriaResults: [{
       id: "calibration-anchor",
-      description: "Evaluator calibration anchor.",
+      description: "Reviewer calibration anchor.",
       status: calibrationCase.expectedStatus,
       score: calibrationCase.expectedStatus === "passed" ? 1 : 0,
       evidenceRefs: [{ kind: "file", ref: "CALIBRATION.md", summary: calibrationCase.rationale }],
@@ -597,20 +597,20 @@ function assertPublishCheckSample(report) {
 
 function assertPublishBundleManifestSample(report) {
   if (report.$schema !== "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json") {
-    throw new Error("docs sample publication bundle manifest must include the publish-bundle schema URL");
+    throw new Error("docs sample publication packet manifest must include the publish-bundle schema URL");
   }
   if (report.version !== "ruhroh_publish_bundle_v1") {
-    throw new Error("docs sample publication bundle manifest must be versioned as ruhroh_publish_bundle_v1");
+    throw new Error("docs sample publication packet manifest must be versioned as ruhroh_publish_bundle_v1");
   }
   if (!Array.isArray(report.files) || !report.files.some((file) => file.role === "publish-check")) {
-    throw new Error("docs sample publication bundle manifest must list the bundled publish-check file");
+    throw new Error("docs sample publication packet manifest must list the bundled publish-check file");
   }
 }
 
 function assertCleanBundleValidation(report) {
   if (report.valid !== true || report.errors.length > 0 || report.warnings.length > 0) {
     throw new Error([
-      "docs sample publication bundle must be structurally valid without validation warnings",
+      "docs sample publication packet must be structurally valid without validation warnings",
       ...report.errors,
       ...report.warnings,
     ].join("\n"));
@@ -625,7 +625,7 @@ function assertClaimIndex(report) {
     throw new Error("docs sample claim index must contain one valid claim");
   }
   if (!Array.isArray(report.claims) || report.claims[0]?.bundlePath === undefined) {
-    throw new Error("docs sample claim index must point at the publication bundle");
+    throw new Error("docs sample claim index must point at the publication packet");
   }
 }
 
@@ -636,19 +636,19 @@ function assertWorkflowSample(html) {
   if (!html.includes("pnpm exec ruhroh report sample-results/run-one/ruhroh-loop-result.json --html ruhroh-report.html")) {
     throw new Error("docs sample workflow must point reviewers at the first-loop report command");
   }
-  if (!html.includes("publication bundle manifest exists")) {
-    throw new Error("docs sample workflow must show the generated publication bundle");
+  if (!html.includes("publication packet inventory exists")) {
+    throw new Error("docs sample workflow must show the generated publication packet");
   }
   if (!html.includes("claim-index.json exists but registry is blocked")) {
     throw new Error("docs sample workflow must show the generated claim index readiness gate");
   }
-  if (!html.includes('<strong>Next action</strong><span class="fail">Publish an audit-ready claim</span>')) {
+  if (!html.includes('<strong>Next action</strong><span class="fail">Publish an audit-ready benchmark result</span>')) {
     throw new Error("docs sample workflow must show blocked publication readiness for the synthetic sample");
   }
-  if (!html.includes("Publication bundle is structurally valid but embedded publish-check or claim readiness is blocked.")) {
+  if (!html.includes("Publication packet is valid but embedded publish-check or ready-to-publish checks are blocked.")) {
     throw new Error("docs sample workflow must show bundle validation readiness details");
   }
-  if (html.includes("No benchmark-claim.json or ruhroh-publication bundle has been written yet.")) {
+  if (html.includes("No benchmark-claim.json or ruhroh-publication packet has been written yet.")) {
     throw new Error("docs sample workflow must not show stale missing-publication guidance");
   }
   if (html.includes("missing local fixture file(s)") || html.includes("RUHROH_RUN_AGENT_COMMAND is not set")) {

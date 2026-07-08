@@ -41,10 +41,10 @@ that docs links into `/samples/` resolve to generated artifacts, then
 fails if tracked samples changed or new untracked sample files appeared. The
 failure message points at missing links, stale files, or untracked generated
 files. This keeps the workflow guide, report HTML, publish-check JSON,
-publication bundle, and claim index aligned with the current CLI contracts
+publication packet, and claim index aligned with the current CLI contracts
 instead of letting the visible audit examples drift.
 
-Manual workflows may run live adapters when credentials are available. Upload
+Manual workflows may run live agent connectors when credentials are available. Upload
 the generated Harbor job directory, Ruhroh summary JSON, transcripts, and
 workspace archive as artifacts.
 
@@ -52,17 +52,17 @@ The repo-local `Ruhroh Smoke` workflow keeps live agent execution off by
 default. On manual dispatch, set `live_gemini=true` and provide a
 `GEMINI_API_KEY` secret to run the Gemini CLI custom-shell smoke.
 Treat Codex CLI and Claude Code wrapper runs the same way: run dry-run and
-shell-syntax checks by default, then enable live adapter jobs only in isolated
+shell-syntax checks by default, then enable live agent jobs only in isolated
 benchmark environments with explicit credentials and uploaded artifacts.
 
-For benchmark-pack contribution or registry jobs, run
+For benchmark-suite contribution or registry jobs, run
 `inspect-pack --require-calibrated --require-risk-reviewed` before any live
 collection. Use
-[Benchmark Pack Registry](./benchmark-pack-registry.md) and
+[Benchmark Suite Review](./benchmark-pack-registry.md) and
 [examples/ci/ruhroh-pack-registry.yml](../examples/ci/ruhroh-pack-registry.yml)
-as the CI shape: validate scenarios and suites, require calibration coverage
+as the CI shape: validate tasks and benchmark suites, require calibration coverage
 and contamination/reward-hacking review, emit an inspection JSON artifact, and
-fail before collection if the pack cannot support defensible results.
+fail before collection if the benchmark suite cannot support defensible results.
 The template also writes a compact benchmark-pack inspection card to
 `GITHUB_STEP_SUMMARY`, uploads `ruhroh-pack-inspection-summary.md`, and updates a
 single pull-request comment with the same status, blocker, warning,
@@ -84,8 +84,8 @@ publication checks:
 
 1. collect repeated runs in an isolated benchmark environment;
 2. preserve the matching `.generated/ruhroh/ruhroh-run-plan.json`;
-3. upload or check out the result artifacts;
-4. run the publication gate against those artifacts.
+3. upload or check out the saved result evidence;
+4. run the publication gate against that evidence.
 
 Use [examples/ci/ruhroh-claim-publication.yml](../examples/ci/ruhroh-claim-publication.yml)
 as a starting point. It runs:

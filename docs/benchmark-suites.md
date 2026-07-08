@@ -11,9 +11,9 @@ depends_on:
 
 # Benchmark Suites
 
-Ruhroh suites are frozen benchmark-pack manifests. They group realistic
-scenarios under a named methodology and governance record so results can be
-reported against something more stable than an ad hoc tier filter.
+Ruhroh benchmark suites are frozen benchmark manifests. They group realistic tasks
+under a named methodology and governance record so results can be reported
+against something more stable than an ad hoc filter.
 
 List bundled suites:
 
@@ -47,26 +47,26 @@ Generate a suite:
 pnpm exec ruhroh generate --suite ruhroh-smoke
 ```
 
-Run or dry-run a suite with an adapter:
+Run or dry-run a benchmark suite with an agent connector:
 
 ```bash
 pnpm exec ruhroh run --suite ruhroh-productivity --adapter ./path/to/agent-wrapper.sh --dry-run
 ```
 
-Validate suite membership and referenced scenarios:
+Validate benchmark-suite membership and referenced tasks:
 
 ```bash
 pnpm exec ruhroh validate --suite ruhroh-data-apps
 pnpm exec ruhroh validate --suite ruhroh-data-apps --json
 ```
 
-Check local suite readiness alongside adapter/evaluator wiring:
+Check local benchmark-suite readiness alongside agent/reviewer wiring:
 
 ```bash
 pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-smoke --adapter ./adapters/my-agent.sh
 ```
 
-Create a local suite from authored scenarios:
+Create a local benchmark suite from authored tasks:
 
 ```bash
 pnpm exec ruhroh new-suite local-data \
@@ -78,16 +78,16 @@ pnpm exec ruhroh new-suite local-data \
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-data
 ```
 
-`new-suite` reads each selected scenario, freezes its
-`metadata.scenarioVersion` in the suite manifest, and writes methodology plus
+`new-suite` reads each selected task, freezes its
+`metadata.scenarioVersion` in the benchmark-suite manifest, and writes methodology plus
 governance defaults for repeatable comparisons. Review the description,
 acceptance criteria, contamination review, reward-hacking review, review
-checklist, and deprecation policy before publishing the suite.
+checklist, and deprecation policy before publishing the benchmark suite.
 
-## Bundled Suites
+## Built-In Benchmark Suites
 
-- `ruhroh-smoke`: one small local-app scenario for install validation and
-  adapter bring-up.
+- `ruhroh-smoke`: one small local-app task for install validation and
+  connector bring-up.
 - `ruhroh-productivity`: stateful productivity app workflows such as budget
   planning, sprint planning, and task boards.
 - `ruhroh-data-apps`: local app tasks that involve structured data assets,
@@ -107,8 +107,8 @@ They use `version: "ruhroh_suite_v1"` and include:
 
 - `id`, `title`, `suiteVersion`, and `description`;
 - ordered `scenarioIds`;
-- `scenarioVersions`, mapping every suite scenario id to the scenario metadata
-  version frozen by this suite version;
+- `scenarioVersions`, mapping every task id to the task metadata version frozen
+  by this benchmark-suite version;
 - methodology fields: `minRuns`, `aggregationUnit`, `reportPolicy`,
   `confidenceLevel`, and `retryPolicy`;
 - governance fields: owner, changelog, acceptance criteria, contamination
@@ -117,85 +117,85 @@ They use `version: "ruhroh_suite_v1"` and include:
 The package ships a structural JSON Schema at
 `node_modules/@kestrel-agents/ruhroh/schemas/suite-v1.schema.json`; `ruhroh init`
 also copies it to `ruhroh/schemas/suite-v1.schema.json`. Use it for editor
-completion or CI shape checks before running `ruhroh validate`, which adds
-scenario existence, scenario-version lock, and governance validation.
+completion or CI shape checks before running `ruhroh validate`, which adds task
+existence, task-version lock, and governance validation.
 
-Published suite changes should bump `suiteVersion` whenever scenario membership,
-locked scenario versions, assets, prompts, or acceptance criteria change.
-`ruhroh validate --suite <id>` checks the suite locks against the current
-scenario metadata when both trees are available. Validation requires non-empty
+Published benchmark-suite changes should bump `suiteVersion` whenever task membership,
+locked task versions, assets, prompts, or acceptance criteria change.
+`ruhroh validate --suite <id>` checks the benchmark-suite locks against the current
+task metadata when both trees are available. Validation requires non-empty
 contamination review, reward-hacking review, review checklist, and deprecation
 policy fields so a benchmark pack cannot be published without recording its
 adversarial-review and lifecycle controls.
 
-## Suite Evolution
+## Benchmark Suite Versioning
 
-Treat `suiteVersion` as the benchmark-pack methodology version. It is the
+Treat `suiteVersion` as the benchmark methodology version. It is the
 version a claim cites when it says "these runs were collected against this
-suite."
+benchmark suite."
 
 Bump `suiteVersion` when you:
 
-- add, remove, reorder, or replace suite scenarios;
+- add, remove, reorder, or replace tasks;
 - move a suite lock to a new `metadata.scenarioVersion`;
 - change `methodology.minRuns`, retry policy, aggregation unit, or report
   policy;
 - change acceptance criteria, contamination review, reward-hacking review,
   review checklist, or deprecation policy in a way that affects publication
   readiness;
-- change private evaluator assets or calibration expectations for scenarios in
-  the suite.
+- change private reviewer files or calibration expectations for tasks in
+  the benchmark suite.
 
 You do not need a suite bump for typo fixes, owner/contact updates, or
-non-semantic wording changes that do not affect scenario locks, methodology,
+non-semantic wording changes that do not affect task locks, methodology,
 or governance decisions. Still add a changelog note when the suite is public so
 reviewers can distinguish harmless metadata maintenance from benchmark drift.
 
-Before publishing results for a changed suite:
+Before publishing results for a changed benchmark suite:
 
 1. Update `suiteVersion` and the suite changelog.
 2. Re-run `ruhroh validate --scenario-dir <dir> --suite-dir <dir> --suite <id>`.
 3. Re-run `ruhroh inspect-pack --require-calibrated --require-risk-reviewed`.
 4. Generate a new run plan for the changed suite version.
-5. Collect a fresh cohort; do not mix results from old and new suite versions in
+5. Collect a fresh cohort; do not mix results from old and new benchmark-suite versions in
    one published claim.
 6. Run `ruhroh publish-check --suite <id> --run-plan <plan> --bundle <dir>
    --verify-sources` and archive the bundle.
 
-Old claims remain inspectable if their bundle keeps the old suite manifest,
-scenario version locks, run plan, source hashes, and result artifacts. They
-should not be silently reinterpreted as results for the newer suite.
+Old claims remain inspectable if their publication packet keeps the old benchmark-suite
+manifest, task version locks, run plan, source hashes, and saved results. They
+should not be silently reinterpreted as results for the newer benchmark suite.
 
 ## Methodology
 
-Ruhroh compares runs by scenario and adapter. A suite should define the minimum
+Ruhroh compares runs by task and agent connector. A benchmark suite should define the minimum
 sample size needed before its pass-rate summary is treated as more than
 directional. Bundled suites use at least five runs for smoke checks and ten runs
 for broader comparisons.
 
 The standard report policy is:
 
-- pass rate by scenario and adapter;
+- pass rate by task and agent connector;
 - Wilson 95% confidence interval;
 - pass@k for repeated runs;
 - mean score with deterministic bootstrap percentile 95% confidence interval,
   plus mean subscores;
 - optional cost and token summaries from run manifests;
-- failure buckets and preserved artifact links.
+- failure buckets and saved evidence links.
 
-Use `ruhroh compare ./results --suite <suite-id>` for suite-level claims. The
-suite option filters the result set to suite scenarios, reports suite metadata,
-warns when member scenarios are missing, applies `methodology.minRuns`, and
-checks aggregate scenario-version cohorts against the suite's `scenarioVersions`
+Use `ruhroh compare ./results --suite <suite-id>` for benchmark-suite claims. The
+suite option filters the result set to benchmark-suite members, reports benchmark-suite metadata,
+warns when member tasks are missing, applies `methodology.minRuns`, and
+checks aggregate task-version cohorts against the suite's `scenarioVersions`
 locks.
-See [Scenario Evolution](./scenario-evolution.md) before moving a suite to a
-new scenario version.
+See [Task Versioning](./scenario-evolution.md) before moving a benchmark suite to a
+new task version.
 
-Suite compares include an adapter-level rollup in `suiteAdapterSummaries`. Use
-that rollup for high-level suite claims, but keep the per-scenario groups in the
+Task-set compares include an agent-level rollup in `suiteAdapterSummaries`. Use
+that rollup for high-level claims, but keep the per-task groups in the
 report so differences can be debugged. The rollup reports run-weighted pass
-rate, Wilson CI, mean scenario pass rate, missing scenarios, per-scenario run
-counts, and whether every scenario reached the suite's minimum run count.
+rate, Wilson CI, mean task pass rate, missing tasks, per-task run counts, and
+whether every task reached the benchmark suite's minimum run count.
 
 Suite compares also include `claimReadiness`. Treat
 `claimReadiness.publishable: false` as a stop sign for public claims; its
@@ -205,5 +205,5 @@ statistical warnings, or required human review.
 Do not retry ordinary agent failures inside a sample. Retry only when the run
 manifest and artifacts show an external infrastructure failure.
 
-For the full reporting and evaluator-governance rules, see
+For the full reporting and reviewer-governance rules, see
 [Benchmark Methodology](/benchmark-methodology).

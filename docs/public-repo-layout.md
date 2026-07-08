@@ -56,15 +56,15 @@ ruhroh/
     getting-started.md         # first fixture loop and staged workflow
     concepts.md                # lifecycle and glossary
     local-fixture-run.md       # credential-free smoke path
-    benchmark-pack-tutorial.md # scenario to claim packet
+    benchmark-pack-tutorial.md # task to publication packet
     report-gallery.md          # generated evidence samples
-    write-*.md                 # scenario, adapter, evaluator guides
+    write-*.md                 # task, agent, reviewer guides
     *registry.md               # pack and claim registry flows
     *reference.md              # CLI, result JSON, API references
     troubleshooting.md
     faq.md
     public/
-      samples/                 # checked-in generated reports and bundles
+      samples/                 # checked-in generated reports and packets
     .vitepress/
       config.ts
   scripts/
