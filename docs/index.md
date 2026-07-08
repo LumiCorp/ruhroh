@@ -45,14 +45,14 @@ that explains what happened and why the score can or cannot be trusted.
 
 ## See The Reports First
 
-Open the [sample workflow guide](/samples/ruhroh-workflow) before running
-anything. It shows the path from the built-in no-credentials example to a
-reviewable benchmark result. Then inspect the
-[compare report](/samples/ruhroh-compare),
-[publication packet compare](/samples/ruhroh-publication/ruhroh-compare),
-and [claim index](/samples/ruhroh-claims). The sample is valid but not ready to
-publish, so the first impression is the core product behavior: every score is
-backed by evidence, and weak claims stay blocked.
+Open the [sample workflow guide](/samples/ruhroh-workflow.html) before running
+anything. It shows a complete local fixture path, evaluator calibration, run
+plan, comparison inputs, publication bundle, and claim index in one staged
+artifact. Then inspect the [compare report](/samples/ruhroh-compare.html),
+[publication bundle manifest](/samples/ruhroh-publication/manifest.json), and
+[claim index](/samples/ruhroh-claims.html). The sample is structurally valid but
+not publishable, so the first impression is the core product behavior: every
+score is backed by evidence, and weak claims stay blocked.
 
 ## First Local Check
 
