@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json",
+  "title": "Ruhroh Publish Bundle Manifest v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "createdAt",
+    "source",
+    "publishable",
+    "blockerCount",
+    "advisoryCount",
+    "files"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_publish_bundle_v1" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["resultsPath", "bundlePath"],
+      "properties": {
+        "resultsPath": { "type": "string", "minLength": 1 },
+        "bundlePath": { "type": "string", "minLength": 1 },
+        "suiteId": { "type": "string", "minLength": 1 },
+        "runPlanPath": { "type": "string", "minLength": 1 },
+        "rerunLedgerPath": { "type": "string", "minLength": 1 },
+        "evaluatorCalibrationReportPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "publishable": { "type": "boolean" },
+    "blockerCount": { "type": "number", "minimum": 0 },
+    "advisoryCount": { "type": "number", "minimum": 0 },
+    "files": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/bundleFile" }
+    }
+  },
+  "$defs": {
+    "bundleFile": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["role", "path", "description"],
+      "properties": {
+        "role": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

@@ -73,6 +73,34 @@ export function validateRuhrohScenario(scenario, options = {}) {
 export function lintRuhrohScenarioEvaluation(scenario) {
     return lintRuhrohScenarioEvaluationDetailed(scenario).map((diagnostic) => diagnostic.message);
 }
+export function summarizeRuhrohScenarioCalibration(scenario) {
+    const calibrationCases = readCalibrationCases(scenario.evaluation?.calibrationCases);
+    const byExpectedStatus = {
+        passed: 0,
+        failed: 0,
+        review: 0,
+    };
+    for (const calibrationCase of calibrationCases) {
+        byExpectedStatus[calibrationCase.expectedStatus] += 1;
+    }
+    const statuses = ["passed", "failed", "review"];
+    const coveredStatuses = statuses.filter((status) => byExpectedStatus[status] > 0);
+    const missingStatuses = statuses.filter((status) => byExpectedStatus[status] === 0);
+    const warnings = [];
+    if (calibrationCases.length === 0) {
+        warnings.push("evaluation.calibrationCases has no expected judgment anchors");
+    }
+    else if (missingStatuses.length > 0) {
+        warnings.push(`evaluation.calibrationCases is missing ${missingStatuses.join(", ")} expected judgment anchors`);
+    }
+    return {
+        total: calibrationCases.length,
+        byExpectedStatus,
+        coveredStatuses,
+        missingStatuses,
+        warnings,
+    };
+}
 export function lintRuhrohScenarioEvaluationDetailed(scenario) {
     const diagnostics = [];
     const addDiagnostic = (code, category, field, message) => {

@@ -14,6 +14,7 @@ export interface BuildRuhrohHarborCommandInput {
 export interface RuhrohHarborCommand {
     scenarioId: string;
     args: string[];
+    displayArgs: string[];
 }
 export declare function buildRuhrohHarborCommand(input: BuildRuhrohHarborCommandInput): RuhrohHarborCommand;
 export declare function buildRuhrohHarborCommands(input: {

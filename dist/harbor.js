@@ -16,6 +16,7 @@ export const RUHROH_ARTIFACTS = [
     "/installed-agent/ruhroh-loop-transcripts.tar.gz",
 ];
 export function buildRuhrohHarborCommand(input) {
+    const tasksPath = path.join(input.datasetPath, "tasks");
     const taskPath = path.join(input.datasetPath, "tasks", input.scenario.id);
     const evaluationEnv = input.scenario.evaluation === undefined ? [] : [
         "--agent-env",
@@ -41,25 +42,36 @@ export function buildRuhrohHarborCommand(input) {
         "--agent-env",
         `RUHROH_SCENARIO_METADATA_JSON=${JSON.stringify(input.scenario.metadata)}`,
     ];
+    const baseArgs = [
+        "run",
+        "--path",
+        tasksPath,
+        "--include-task-name",
+        input.scenario.id,
+        "--agent-import-path",
+        input.agentImportPath ?? RUHROH_HARBOR_AGENT_IMPORT_PATH,
+        "--n-concurrent",
+        "1",
+        "--agent-env",
+        `RUHROH_MAX_ITERATIONS=${String(input.iterations ?? input.scenario.loop.defaultMaxIterations)}`,
+        "--agent-env",
+        `RUHROH_RUN_AGENT_ADAPTER=${input.adapter}`,
+        ...(input.scenario.run?.mode === undefined ? [] : ["--agent-env", `RUHROH_RUN_MODE=${input.scenario.run.mode}`]),
+        ...scenarioMetadataEnv,
+        ...evaluationEnv,
+    ];
+    const artifactArgs = (input.artifacts ?? RUHROH_ARTIFACTS).flatMap((artifact) => ["--artifact", artifact]);
     return {
         scenarioId: input.scenario.id,
         args: [
-            "run",
-            "--path",
-            taskPath,
-            "--agent-import-path",
-            input.agentImportPath ?? RUHROH_HARBOR_AGENT_IMPORT_PATH,
-            "--n-concurrent",
-            "1",
-            "--agent-env",
-            `RUHROH_MAX_ITERATIONS=${String(input.iterations ?? input.scenario.loop.defaultMaxIterations)}`,
-            "--agent-env",
-            `RUHROH_RUN_AGENT_ADAPTER=${input.adapter}`,
-            ...(input.scenario.run?.mode === undefined ? [] : ["--agent-env", `RUHROH_RUN_MODE=${input.scenario.run.mode}`]),
-            ...scenarioMetadataEnv,
-            ...evaluationEnv,
+            ...baseArgs,
+            ...buildAgentEnvArgs(input.env ?? process.env, undefined, { redact: false }),
+            ...artifactArgs,
+        ],
+        displayArgs: [
+            ...baseArgs,
             ...buildAgentEnvArgs(input.env ?? process.env),
-            ...(input.artifacts ?? RUHROH_ARTIFACTS).flatMap((artifact) => ["--artifact", artifact]),
+            ...artifactArgs,
         ],
     };
 }

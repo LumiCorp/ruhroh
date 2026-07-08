@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/rerun-ledger-v1.schema.json",
+  "title": "Ruhroh Rerun Ledger v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "entries"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_rerun_ledger_v1" },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/ledgerEntry" }
+    }
+  },
+  "$defs": {
+    "ledgerEntry": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "sampleId",
+        "decision",
+        "reasonKind",
+        "reason",
+        "decidedBy",
+        "decidedAt"
+      ],
+      "properties": {
+        "sampleId": { "type": "string", "minLength": 1 },
+        "decision": { "enum": ["exclude", "rerun"] },
+        "reasonKind": {
+          "enum": [
+            "infrastructure",
+            "invalid_artifact",
+            "operator_error",
+            "other"
+          ]
+        },
+        "reason": { "type": "string", "minLength": 1 },
+        "decidedBy": { "type": "string", "minLength": 1 },
+        "decidedAt": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

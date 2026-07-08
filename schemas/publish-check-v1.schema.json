@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json",
+  "title": "Ruhroh Publish Check v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": [
+    "version",
+    "source",
+    "publishable",
+    "blockerCount",
+    "blockers",
+    "remediation",
+    "advisoryCount",
+    "advisories",
+    "compare"
+  ],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_publish_check_v1" },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["resultsPath"],
+      "properties": {
+        "resultsPath": { "type": "string", "minLength": 1 },
+        "suiteId": { "type": "string", "minLength": 1 },
+        "runPlanPath": { "type": "string", "minLength": 1 },
+        "rerunLedgerPath": { "type": "string", "minLength": 1 },
+        "benchmarkClaimPath": { "type": "string", "minLength": 1 },
+        "benchmarkSummaryPath": { "type": "string", "minLength": 1 },
+        "htmlPath": { "type": "string", "minLength": 1 },
+        "summaryMarkdownPath": { "type": "string", "minLength": 1 },
+        "bundlePath": { "type": "string", "minLength": 1 },
+        "evaluatorCalibrationReportPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "publishable": { "type": "boolean" },
+    "blockerCount": { "type": "number", "minimum": 0 },
+    "blockers": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "remediation": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/remediation" }
+    },
+    "advisoryCount": { "type": "number", "minimum": 0 },
+    "advisories": {
+      "type": "array",
+      "items": { "type": "string" }
+    },
+    "compare": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["version", "artifactValidation", "claimReadiness"],
+      "properties": {
+        "version": { "const": "ruhroh_compare_v1" },
+        "artifactValidation": { "type": "object" },
+        "claimReadiness": { "type": "object" },
+        "benchmarkClaim": { "type": "object" },
+        "benchmarkSummary": { "type": "object" }
+      }
+    },
+    "sourceVerification": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "version": { "const": "ruhroh_claim_source_verification_v1" },
+        "checked": { "type": "boolean" },
+        "errors": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "warnings": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "remediation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["code", "category", "message", "action"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "category": { "type": "string", "minLength": 1 },
+        "message": { "type": "string", "minLength": 1 },
+        "blocker": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1 },
+        "docs": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

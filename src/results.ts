@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { existsSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import path from "node:path";
 
 import type { RuhrohEvidenceRef, RunAgentArtifactManifest } from "./adapters.js";
 
@@ -313,6 +314,8 @@ export interface RuhrohBenchmarkClaimSource {
   suiteSha256?: string | undefined;
   runPlanPath?: string | undefined;
   runPlanSha256?: string | undefined;
+  rerunLedgerPath?: string | undefined;
+  rerunLedgerSha256?: string | undefined;
   htmlPath?: string | undefined;
   benchmarkClaimPath?: string | undefined;
   benchmarkSummaryPath?: string | undefined;
@@ -430,6 +433,42 @@ export interface RuhrohBenchmarkSummaryValidationResult {
   version: "ruhroh_benchmark_summary_validation_v1";
   errors: string[];
   warnings: string[];
+}
+
+export interface RuhrohRunResultArtifact {
+  path: string;
+  sha256: string;
+  run: RuhrohLoopResult;
+}
+
+export interface BuildRuhrohRunResultsReportInput {
+  resultsPath: string;
+  aggregate?: AggregateRuhrohRunsOptions | undefined;
+  createdAt?: string | undefined;
+  tool?: RuhrohBenchmarkClaimToolSummary | undefined;
+  source?: Omit<RuhrohBenchmarkClaimSource, "resultsPath" | "resultArtifacts"> | undefined;
+  suite?: RuhrohBenchmarkClaimSuiteSummary | undefined;
+  suiteAdapterSummaries?: readonly RuhrohSuiteAdapterSummary[] | undefined;
+  pairwiseComparisons?: readonly RuhrohPairwiseAdapterComparison[] | undefined;
+  runPlanPresent?: boolean | undefined;
+  runPlanWarnings?: readonly string[] | undefined;
+  artifactValidationErrors?: number | undefined;
+  artifactValidationWarnings?: number | undefined;
+}
+
+export interface RuhrohRunResultsReport {
+  version: "ruhroh_run_results_report_v1";
+  source: {
+    resultsPath: string;
+    resultCount: number;
+  };
+  artifacts: RuhrohRunResultArtifact[];
+  summaries: RuhrohRunSummary[];
+  groups: RuhrohAggregateRunGroup[];
+  reviewQueue: RuhrohReviewQueueItem[];
+  claimReadiness: RuhrohBenchmarkClaimReadiness;
+  benchmarkClaim: RuhrohBenchmarkClaimExport;
+  benchmarkSummary: RuhrohBenchmarkSummaryExport;
 }
 
 export interface SummarizeRuhrohClaimReadinessOptions {
@@ -600,6 +639,75 @@ const REQUIRED_RESULT_ARTIFACT_PATHS = [
 
 export function scoreForEvalStatus(status: RuhrohEvalStatus): number {
   return status === "passed" ? 1 : 0;
+}
+
+export function discoverRuhrohRunResultPaths(inputPath: string): string[] {
+  const resolved = path.resolve(inputPath);
+  if (!existsSync(resolved)) {
+    throw new Error(`Path does not exist: ${resolved}`);
+  }
+  if (!statSync(resolved).isDirectory()) {
+    return [resolved];
+  }
+  return walkRunResultFiles(resolved);
+}
+
+export function loadRuhrohRunResultArtifacts(inputPath: string): RuhrohRunResultArtifact[] {
+  return discoverRuhrohRunResultPaths(inputPath).map((resultPath) => readRuhrohRunResultArtifact(resultPath));
+}
+
+export function loadRuhrohRunResults(inputPath: string): RuhrohLoopResult[] {
+  return loadRuhrohRunResultArtifacts(inputPath).map((artifact) => artifact.run);
+}
+
+export function buildRuhrohRunResultsReport(input: BuildRuhrohRunResultsReportInput): RuhrohRunResultsReport {
+  const resultsPath = path.resolve(input.resultsPath);
+  const artifacts = loadRuhrohRunResultArtifacts(resultsPath);
+  const runs = artifacts.map((artifact) => artifact.run);
+  const summaries = runs.map((run) => summarizeRuhrohRun(run));
+  const groups = aggregateRuhrohRuns(runs, input.aggregate);
+  const reviewQueue = summarizeRuhrohReviewQueue(summaries);
+  const claimReadiness = summarizeRuhrohBenchmarkClaimReadiness(groups, {
+    suiteId: input.suite?.id,
+    suiteAdapterSummaries: input.suiteAdapterSummaries,
+    pairwiseComparisons: input.pairwiseComparisons,
+    runPlanWarnings: input.runPlanWarnings,
+    artifactValidationErrors: input.artifactValidationErrors,
+    artifactValidationWarnings: input.artifactValidationWarnings,
+    reviewQueue,
+  });
+  const benchmarkClaim = summarizeRuhrohBenchmarkClaim(groups, {
+    createdAt: input.createdAt,
+    tool: input.tool,
+    source: {
+      ...input.source,
+      resultsPath,
+      resultArtifacts: artifacts.map((artifact) => benchmarkClaimResultArtifact(artifact)),
+    },
+    suite: input.suite,
+    suiteAdapterSummaries: input.suiteAdapterSummaries,
+    pairwiseComparisons: input.pairwiseComparisons,
+    reviewQueue,
+    claimReadiness,
+    runPlanPresent: input.runPlanPresent,
+    runPlanWarnings: input.runPlanWarnings,
+    artifactValidationErrors: input.artifactValidationErrors,
+    artifactValidationWarnings: input.artifactValidationWarnings,
+  });
+  return {
+    version: "ruhroh_run_results_report_v1",
+    source: {
+      resultsPath,
+      resultCount: artifacts.length,
+    },
+    artifacts,
+    summaries,
+    groups,
+    reviewQueue,
+    claimReadiness,
+    benchmarkClaim,
+    benchmarkSummary: summarizeRuhrohBenchmarkSummary(benchmarkClaim),
+  };
 }
 
 export function normalizeRuhrohEvalResult(input: unknown): RuhrohEvalResult {
@@ -1828,6 +1936,8 @@ function compactBenchmarkClaimSource(source: RuhrohBenchmarkClaimSource): Ruhroh
     ...(source.suiteSha256 === undefined ? {} : { suiteSha256: source.suiteSha256 }),
     ...(source.runPlanPath === undefined ? {} : { runPlanPath: source.runPlanPath }),
     ...(source.runPlanSha256 === undefined ? {} : { runPlanSha256: source.runPlanSha256 }),
+    ...(source.rerunLedgerPath === undefined ? {} : { rerunLedgerPath: source.rerunLedgerPath }),
+    ...(source.rerunLedgerSha256 === undefined ? {} : { rerunLedgerSha256: source.rerunLedgerSha256 }),
     ...(source.htmlPath === undefined ? {} : { htmlPath: source.htmlPath }),
     ...(source.benchmarkClaimPath === undefined ? {} : { benchmarkClaimPath: source.benchmarkClaimPath }),
     ...(source.benchmarkSummaryPath === undefined ? {} : { benchmarkSummaryPath: source.benchmarkSummaryPath }),
@@ -2367,6 +2477,79 @@ function formatEnvironmentFingerprint(environment: Record<string, unknown> | und
     readStringField(environment, "containerImage"),
   ].filter((value): value is string => value !== undefined && value.trim().length > 0);
   return parts.length === 0 ? "unknown" : parts.join(" | ");
+}
+
+function walkRunResultFiles(root: string): string[] {
+  const entries = readdirSync(root, { withFileTypes: true });
+  const files: string[] = [];
+  for (const entry of entries) {
+    const entryPath = path.join(root, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...walkRunResultFiles(entryPath));
+      continue;
+    }
+    if (entry.isFile() && entry.name === "ruhroh-loop-result.json") {
+      files.push(entryPath);
+    }
+  }
+  return files.sort((left, right) => left.localeCompare(right));
+}
+
+function readRuhrohRunResultArtifact(resultPath: string): RuhrohRunResultArtifact {
+  const resolved = path.resolve(resultPath);
+  const raw = readFileSync(resolved, "utf8");
+  const parsed = JSON.parse(raw);
+  if (!isRuhrohLoopResult(parsed)) {
+    throw new Error(`Expected ruhroh_loop_result_v1 JSON at ${resolved}`);
+  }
+  return {
+    path: resolved,
+    sha256: sha256Text(raw),
+    run: parsed,
+  };
+}
+
+function benchmarkClaimResultArtifact(artifact: RuhrohRunResultArtifact): RuhrohBenchmarkClaimResultArtifact {
+  const summary = summarizeRuhrohRun(artifact.run);
+  const scenarioVersion = artifact.run.runManifest?.scenario.scenarioVersion;
+  return {
+    path: artifact.path,
+    sha256: artifact.sha256,
+    scenarioId: summary.scenarioId,
+    adapter: summary.adapter,
+    ...(summary.runId === undefined ? {} : { runId: summary.runId }),
+    ...(summary.sample?.id === undefined ? {} : { sampleId: summary.sample.id }),
+    ...(scenarioVersion === undefined ? {} : { scenarioVersion }),
+    ...(summary.artifactInventory.length === 0 ? {} : { artifactInventory: summary.artifactInventory }),
+  };
+}
+
+function isRuhrohLoopResult(value: unknown): value is RuhrohLoopResult {
+  return isRecord(value)
+    && value.version === "ruhroh_loop_result_v1"
+    && typeof value.adapter === "string"
+    && typeof value.dataset === "string"
+    && typeof value.scenarioId === "string"
+    && typeof value.task_id === "string"
+    && (value.status === "completed" || value.status === "failed")
+    && typeof value.failure_kind === "string"
+    && typeof value.failureBucket === "string"
+    && typeof value.score === "number"
+    && typeof value.iterationsUsed === "number"
+    && typeof value.implementationIterationsUsed === "number"
+    && typeof value.implementationStoppedReason === "string"
+    && typeof value.stoppedReason === "string"
+    && typeof value.duration_ms === "number"
+    && isRecord(value.runAgent)
+    && typeof value.runAgentAdapterId === "string"
+    && typeof value.continuityLevel === "string"
+    && typeof value.sessionHandle === "string"
+    && Array.isArray(value.runIds)
+    && Array.isArray(value.implementationRuns);
+}
+
+function sha256Text(value: string): string {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function readStringField(value: Record<string, unknown> | undefined, key: string): string | undefined {

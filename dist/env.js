@@ -55,9 +55,13 @@ export const RUHROH_AGENT_ENV_KEYS = [
     "RUHROH_INSTALL_TIMEOUT_SEC",
     "RUHROH_RUN_AGENT_ADAPTER",
     "RUHROH_RUN_AGENT_COMMAND",
+    "RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64",
+    "RUHROH_RUN_AGENT_COMMAND_INLINE_NAME",
     "RUHROH_RUN_AGENT_COMMAND_SHELL",
     "RUHROH_RUN_AGENT_COMPLETION_PROTOCOL",
     "RUHROH_EVAL_COMMAND",
+    "RUHROH_EVAL_COMMAND_INLINE_BASE64",
+    "RUHROH_EVAL_COMMAND_INLINE_NAME",
     "RUHROH_EVAL_COMMAND_SHELL",
 ];
 export const RUHROH_RUNNER_ENV_KEYS = [
@@ -65,10 +69,11 @@ export const RUHROH_RUNNER_ENV_KEYS = [
     "RUHROH_HARBOR_COMMAND_TIMEOUT_MS",
     "RUHROH_REPO_ROOT",
 ];
-export function buildAgentEnvArgs(env, keys = RUHROH_AGENT_ENV_KEYS) {
+export function buildAgentEnvArgs(env, keys = RUHROH_AGENT_ENV_KEYS, options = {}) {
+    const redact = options.redact ?? true;
     return keys.flatMap((key) => {
         const value = env[key];
-        return value === undefined || value === "" ? [] : ["--agent-env", `${key}=\${${key}}`];
+        return value === undefined || value === "" ? [] : ["--agent-env", `${key}=${redact ? `\${${key}}` : value}`];
     });
 }
 export function redactEnvAssignment(assignment) {

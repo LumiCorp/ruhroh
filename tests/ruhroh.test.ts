@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -11,6 +11,8 @@ import {
   assessRuhrohArtifactCompleteness,
   assessRuhrohEvalQuality,
   buildAgentEnvArgs,
+  buildRuhrohPublishCheckReport,
+  buildRuhrohRunResultsReport,
   buildRuhrohHarborCommand,
   deriveRuhrohVerdict,
   discoverRuhrohScenarios,
@@ -20,6 +22,9 @@ import {
   generateHarborTask,
   getBuiltinRuhrohSuiteById,
   getBuiltinRuhrohSuitesByScenarioId,
+  inspectRuhrohBenchmarkPack,
+  loadRuhrohRunResultArtifacts,
+  loadRuhrohRunResults,
   loadRuhrohScenario,
   loadRuhrohSuite,
   loadBuiltinRuhrohSuites,
@@ -32,17 +37,22 @@ import {
   readRunUsage,
   resolveRuhrohBuiltinSuiteDir,
   scoreForEvalStatus,
+  summarizeRuhrohScenarioCalibration,
   summarizeRuhrohBenchmarkClaim,
   summarizeRuhrohBenchmarkClaimReadiness,
   summarizeRuhrohPairwiseAdapterComparisons,
   summarizeRuhrohReviewQueue,
   summarizeRuhrohRun,
   summarizeRuhrohSuiteAdapters,
+  loadRuhrohRerunLedger,
+  validateRuhrohPublishBundle,
   validateRuhrohBenchmarkClaim,
+  validateRuhrohRerunLedger,
   validateRuhrohScenario,
   validateRuhrohScenarioSource,
   validateRuhrohSuite,
   validateRuhrohSuiteSource,
+  verifyRuhrohBenchmarkClaimSources,
   type RuhrohBenchmarkSuite,
   type RuhrohLoopResult,
   type RuhrohRunAgentAdapterCapabilities,
@@ -116,7 +126,7 @@ function suite(overrides: Partial<RuhrohBenchmarkSuite> = {}): RuhrohBenchmarkSu
       updatedAt: "2026-07-07",
       changelog: ["1.0.0: Initial suite."],
       acceptanceCriteria: ["Scenarios judge outcome behavior."],
-      contaminationReview: "Original fixture.",
+      contaminationReview: "Original fixture with no known public benchmark solution.",
       rewardHackingReview: "Reviewed for filename and static-output shortcuts.",
       reviewChecklist: ["Confirm outcome behavior is judged."],
       deprecationPolicy: "Bump suiteVersion for membership changes.",
@@ -338,6 +348,60 @@ test("scenario validation accepts evaluator calibration cases and rejects malfor
   assert.match(errors, /evaluation\.calibrationCases\[0\]\.rationale/u);
 });
 
+test("scenario calibration summary reports expected judgment coverage", () => {
+  assert.deepEqual(summarizeRuhrohScenarioCalibration(scenario({
+    evaluation: {
+      mode: "agentic_goal_review",
+      scenarioContext: ["Local app task.", "The user wants outcome behavior."],
+      goalRubric: [
+        "The final app implements the requested workflow end to end.",
+        "The app can be run or opened locally by a reviewer.",
+        "The delivered result avoids prose-only output.",
+      ],
+      evidenceGuidance: [
+        "Inspect the final workspace behavior.",
+        "Use command output and transcripts as supporting evidence.",
+      ],
+      calibrationCases: [
+        {
+          id: "clear-pass",
+          inputSummary: "The app runs locally and all requested workflows are demonstrated.",
+          expectedStatus: "passed",
+          rationale: "The delivered behavior is complete and independently inspectable.",
+        },
+        {
+          id: "ambiguous-review",
+          inputSummary: "The app starts, but the transcript lacks evidence for one core workflow.",
+          expectedStatus: "review",
+          rationale: "The evaluator should escalate when evidence is incomplete.",
+        },
+      ],
+    },
+  })), {
+    total: 2,
+    byExpectedStatus: { passed: 1, failed: 0, review: 1 },
+    coveredStatuses: ["passed", "review"],
+    missingStatuses: ["failed"],
+    warnings: ["evaluation.calibrationCases is missing failed expected judgment anchors"],
+  });
+
+  assert.deepEqual(summarizeRuhrohScenarioCalibration(scenario({
+    evaluation: {
+      mode: "agentic_goal_review",
+      scenarioContext: ["Local app task.", "The user wants outcome behavior."],
+      goalRubric: [
+        "The final app implements the requested workflow end to end.",
+        "The app can be run or opened locally by a reviewer.",
+        "The delivered result avoids prose-only output.",
+      ],
+      evidenceGuidance: [
+        "Inspect the final workspace behavior.",
+        "Use command output and transcripts as supporting evidence.",
+      ],
+    },
+  })).warnings, ["evaluation.calibrationCases has no expected judgment anchors"]);
+});
+
 test("scenario evaluation lint flags generic rubric and weak evidence guidance", () => {
   const weakScenario = {
     ...scenario(),
@@ -414,15 +478,30 @@ test("published package contract ships benchmark authoring assets", () => {
   const packageJson = JSON.parse(readFileSync(path.resolve("package.json"), "utf8"));
   const claimSchema = JSON.parse(readFileSync(path.resolve("schemas", "benchmark-claim-v1.schema.json"), "utf8"));
   const benchmarkSummarySchema = JSON.parse(readFileSync(path.resolve("schemas", "benchmark-summary-v1.schema.json"), "utf8"));
+  const claimIndexSchema = JSON.parse(readFileSync(path.resolve("schemas", "claim-index-v1.schema.json"), "utf8"));
+  const evalCalibrationReportSchema = JSON.parse(readFileSync(path.resolve("schemas", "eval-calibration-report-v1.schema.json"), "utf8"));
   const evalResultSchema = JSON.parse(readFileSync(path.resolve("schemas", "eval-result-v1.schema.json"), "utf8"));
   const loopResultSchema = JSON.parse(readFileSync(path.resolve("schemas", "loop-result-v1.schema.json"), "utf8"));
+  const publishBundleSchema = JSON.parse(readFileSync(path.resolve("schemas", "publish-bundle-v1.schema.json"), "utf8"));
+  const publishCheckSchema = JSON.parse(readFileSync(path.resolve("schemas", "publish-check-v1.schema.json"), "utf8"));
   const runManifestSchema = JSON.parse(readFileSync(path.resolve("schemas", "run-manifest-v1.schema.json"), "utf8"));
   const runPlanSchema = JSON.parse(readFileSync(path.resolve("schemas", "run-plan-v1.schema.json"), "utf8"));
+  const rerunLedgerSchema = JSON.parse(readFileSync(path.resolve("schemas", "rerun-ledger-v1.schema.json"), "utf8"));
   const scenarioSchema = JSON.parse(readFileSync(path.resolve("schemas", "scenario-v2.schema.json"), "utf8"));
   const suiteSchema = JSON.parse(readFileSync(path.resolve("schemas", "suite-v1.schema.json"), "utf8"));
   const workspaceSummarySchema = JSON.parse(readFileSync(path.resolve("schemas", "workspace-summary-v1.schema.json"), "utf8"));
   const exampleNewsletter = JSON.parse(readFileSync(path.resolve("examples", "scenarios", "simple-newsletter", "scenario.json"), "utf8"));
   const exampleGroceryPlanner = JSON.parse(readFileSync(path.resolve("examples", "scenarios", "grocery-budget-planner", "scenario.json"), "utf8"));
+  const docsSampleNewsletter = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "ruhroh", "scenarios", "simple-newsletter", "scenario.json"), "utf8"));
+  const docsSampleCalibrationReport = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", ".generated", "ruhroh", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json"), "utf8"));
+  const docsSamplePublishCheck = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "publish-check.json"), "utf8"));
+  const docsSamplePublishBundleManifest = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "ruhroh-publication", "manifest.json"), "utf8"));
+  const docsSampleBundledPublishCheck = JSON.parse(readFileSync(path.resolve("docs", "public", "samples", "ruhroh-publication", "publish-check.json"), "utf8"));
+  const exampleScenarioValidations = [
+    validateRuhrohScenarioSource(path.resolve("examples", "scenarios", "simple-newsletter")),
+    validateRuhrohScenarioSource(path.resolve("examples", "scenarios", "grocery-budget-planner")),
+  ];
+  const docsSampleNewsletterValidation = validateRuhrohScenarioSource(path.resolve("docs", "public", "samples", "ruhroh", "scenarios", "simple-newsletter"));
   const shippedGlobs = packageJson.files as string[];
 
   for (const expectedGlob of [
@@ -439,24 +518,47 @@ test("published package contract ships benchmark authoring assets", () => {
   ]) {
     assert.equal(shippedGlobs.includes(expectedGlob), true, `${expectedGlob} must be included in the npm package`);
   }
+  assert.equal(shippedGlobs.includes("!docs/.vitepress/**"), true, "generated VitePress output must be excluded from the npm package");
+  assert.equal(shippedGlobs.includes("!docs/public/**"), true, "generated public docs samples must be excluded from the npm package");
 
   assert.equal(packageJson.exports["./schemas/benchmark-claim-v1.schema.json"], "./schemas/benchmark-claim-v1.schema.json");
   assert.equal(packageJson.exports["./schemas/benchmark-summary-v1.schema.json"], "./schemas/benchmark-summary-v1.schema.json");
+  assert.equal(packageJson.exports["./schemas/claim-index-v1.schema.json"], "./schemas/claim-index-v1.schema.json");
+  assert.equal(packageJson.exports["./schemas/eval-calibration-report-v1.schema.json"], "./schemas/eval-calibration-report-v1.schema.json");
   assert.equal(packageJson.exports["./schemas/eval-result-v1.schema.json"], "./schemas/eval-result-v1.schema.json");
   assert.equal(packageJson.exports["./schemas/loop-result-v1.schema.json"], "./schemas/loop-result-v1.schema.json");
+  assert.equal(packageJson.exports["./schemas/publish-bundle-v1.schema.json"], "./schemas/publish-bundle-v1.schema.json");
+  assert.equal(packageJson.exports["./schemas/publish-check-v1.schema.json"], "./schemas/publish-check-v1.schema.json");
   assert.equal(packageJson.exports["./schemas/run-manifest-v1.schema.json"], "./schemas/run-manifest-v1.schema.json");
   assert.equal(packageJson.exports["./schemas/run-plan-v1.schema.json"], "./schemas/run-plan-v1.schema.json");
+  assert.equal(packageJson.exports["./schemas/rerun-ledger-v1.schema.json"], "./schemas/rerun-ledger-v1.schema.json");
   assert.equal(packageJson.exports["./schemas/scenario-v2.schema.json"], "./schemas/scenario-v2.schema.json");
   assert.equal(packageJson.exports["./schemas/suite-v1.schema.json"], "./schemas/suite-v1.schema.json");
   assert.equal(packageJson.exports["./schemas/workspace-summary-v1.schema.json"], "./schemas/workspace-summary-v1.schema.json");
   assert.equal(packageJson.bin.ruhroh, "./dist/cli.js");
   assert.equal(packageJson.description, "Realistic user-request benchmarks for coding agents");
   assert.equal(existsSync(path.resolve("examples", "adapters", "fixture-newsletter", "run.sh")), true);
+  assert.equal(existsSync(path.resolve("examples", "adapters", "aider", "run.sh")), true);
+  assert.equal(existsSync(path.resolve("examples", "adapters", "aider", "README.md")), true);
+  assert.equal(existsSync(path.resolve("examples", "ci", "ruhroh-pack-registry.yml")), true);
+  assert.equal(existsSync(path.resolve("examples", "ci", "ruhroh-claim-publication.yml")), true);
+  assert.equal(existsSync(path.resolve("examples", "ci", "ruhroh-sharded-collection.yml")), true);
+  const packRegistryWorkflow = readFileSync(path.resolve("examples", "ci", "ruhroh-pack-registry.yml"), "utf8");
+  assert.match(packRegistryWorkflow, /pull-requests: write/u);
+  assert.match(packRegistryWorkflow, /Write benchmark pack summary/u);
+  assert.match(packRegistryWorkflow, /actions\/github-script@v7/u);
+  assert.match(packRegistryWorkflow, /ruhroh-pack-inspection-summary\.md/u);
   assert.equal(existsSync(path.resolve("examples", "evaluators", "fixture-newsletter", "run.sh")), true);
   assert.equal(existsSync(path.resolve("suites", "ruhroh-smoke", "suite.json")), true);
+  assert.equal(existsSync(path.resolve("docs", "benchmark-pack-tutorial.md")), true);
   assert.equal(existsSync(path.resolve("docs", "benchmark-methodology.md")), true);
+  assert.equal(existsSync(path.resolve("docs", "contract-evolution.md")), true);
   assert.equal(claimSchema.properties.version.const, "ruhroh_benchmark_claim_v1");
   assert.equal(benchmarkSummarySchema.properties.version.const, "ruhroh_benchmark_summary_v1");
+  assert.equal(claimIndexSchema.properties.version.const, "ruhroh_claim_index_v1");
+  assert.equal(claimIndexSchema.properties.claims.items.$ref, "#/$defs/claimIndexEntry");
+  assert.equal(evalCalibrationReportSchema.properties.version.const, "ruhroh_eval_calibration_report_v1");
+  assert.equal(evalCalibrationReportSchema.properties.results.items.$ref, "#/$defs/calibrationCaseResult");
   assert.equal(benchmarkSummarySchema.properties.rows.items.$ref, "#/$defs/summaryRow");
   assert.equal(claimSchema.properties.suiteCoverage.$ref, "#/$defs/suiteCoverage");
   assert.equal(claimSchema.properties.readiness.required.includes("publishable"), true);
@@ -468,14 +570,24 @@ test("published package contract ships benchmark authoring assets", () => {
   assert.equal(claimSchema.properties.methodology.properties.statisticalMethods.items.enum.includes("bootstrap_mean_score_ci"), true);
   assert.equal(claimSchema.properties.evidence.required.includes("runPlanPresent"), true);
   assert.equal(claimSchema.properties.evidence.required.includes("artifactValidationErrors"), true);
+  assert.equal(rerunLedgerSchema.properties.version.const, "ruhroh_rerun_ledger_v1");
+  assert.deepEqual(rerunLedgerSchema.$defs.ledgerEntry.properties.decision.enum, ["exclude", "rerun"]);
+  assert.deepEqual(rerunLedgerSchema.$defs.ledgerEntry.properties.reasonKind.enum, ["infrastructure", "invalid_artifact", "operator_error", "other"]);
   assert.equal(evalResultSchema.properties.version.const, "ruhroh_eval_result_v1");
   assert.equal(evalResultSchema.required.includes("evidenceRefs"), true);
   assert.equal(loopResultSchema.properties.version.const, "ruhroh_loop_result_v1");
   assert.equal(loopResultSchema.required.includes("implementationRuns"), true);
+  assert.equal(publishCheckSchema.properties.version.const, "ruhroh_publish_check_v1");
+  assert.equal(publishCheckSchema.properties.compare.properties.version.const, "ruhroh_compare_v1");
+  assert.equal(publishCheckSchema.properties.remediation.items.$ref, "#/$defs/remediation");
+  assert.equal(publishBundleSchema.properties.version.const, "ruhroh_publish_bundle_v1");
+  assert.deepEqual(publishBundleSchema.properties.source.required, ["resultsPath", "bundlePath"]);
+  assert.equal(publishBundleSchema.properties.files.items.$ref, "#/$defs/bundleFile");
   assert.equal(runManifestSchema.properties.version.const, "ruhroh_run_manifest_v1");
   assert.equal(runManifestSchema.properties.environment.properties.fingerprint.$ref, "#/$defs/fingerprint");
   assert.equal(runManifestSchema.properties.runAgent.required.includes("adapterId"), true);
   assert.equal(runPlanSchema.properties.version.const, "ruhroh_run_plan_v1");
+  assert.deepEqual(runPlanSchema.properties.selection.properties.shard.required, ["index", "total"]);
   assert.equal(runPlanSchema.properties.samples.items.$ref, "#/$defs/plannedSample");
   assert.equal(scenarioSchema.properties.version.const, "ruhroh_scenario_v2");
   assert.equal(scenarioSchema.$defs.metadata.properties.privateEvalRationale.type, "string");
@@ -487,11 +599,94 @@ test("published package contract ships benchmark authoring assets", () => {
   assert.equal(suiteSchema.properties.governance.required.includes("deprecationPolicy"), true);
   assert.equal(workspaceSummarySchema.properties.version.const, "ruhroh_workspace_summary_v1");
   assert.equal(workspaceSummarySchema.properties.sampleFiles.items.$ref, "#/$defs/sampleFile");
-  for (const exampleScenario of [exampleNewsletter, exampleGroceryPlanner]) {
+  for (const [index, exampleScenario] of [exampleNewsletter, exampleGroceryPlanner].entries()) {
     assert.equal(exampleScenario.version, "ruhroh_scenario_v2");
     assert.equal(exampleScenario.driver, undefined);
     assert.equal(exampleScenario.run.mode, "build");
     assert.equal(exampleScenario.metadata.visibility, "public");
+    assert.deepEqual(exampleScenario.evaluation.calibrationCases.map((item: { expectedStatus: string }) => item.expectedStatus), ["passed", "failed", "review"]);
+    assert.deepEqual(exampleScenarioValidations[index]?.calibration?.missingStatuses, []);
+    assert.deepEqual(exampleScenarioValidations[index]?.calibration?.warnings, []);
+  }
+  assert.deepEqual(
+    docsSampleNewsletter.evaluation.calibrationCases.map((item: { expectedStatus: string }) => item.expectedStatus),
+    exampleNewsletter.evaluation.calibrationCases.map((item: { expectedStatus: string }) => item.expectedStatus),
+  );
+  assert.deepEqual(docsSampleNewsletterValidation.calibration?.missingStatuses, []);
+  assert.deepEqual(docsSampleNewsletterValidation.calibration?.warnings, []);
+  assert.equal(docsSampleCalibrationReport.version, "ruhroh_eval_calibration_report_v1");
+  assert.equal(docsSampleCalibrationReport.caseCount, docsSampleNewsletter.evaluation.calibrationCases.length);
+  assert.equal(docsSampleCalibrationReport.matchedCount, docsSampleNewsletter.evaluation.calibrationCases.length);
+  assert.equal(docsSampleCalibrationReport.mismatchCount, 0);
+  assert.equal(docsSamplePublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
+  assert.equal(docsSamplePublishCheck.version, "ruhroh_publish_check_v1");
+  assert.equal(docsSamplePublishCheck.compare.version, "ruhroh_compare_v1");
+  assert.equal(Array.isArray(docsSamplePublishCheck.remediation) && docsSamplePublishCheck.remediation.length > 0, true);
+  assert.equal(docsSamplePublishBundleManifest.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json");
+  assert.equal(docsSamplePublishBundleManifest.version, "ruhroh_publish_bundle_v1");
+  assert.equal(docsSamplePublishBundleManifest.files.some((file: { role: string }) => file.role === "publish-check"), true);
+  assert.equal(docsSampleBundledPublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
+  assert.equal(docsSampleBundledPublishCheck.source.resultsPath, "sources/results");
+  assert.deepEqual(
+    docsSampleCalibrationReport.results.map((item: { expectedStatus: string; actualStatus: string; matched: boolean }) => ({
+      expectedStatus: item.expectedStatus,
+      actualStatus: item.actualStatus,
+      matched: item.matched,
+    })),
+    docsSampleNewsletter.evaluation.calibrationCases.map((item: { expectedStatus: string }) => ({
+      expectedStatus: item.expectedStatus,
+      actualStatus: item.expectedStatus,
+      matched: true,
+    })),
+  );
+  for (const result of docsSampleCalibrationReport.results as Array<{ inputPath: string; outputPath: string; workspacePath: string }>) {
+    assert.equal(existsSync(path.resolve("docs", "public", "samples", result.inputPath)), true);
+    assert.equal(existsSync(path.resolve("docs", "public", "samples", result.outputPath)), true);
+    assert.equal(existsSync(path.resolve("docs", "public", "samples", result.workspacePath, "CALIBRATION.md")), true);
+  }
+});
+
+test("public API validates rerun ledger contracts", () => {
+  const ledger = {
+    version: "ruhroh_rerun_ledger_v1",
+    entries: [
+      {
+        sampleId: "simple-newsletter/agent-a/2-of-2",
+        decision: "exclude",
+        reasonKind: "infrastructure",
+        reason: "Worker VM was preempted before artifacts uploaded.",
+        decidedBy: "ci",
+        decidedAt: "2026-07-08T12:00:00.000Z",
+      },
+    ],
+  };
+
+  const validation = validateRuhrohRerunLedger(ledger);
+  assert.equal(validation.valid, true);
+  assert.deepEqual(validation.errors, []);
+  assert.equal(validation.ledger?.entries[0]?.sampleId, "simple-newsletter/agent-a/2-of-2");
+
+  const duplicateValidation = validateRuhrohRerunLedger({
+    ...ledger,
+    entries: [ledger.entries[0], ledger.entries[0]],
+  });
+  assert.equal(duplicateValidation.valid, false);
+  assert.match(duplicateValidation.errors.join("\n"), /duplicate sampleId simple-newsletter\/agent-a\/2-of-2/u);
+
+  const invalidReasonValidation = validateRuhrohRerunLedger({
+    ...ledger,
+    entries: [{ ...ledger.entries[0], reasonKind: "flaky_agent" }],
+  });
+  assert.equal(invalidReasonValidation.valid, false);
+  assert.match(invalidReasonValidation.errors.join("\n"), /reasonKind must be infrastructure, invalid_artifact, operator_error, or other/u);
+
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-rerun-ledger-api-"));
+  try {
+    const ledgerPath = path.join(tmp, "ruhroh-rerun-ledger.json");
+    writeFileSync(ledgerPath, `${JSON.stringify(ledger, null, 2)}\n`);
+    assert.equal(loadRuhrohRerunLedger(ledgerPath).entries.length, 1);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
   }
 });
 
@@ -776,10 +971,12 @@ test("Harbor command construction includes adapter and artifacts", () => {
   });
 
   assert.equal(command.scenarioId, "example-scenario");
-  assert.deepEqual(command.args.slice(0, 6), [
+  assert.deepEqual(command.args.slice(0, 8), [
     "run",
     "--path",
-    path.resolve("/repo", ".generated/ruhroh/harbor/tasks/example-scenario"),
+    path.resolve("/repo", ".generated/ruhroh/harbor/tasks"),
+    "--include-task-name",
+    "example-scenario",
     "--agent-import-path",
     "ruhroh.harbor_agent:RuhrohHarborAgent",
     "--n-concurrent",
@@ -791,9 +988,12 @@ test("Harbor command construction includes adapter and artifacts", () => {
   assert.equal(command.args.includes("RUHROH_EVAL_GOAL_RUBRIC_JSON=[\"The app satisfies the user goal.\"]"), true);
   assert.equal(command.args.includes("RUHROH_EVAL_CALIBRATION_CASES_JSON=[{\"id\":\"failed-delivery\",\"inputSummary\":\"The app is only a README describing what would be built.\",\"expectedStatus\":\"failed\",\"rationale\":\"A prose-only result is not a delivered workspace.\"}]"), true);
   assert.equal(command.args.includes(`RUHROH_EVAL_PRIVATE_ASSETS_JSON=${JSON.stringify([path.resolve("/repo", ".generated/ruhroh/harbor/tasks/example-scenario/private-eval-assets/private/rubric.json")])}`), true);
-  assert.equal(command.args.includes("OPENROUTER_API_KEY=${OPENROUTER_API_KEY}"), true);
-  assert.equal(command.args.includes("RUHROH_RUN_AGENT_COMMAND_SHELL=${RUHROH_RUN_AGENT_COMMAND_SHELL}"), true);
-  assert.equal(command.args.includes("RUHROH_EVAL_COMMAND_SHELL=${RUHROH_EVAL_COMMAND_SHELL}"), true);
+  assert.equal(command.args.includes("OPENROUTER_API_KEY=secret"), true);
+  assert.equal(command.args.includes("RUHROH_RUN_AGENT_COMMAND_SHELL=1"), true);
+  assert.equal(command.args.includes("RUHROH_EVAL_COMMAND_SHELL=1"), true);
+  assert.equal(command.displayArgs.includes("OPENROUTER_API_KEY=${OPENROUTER_API_KEY}"), true);
+  assert.equal(command.displayArgs.includes("RUHROH_RUN_AGENT_COMMAND_SHELL=${RUHROH_RUN_AGENT_COMMAND_SHELL}"), true);
+  assert.equal(command.displayArgs.includes("RUHROH_EVAL_COMMAND_SHELL=${RUHROH_EVAL_COMMAND_SHELL}"), true);
   assert.equal(command.args.includes("/installed-agent/ruhroh-run-manifest.json"), true);
   assert.equal(command.args.includes("/installed-agent/ruhroh-loop-eval-input.json"), true);
   assert.equal(command.args.includes("/installed-agent/ruhroh-workspace-summary.json"), true);
@@ -866,6 +1066,13 @@ test("scenario source validation reports missing declared assets", () => {
     assert.match(result.errors.join("\n"), /declared asset does not exist/u);
     assert.match(result.errors.join("\n"), /declared evaluation\.privateAssets asset does not exist/u);
     assert.match(result.warnings.join("\n"), /evaluation\.goalRubric should include/u);
+    assert.deepEqual(result.calibration, {
+      total: 0,
+      byExpectedStatus: { passed: 0, failed: 0, review: 0 },
+      coveredStatuses: [],
+      missingStatuses: ["passed", "failed", "review"],
+      warnings: ["evaluation.calibrationCases has no expected judgment anchors"],
+    });
     assert.deepEqual(result.warningDetails.map((diagnostic) => diagnostic.code), [
       "evaluation_context_minimum",
       "evaluation_calibration_cases_minimum",
@@ -874,6 +1081,99 @@ test("scenario source validation reports missing declared assets", () => {
       "evaluation_goal_rubric_terse",
       "evaluation_goal_rubric_generic",
     ]);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("scenario source validation rejects private evaluator asset exposure", () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-source-private-asset-exposure-"));
+  try {
+    const scenarioDir = path.join(tmp, "simple-newsletter");
+    mkdirSync(path.join(scenarioDir, "assets", "public"), { recursive: true });
+    mkdirSync(path.join(scenarioDir, "assets", "private"), { recursive: true });
+    writeFileSync(path.join(scenarioDir, "instruction.md"), "Build a tiny newsletter page.\n");
+    writeFileSync(path.join(scenarioDir, "assets", "public", "audience.txt"), "founders\n");
+    writeFileSync(path.join(scenarioDir, "assets", "private", "expected.txt"), "held-out expectation\n");
+    writeFileSync(path.join(scenarioDir, "scenario.json"), JSON.stringify({
+      version: "ruhroh_scenario_v2",
+      id: "simple-newsletter",
+      title: "Simple Newsletter",
+      tier: "smoke",
+      kind: "real_user",
+      userPromptPath: "instruction.md",
+      assets: ["assets"],
+      run: { timeoutSeconds: 600 },
+      requires: { continuity: "workspace_only", tools: ["filesystem", "shell"], network: false },
+      loop: { defaultMaxIterations: 3, stopPolicy: "goal_satisfied_or_max" },
+      evaluation: {
+        mode: "agentic_goal_review",
+        scenarioContext: ["Local app creation task.", "The user wants a finished page."],
+        goalRubric: [
+          "The final page presents newsletter content matching the user request.",
+          "The workspace can be inspected locally without relying on external services.",
+          "The implementation preserves the requested constraints and visible behavior.",
+        ],
+        evidenceGuidance: ["Inspect the generated page.", "Run a local smoke check when useful."],
+        calibrationCases: [{
+          id: "passing",
+          inputSummary: "The page is complete and locally inspectable.",
+          expectedStatus: "passed",
+          rationale: "The requested outcome is present.",
+        }],
+        privateAssets: ["assets/private/expected.txt"],
+      },
+    }));
+
+    const result = validateRuhrohScenarioSource(scenarioDir);
+    assert.match(result.errors.join("\n"), /evaluation\.privateAssets must not overlap public assets: assets\/private\/expected\.txt is exposed by assets entry assets/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("scenario source validation warns when changelog omits current scenario version", () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-source-version-warning-"));
+  try {
+    const scenarioDir = path.join(tmp, "simple-newsletter");
+    mkdirSync(scenarioDir, { recursive: true });
+    writeFileSync(path.join(scenarioDir, "instruction.md"), "Build a tiny newsletter page.\n");
+    writeFileSync(path.join(scenarioDir, "scenario.json"), JSON.stringify({
+      version: "ruhroh_scenario_v2",
+      id: "simple-newsletter",
+      title: "Simple Newsletter",
+      tier: "smoke",
+      kind: "real_user",
+      metadata: {
+        scenarioVersion: "1.2.0",
+        changelog: ["1.1.0: Clarified rubric wording."],
+      },
+      userPromptPath: "instruction.md",
+      assets: [],
+      run: { timeoutSeconds: 600 },
+      requires: { continuity: "workspace_only", tools: ["filesystem", "shell"], network: false },
+      loop: { defaultMaxIterations: 3, stopPolicy: "goal_satisfied_or_max" },
+      evaluation: {
+        mode: "agentic_goal_review",
+        scenarioContext: ["Local app creation task.", "The user needs a finished page."],
+        goalRubric: [
+          "The final page presents newsletter content matching the user request.",
+          "The workspace can be inspected locally without relying on external services.",
+          "The implementation preserves the requested constraints and visible behavior.",
+        ],
+        evidenceGuidance: ["Inspect the generated page.", "Run a local smoke check when useful."],
+        calibrationCases: [{
+          id: "passing",
+          inputSummary: "The page is complete and locally inspectable.",
+          expectedStatus: "passed",
+          rationale: "The requested outcome is present.",
+        }],
+      },
+    }));
+
+    const result = validateRuhrohScenarioSource(scenarioDir);
+    assert.deepEqual(result.errors, []);
+    assert.match(result.warnings.join("\n"), /metadata\.changelog should mention current scenarioVersion 1\.2\.0/u);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -919,6 +1219,440 @@ test("suite discovery loads manifests and validates referenced scenarios", () =>
     const validation = validateRuhrohSuiteSource(suiteSources[0] ?? assert.fail("missing suite"), { availableScenarioIds: scenarioIds });
     assert.deepEqual(validation.errors, []);
     assert.equal(validation.suite?.scenarioIds[0], "simple-newsletter");
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("benchmark pack inspection summarizes scenarios, suites, validation, and calibration", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-pack-inspection-"));
+  try {
+    const scenarioRoot = path.join(tmp, "scenarios");
+    const suiteRoot = path.join(tmp, "suites");
+    mkdirSync(path.join(scenarioRoot, "simple-newsletter"), { recursive: true });
+    mkdirSync(path.join(scenarioRoot, "simple-newsletter", "assets", "fixtures"), { recursive: true });
+    mkdirSync(path.join(suiteRoot, "local-smoke"), { recursive: true });
+    const publicAssetPath = path.join(scenarioRoot, "simple-newsletter", "assets", "fixtures", "audience.txt");
+    const privateAssetPath = path.join(scenarioRoot, "simple-newsletter", "assets", "private-review-notes.txt");
+    writeFileSync(publicAssetPath, "founders\noperators\n");
+    writeFileSync(privateAssetPath, "private evaluator-only acceptance notes\n");
+    writeFileSync(path.join(scenarioRoot, "simple-newsletter", "scenario.json"), JSON.stringify(scenario({
+      id: "simple-newsletter",
+      title: "Simple Newsletter",
+      assets: ["assets/fixtures"],
+      metadata: {
+        scenarioVersion: "1.0.0",
+        visibility: "public",
+        difficulty: "intro",
+        tags: ["smoke"],
+        provenance: "Original test fixture.",
+        createdAt: "2026-07-08",
+        updatedAt: "2026-07-08",
+        contaminationNotes: "No public canonical solution.",
+        expectedRuntimeSeconds: 300,
+        maintainers: ["ruhroh-maintainers"],
+        changelog: ["1.0.0: Initial fixture."],
+        lifecycle: { status: "active" },
+      },
+      evaluation: {
+        mode: "agentic_goal_review",
+        scenarioContext: ["Local app creation task.", "Fixture smoke path."],
+        goalRubric: [
+          "The app renders the requested newsletter signup workflow.",
+          "The workflow includes visible confirmation after submission.",
+          "The final workspace can run locally without network access.",
+        ],
+        evidenceGuidance: [
+          "Inspect the final workspace files.",
+          "Run the app or relevant tests when useful.",
+        ],
+        privateAssets: ["assets/private-review-notes.txt"],
+      },
+    })));
+    writeFileSync(path.join(suiteRoot, "local-smoke", "suite.json"), JSON.stringify(suite({
+      id: "local-smoke",
+      title: "Local Smoke",
+      scenarioIds: ["simple-newsletter"],
+      scenarioVersions: { "simple-newsletter": "1.0.0" },
+    })));
+
+    const inspection = inspectRuhrohBenchmarkPack({ scenarioDir: scenarioRoot, suiteDir: suiteRoot });
+    assert.equal(inspection.version, "ruhroh_benchmark_pack_inspection_v1");
+    assert.equal(inspection.requirements.requireFullCalibration, false);
+    assert.equal(inspection.requirements.requireRiskReviewed, false);
+    assert.equal(inspection.ready, true);
+    assert.deepEqual(inspection.summary, {
+      scenarioCount: 1,
+      validScenarioCount: 1,
+      invalidScenarioCount: 0,
+      suiteCount: 1,
+      validSuiteCount: 1,
+      invalidSuiteCount: 0,
+      calibrationWarningCount: 1,
+      riskReviewWarningCount: 0,
+      difficultyCounts: {
+        intro: 1,
+        standard: 0,
+        hard: 0,
+        expert: 0,
+        unknown: 0,
+      },
+      runtimeEstimate: {
+        knownScenarioCount: 1,
+        unknownScenarioCount: 0,
+        totalExpectedRuntimeSeconds: 300,
+        minExpectedRuntimeSeconds: 300,
+        maxExpectedRuntimeSeconds: 300,
+      },
+    });
+    assert.equal(inspection.scenarios[0].id, "simple-newsletter");
+    assert.equal(inspection.scenarios[0].scenarioVersion, "1.0.0");
+    assert.equal(inspection.scenarios[0].expectedRuntimeSeconds, 300);
+    assert.deepEqual(inspection.scenarios[0].tags, ["smoke"]);
+    assert.equal(inspection.scenarios[0].riskReview.status, "documented");
+    assert.deepEqual(inspection.scenarios[0].riskReview.warnings, []);
+    assert.equal(inspection.scenarios[0].content.scenarioPath, path.join(scenarioRoot, "simple-newsletter", "scenario.json"));
+    assert.match(inspection.scenarios[0].content.scenarioSha256 ?? "", /^[a-f0-9]{64}$/u);
+    assert.equal(inspection.scenarios[0].content.promptPath, undefined);
+    assert.deepEqual(inspection.scenarios[0].content.assetFingerprints.map((fingerprint) => ({
+      path: fingerprint.path,
+      status: fingerprint.status,
+      kind: fingerprint.kind,
+      fileCount: fingerprint.fileCount,
+      sizeBytes: fingerprint.sizeBytes,
+    })), [{
+      path: "assets/fixtures",
+      status: "ok",
+      kind: "directory",
+      fileCount: 1,
+      sizeBytes: readFileSync(publicAssetPath).length,
+    }]);
+    assert.match(inspection.scenarios[0].content.assetFingerprints[0]?.sha256 ?? "", /^[a-f0-9]{64}$/u);
+    assert.deepEqual(inspection.scenarios[0].content.privateAssetFingerprints.map((fingerprint) => ({
+      path: fingerprint.path,
+      status: fingerprint.status,
+      kind: fingerprint.kind,
+      fileCount: fingerprint.fileCount,
+      sizeBytes: fingerprint.sizeBytes,
+      sha256: fingerprint.sha256,
+    })), [{
+      path: "assets/private-review-notes.txt",
+      status: "ok",
+      kind: "file",
+      fileCount: 1,
+      sizeBytes: readFileSync(privateAssetPath).length,
+      sha256: sha256File(privateAssetPath),
+    }]);
+    assert.equal(inspection.scenarios[0].calibration?.warnings[0], "evaluation.calibrationCases has no expected judgment anchors");
+    assert.equal(inspection.suites[0].id, "local-smoke");
+    assert.equal(inspection.suites[0].minRuns, 5);
+    assert.deepEqual(inspection.suites[0].difficultyCounts, {
+      intro: 1,
+      standard: 0,
+      hard: 0,
+      expert: 0,
+      unknown: 0,
+    });
+    assert.deepEqual(inspection.suites[0].runtimeEstimate, {
+      knownScenarioCount: 1,
+      unknownScenarioCount: 0,
+      totalExpectedRuntimeSeconds: 300,
+      minExpectedRuntimeSeconds: 300,
+      maxExpectedRuntimeSeconds: 300,
+    });
+    assert.equal(inspection.suites[0].estimatedCollectionSeconds, 1500);
+    assert.equal(inspection.suites[0].riskReview.status, "documented");
+    assert.deepEqual(inspection.suites[0].riskReview.warnings, []);
+
+    const strictInspection = inspectRuhrohBenchmarkPack({ scenarioDir: scenarioRoot, suiteDir: suiteRoot, requireFullCalibration: true });
+    assert.equal(strictInspection.requirements.requireFullCalibration, true);
+    assert.equal(strictInspection.requirements.requireRiskReviewed, false);
+    assert.equal(strictInspection.ready, false);
+    assert.equal(strictInspection.blockers.some((blocker) => blocker.includes("calibration requirement failed")), true);
+    assert.equal(strictInspection.blockers.some((blocker) => blocker.includes("add passed, failed, review anchor(s)")), true);
+
+    const inspectJsonStdout: string[] = [];
+    const inspectJsonCode = await runRuhrohCli(["inspect-pack", "--scenario-dir", "scenarios", "--suite-dir", "suites", "--json"], {
+      spawn: (() => assert.fail("inspect-pack should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { inspectJsonStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const inspectJson = JSON.parse(inspectJsonStdout.join(""));
+    assert.equal(inspectJsonCode, 0);
+    assert.equal(inspectJson.version, "ruhroh_benchmark_pack_inspection_v1");
+    assert.equal(inspectJson.ready, true);
+    assert.equal(inspectJson.requirements.requireFullCalibration, false);
+    assert.equal(inspectJson.requirements.requireRiskReviewed, false);
+    assert.equal(inspectJson.summary.validScenarioCount, 1);
+    assert.equal(inspectJson.summary.riskReviewWarningCount, 0);
+    assert.equal(inspectJson.summary.difficultyCounts.intro, 1);
+    assert.equal(inspectJson.summary.runtimeEstimate.totalExpectedRuntimeSeconds, 300);
+    assert.equal(inspectJson.summary.runtimeEstimate.minExpectedRuntimeSeconds, 300);
+    assert.equal(inspectJson.suites[0].difficultyCounts.intro, 1);
+    assert.equal(inspectJson.suites[0].runtimeEstimate.totalExpectedRuntimeSeconds, 300);
+    assert.equal(inspectJson.suites[0].estimatedCollectionSeconds, 1500);
+    assert.equal(inspectJson.scenarios[0].riskReview.status, "documented");
+    assert.equal(inspectJson.scenarios[0].expectedRuntimeSeconds, 300);
+    assert.equal(inspectJson.scenarios[0].content.assetFingerprints[0].path, "assets/fixtures");
+    assert.equal(inspectJson.scenarios[0].content.assetFingerprints[0].kind, "directory");
+    assert.match(inspectJson.scenarios[0].content.assetFingerprints[0].sha256, /^[a-f0-9]{64}$/u);
+
+    const strictJsonStdout: string[] = [];
+    const strictJsonStderr: string[] = [];
+    const strictJsonCode = await runRuhrohCli(["inspect-pack", "--scenario-dir", "scenarios", "--suite-dir", "suites", "--require-calibrated", "--json"], {
+      spawn: (() => assert.fail("strict inspect-pack should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { strictJsonStdout.push(chunk); return true; } },
+      stderr: { write: (chunk: string) => { strictJsonStderr.push(chunk); return true; } },
+    });
+    const strictJson = JSON.parse(strictJsonStdout.join(""));
+    assert.equal(strictJsonCode, 1);
+    assert.equal(strictJson.requirements.requireFullCalibration, true);
+    assert.equal(strictJson.requirements.requireRiskReviewed, false);
+    assert.equal(strictJson.ready, false);
+    assert.equal(strictJson.blockers.some((blocker: string) => blocker.includes("calibration requirement failed")), true);
+    assert.equal(strictJson.blockers.some((blocker: string) => blocker.includes("add passed, failed, review anchor(s)")), true);
+    assert.match(strictJsonStderr.join(""), /inspect-pack failed readiness gate/u);
+
+    writeFileSync(path.join(scenarioRoot, "simple-newsletter", "scenario.json"), JSON.stringify(scenario({
+      id: "simple-newsletter",
+      title: "Simple Newsletter",
+      assets: ["assets/fixtures"],
+      metadata: {
+        scenarioVersion: "1.0.0",
+        visibility: "public",
+        difficulty: "intro",
+        tags: ["smoke"],
+        provenance: "Original test fixture.",
+        createdAt: "2026-07-08",
+        updatedAt: "2026-07-08",
+        contaminationNotes: "No public canonical solution.",
+        expectedRuntimeSeconds: 300,
+        maintainers: ["ruhroh-maintainers"],
+        changelog: ["1.0.0: Initial fixture."],
+        lifecycle: { status: "active" },
+      },
+      evaluation: {
+        mode: "agentic_goal_review",
+        scenarioContext: ["Local app creation task.", "Fixture smoke path."],
+        goalRubric: [
+          "The app renders the requested newsletter signup workflow.",
+          "The workflow includes visible confirmation after submission.",
+          "The final workspace can run locally without network access.",
+        ],
+        evidenceGuidance: [
+          "Inspect the final workspace files.",
+          "Run the app or relevant tests when useful.",
+        ],
+        calibrationCases: [
+          {
+            id: "complete-newsletter-pass",
+            inputSummary: "The workspace contains the requested newsletter page and a visible confirmation workflow.",
+            expectedStatus: "passed",
+            rationale: "Complete delivered work should pass.",
+          },
+          {
+            id: "missing-workflow-failure",
+            inputSummary: "The workspace only contains an unchanged starter page with no newsletter workflow.",
+            expectedStatus: "failed",
+            rationale: "Missing the core requested outcome should fail.",
+          },
+          {
+            id: "unclear-run-path-review",
+            inputSummary: "The workspace appears partially implemented, but the available artifacts do not show how to inspect or run it.",
+            expectedStatus: "review",
+            rationale: "Ambiguous evidence should be escalated rather than force-passed.",
+          },
+        ],
+        privateAssets: ["assets/private-review-notes.txt"],
+      },
+    })));
+    const calibratedStrictInspection = inspectRuhrohBenchmarkPack({ scenarioDir: scenarioRoot, suiteDir: suiteRoot, requireFullCalibration: true });
+    assert.equal(calibratedStrictInspection.ready, true);
+    assert.deepEqual(calibratedStrictInspection.scenarios[0].calibration?.missingStatuses, []);
+    assert.deepEqual(calibratedStrictInspection.scenarios[0].calibration?.warnings, []);
+
+    const riskReviewedStrictInspection = inspectRuhrohBenchmarkPack({ scenarioDir: scenarioRoot, suiteDir: suiteRoot, requireFullCalibration: true, requireRiskReviewed: true });
+    assert.equal(riskReviewedStrictInspection.requirements.requireRiskReviewed, true);
+    assert.equal(riskReviewedStrictInspection.ready, true);
+
+    const inspectTextStdout: string[] = [];
+    const inspectTextCode = await runRuhrohCli(["inspect-pack", "--scenario-dir", "scenarios", "--suite-dir", "suites"], {
+      spawn: (() => assert.fail("text inspect-pack should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { inspectTextStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(inspectTextCode, 0);
+    assert.match(inspectTextStdout.join(""), /Ruhroh benchmark pack inspection/u);
+    assert.match(inspectTextStdout.join(""), /ready: yes/u);
+    assert.match(inspectTextStdout.join(""), /requireRiskReviewed: no/u);
+    assert.match(inspectTextStdout.join(""), /risk review warnings: 0/u);
+    assert.match(inspectTextStdout.join(""), /difficulty mix: intro=1/u);
+    assert.match(inspectTextStdout.join(""), /expected runtime: total=5m, range=5m-5m, known=1/u);
+    assert.match(inspectTextStdout.join(""), /content fingerprints: 1 scenario manifests, 0 prompts, 1 public asset entries, 1 private asset entries/u);
+
+    const inspectHtmlStdout: string[] = [];
+    const inspectHtmlPath = path.join(tmp, "ruhroh-pack-inspection.html");
+    const inspectHtmlCode = await runRuhrohCli(["inspect-pack", "--scenario-dir", "scenarios", "--suite-dir", "suites", "--html", "ruhroh-pack-inspection.html"], {
+      spawn: (() => assert.fail("HTML inspect-pack should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { inspectHtmlStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const inspectHtml = readFileSync(inspectHtmlPath, "utf8");
+    assert.equal(inspectHtmlCode, 0);
+    assert.equal(existsSync(inspectHtmlPath), true);
+    assert.match(inspectHtmlStdout.join(""), /Ruhroh benchmark pack inspection/u);
+    assert.match(inspectHtml, /Ruhroh benchmark pack inspection/u);
+    assert.match(inspectHtml, /Benchmark pack overview/u);
+    assert.match(inspectHtml, /Risk review warnings/u);
+    assert.match(inspectHtml, /Risk review gate/u);
+    assert.match(inspectHtml, /Difficulty mix/u);
+    assert.match(inspectHtml, /Expected runtime/u);
+    assert.match(inspectHtml, /Collection estimate/u);
+    assert.match(inspectHtml, /Content Fingerprints/u);
+    assert.match(inspectHtml, /assets\/fixtures/u);
+
+    writeFileSync(path.join(scenarioRoot, "simple-newsletter", "scenario.json"), JSON.stringify(scenario({
+      id: "simple-newsletter",
+      title: "Simple Newsletter",
+      assets: ["assets/fixtures"],
+      metadata: {
+        scenarioVersion: "1.0.0",
+        visibility: "public",
+        difficulty: "intro",
+        tags: ["smoke"],
+        provenance: "Original test fixture.",
+        createdAt: "2026-07-08",
+        updatedAt: "2026-07-08",
+        contaminationNotes: "TBD",
+        expectedRuntimeSeconds: 300,
+        maintainers: ["ruhroh-maintainers"],
+        changelog: ["1.0.0: Initial fixture."],
+        lifecycle: { status: "active" },
+      },
+      evaluation: {
+        mode: "agentic_goal_review",
+        scenarioContext: ["Local app creation task.", "Fixture smoke path."],
+        goalRubric: [
+          "The app renders the requested newsletter signup workflow.",
+          "The workflow includes visible confirmation after submission.",
+          "The final workspace can run locally without network access.",
+        ],
+        evidenceGuidance: [
+          "Inspect the final workspace files.",
+          "Run the app or relevant tests when useful.",
+        ],
+        privateAssets: ["assets/private-review-notes.txt"],
+      },
+    })));
+    writeFileSync(path.join(suiteRoot, "local-smoke", "suite.json"), JSON.stringify(suite({
+      id: "local-smoke",
+      title: "Local Smoke",
+      scenarioIds: ["simple-newsletter"],
+      scenarioVersions: { "simple-newsletter": "1.0.0" },
+      governance: {
+        owner: "ruhroh-maintainers",
+        createdAt: "2026-07-07",
+        updatedAt: "2026-07-07",
+        changelog: ["1.0.0: Initial suite."],
+        acceptanceCriteria: ["Scenarios judge outcome behavior."],
+        contaminationReview: "TBD",
+        rewardHackingReview: "unknown",
+        reviewChecklist: ["Confirm outcome behavior is judged."],
+        deprecationPolicy: "Bump suiteVersion for membership changes.",
+      },
+    })));
+    const weakRiskInspection = inspectRuhrohBenchmarkPack({ scenarioDir: scenarioRoot, suiteDir: suiteRoot });
+    assert.equal(weakRiskInspection.ready, true);
+    assert.equal(weakRiskInspection.summary.riskReviewWarningCount, 3);
+    assert.equal(weakRiskInspection.scenarios[0].riskReview.status, "needs_review");
+    assert.equal(weakRiskInspection.suites[0].riskReview.status, "needs_review");
+    assert.equal(weakRiskInspection.warnings.some((warning) => warning.includes("metadata.contaminationNotes")), true);
+    assert.equal(weakRiskInspection.warnings.some((warning) => warning.includes("governance.contaminationReview")), true);
+    assert.equal(weakRiskInspection.warnings.some((warning) => warning.includes("governance.rewardHackingReview")), true);
+
+    const strictRiskInspection = inspectRuhrohBenchmarkPack({ scenarioDir: scenarioRoot, suiteDir: suiteRoot, requireRiskReviewed: true });
+    assert.equal(strictRiskInspection.requirements.requireRiskReviewed, true);
+    assert.equal(strictRiskInspection.ready, false);
+    assert.equal(strictRiskInspection.blockers.filter((blocker) => blocker.includes("risk review requirement failed")).length, 3);
+
+    const strictRiskStdout: string[] = [];
+    const strictRiskStderr: string[] = [];
+    const strictRiskCode = await runRuhrohCli(["inspect-pack", "--scenario-dir", "scenarios", "--suite-dir", "suites", "--require-risk-reviewed", "--json"], {
+      spawn: (() => assert.fail("strict risk inspect-pack should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { strictRiskStdout.push(chunk); return true; } },
+      stderr: { write: (chunk: string) => { strictRiskStderr.push(chunk); return true; } },
+    });
+    const strictRiskJson = JSON.parse(strictRiskStdout.join(""));
+    assert.equal(strictRiskCode, 1);
+    assert.equal(strictRiskJson.requirements.requireRiskReviewed, true);
+    assert.equal(strictRiskJson.blockers.some((blocker: string) => blocker.includes("metadata.contaminationNotes")), true);
+    assert.match(strictRiskStderr.join(""), /inspect-pack failed readiness gate/u);
+
+    writeFileSync(path.join(scenarioRoot, "simple-newsletter", "scenario.json"), JSON.stringify(scenario({
+      id: "simple-newsletter",
+      title: "Simple Newsletter",
+      assets: ["assets/fixtures"],
+      metadata: {
+        scenarioVersion: "1.0.0",
+        visibility: "public",
+        difficulty: "intro",
+        tags: ["smoke"],
+        provenance: "Original test fixture.",
+        createdAt: "2026-07-08",
+        updatedAt: "2026-07-08",
+        contaminationNotes: "No public canonical solution.",
+        expectedRuntimeSeconds: 300,
+        maintainers: ["ruhroh-maintainers"],
+        changelog: ["1.0.0: Initial fixture."],
+        lifecycle: { status: "active" },
+      },
+      evaluation: {
+        mode: "agentic_goal_review",
+        scenarioContext: ["Local app creation task.", "Fixture smoke path."],
+        goalRubric: [
+          "The app renders the requested newsletter signup workflow.",
+          "The workflow includes visible confirmation after submission.",
+          "The final workspace can run locally without network access.",
+        ],
+        evidenceGuidance: [
+          "Inspect the final workspace files.",
+          "Run the app or relevant tests when useful.",
+        ],
+        privateAssets: ["assets/private-review-notes.txt"],
+      },
+    })));
+
+    writeFileSync(path.join(suiteRoot, "local-smoke", "suite.json"), JSON.stringify(suite({
+      id: "local-smoke",
+      title: "Local Smoke",
+      scenarioIds: ["missing-task"],
+      scenarioVersions: { "missing-task": "1.0.0" },
+    })));
+    const blockedInspection = inspectRuhrohBenchmarkPack({ scenarioDir: scenarioRoot, suiteDir: suiteRoot });
+    assert.equal(blockedInspection.ready, false);
+    assert.equal(blockedInspection.summary.invalidSuiteCount, 1);
+    assert.equal(blockedInspection.blockers.some((blocker) => blocker.includes("scenarioIds references unknown scenario: missing-task")), true);
+
+    const blockedStderr: string[] = [];
+    const blockedCode = await runRuhrohCli(["inspect-pack", "--scenario-dir", "scenarios", "--suite-dir", "suites", "--json"], {
+      spawn: (() => assert.fail("blocked inspect-pack should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: () => true },
+      stderr: { write: (chunk: string) => { blockedStderr.push(chunk); return true; } },
+    });
+    assert.equal(blockedCode, 1);
+    assert.match(blockedStderr.join(""), /inspect-pack failed readiness gate/u);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -999,6 +1733,7 @@ test("Harbor task generation writes app-agnostic verifier and copies assets", ()
     mkdirSync(path.join(scenarioDir, "assets"), { recursive: true });
     mkdirSync(path.join(scenarioDir, "private"), { recursive: true });
     writeFileSync(path.join(scenarioDir, "assets", "budget.csv"), "category,amount\nfood,42\n");
+    writeFileSync(path.join(scenarioDir, "assets", "draft-secret.txt"), "do not copy\n");
     writeFileSync(path.join(scenarioDir, "private", "expected.json"), "{\"requiredStories\":3}\n");
 
     const result = generateHarborTask({
@@ -1006,6 +1741,7 @@ test("Harbor task generation writes app-agnostic verifier and copies assets", ()
         version: "ruhroh_scenario_v2",
         id: "grocery-budget-planner",
         title: "Grocery Budget Planner",
+        assets: ["assets/budget.csv"],
         metadata: {
           scenarioVersion: "1.2.0",
           difficulty: "standard",
@@ -1050,10 +1786,11 @@ test("Harbor task generation writes app-agnostic verifier and copies assets", ()
     assert.match(taskToml, /lifecycle_status = "deprecated"/u);
     assert.match(taskToml, /lifecycle_replacement_id = "grocery-budget-planner-v2"/u);
     assert.match(taskToml, /tags = \["budget", "local-app"\]/u);
-    assert.match(taskToml, /network_mode = "none"/u);
+    assert.match(taskToml, /network_mode = "no-network"/u);
     assert.equal(existsSync(path.join(result.taskDir, "environment", "Dockerfile")), true);
     assert.equal(existsSync(path.join(result.taskDir, "solution", "solve.sh")), true);
     assert.equal(readFileSync(path.join(result.taskDir, "assets", "budget.csv"), "utf8"), "category,amount\nfood,42\n");
+    assert.equal(existsSync(path.join(result.taskDir, "assets", "draft-secret.txt")), false);
     assert.equal(readFileSync(path.join(result.taskDir, "private-eval-assets", "private", "expected.json"), "utf8"), "{\"requiredStories\":3}\n");
     assert.equal(existsSync(path.join(result.taskDir, "assets", "private", "expected.json")), false);
     assert.equal(result.filesWritten.includes(path.join(result.taskDir, "private-eval-assets", "private", "expected.json")), true);
@@ -1147,6 +1884,33 @@ test("public CLI lists and generates scenarios from a clean fixture project", as
     assert.equal(listCode, 0);
     assert.match(listStdout.join(""), /simple-newsletter\tsmoke\tSimple Newsletter/u);
 
+    const listAliasStdout: string[] = [];
+    const listAliasCode = await runRuhrohCli(["list", "--scenario-dir", "ruhroh/scenarios"], {
+      spawn: (() => assert.fail("list alias should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { listAliasStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(listAliasCode, 0);
+    assert.match(listAliasStdout.join(""), /simple-newsletter\tsmoke\tSimple Newsletter/u);
+
+    const listJsonStdout: string[] = [];
+    const listJsonCode = await runRuhrohCli(["list", "--scenario-dir", "ruhroh/scenarios", "--json"], {
+      spawn: (() => assert.fail("list JSON should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { listJsonStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const listJson = JSON.parse(listJsonStdout.join(""));
+    assert.equal(listJsonCode, 0);
+    assert.equal(listJson.version, "ruhroh_scenario_list_v1");
+    assert.equal(listJson.source.scenarioDir, path.join(tmp, "ruhroh", "scenarios"));
+    assert.equal(listJson.scenarios[0].id, "simple-newsletter");
+    assert.equal(listJson.scenarios[0].tier, "smoke");
+    assert.equal(listJson.scenarios[0].sourcePath, path.join("ruhroh", "scenarios", "simple-newsletter", "scenario.json"));
+
     const generateStdout: string[] = [];
     const generateCode = await runRuhrohCli(["--scenario-dir", "ruhroh/scenarios", "--scenario", "simple-newsletter", "--generate-only"], {
       spawn: (() => assert.fail("generate-only should not spawn Harbor")) as never,
@@ -1207,6 +1971,31 @@ test("public CLI lists and generates benchmark suites from a clean fixture proje
     assert.equal(listCode, 0);
     assert.match(listStdout.join(""), /local-smoke\t1\.0\.0\t1\tLocal Smoke/u);
 
+    const listAliasStdout: string[] = [];
+    const listAliasCode = await runRuhrohCli(["list-suites", "--suite-dir", "ruhroh/suites"], {
+      spawn: (() => assert.fail("list-suites alias should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { listAliasStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(listAliasCode, 0);
+    assert.match(listAliasStdout.join(""), /local-smoke\t1\.0\.0\t1\tLocal Smoke/u);
+
+    const listJsonStdout: string[] = [];
+    const listJsonCode = await runRuhrohCli(["list-suites", "--suite-dir", "ruhroh/suites", "--json"], {
+      spawn: (() => assert.fail("list-suites JSON should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { listJsonStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const listJson = JSON.parse(listJsonStdout.join(""));
+    assert.equal(listJsonCode, 0);
+    assert.equal(listJson.version, "ruhroh_suite_list_v1");
+    assert.equal(listJson.suites[0].id, "local-smoke");
+    assert.equal(listJson.suites[0].suiteVersion, "1.0.0");
+
     const generateStdout: string[] = [];
     const generateCode = await runRuhrohCli([
       "--scenario-dir",
@@ -1226,6 +2015,73 @@ test("public CLI lists and generates benchmark suites from a clean fixture proje
     assert.equal(generateCode, 0);
     assert.match(generateStdout.join(""), /generated simple-newsletter/u);
     assert.equal(existsSync(path.join(tmp, ".generated", "ruhroh", "harbor", "tasks", "simple-newsletter", "task.toml")), true);
+
+    const planStdout: string[] = [];
+    const planCode = await runRuhrohCli([
+      "plan",
+      "--scenario-dir",
+      "ruhroh/scenarios",
+      "--suite-dir",
+      "ruhroh/suites",
+      "--suite",
+      "local-smoke",
+      "--adapter",
+      "custom-shell",
+      "--runs",
+      "3",
+      "--json",
+    ], {
+      spawn: (() => assert.fail("plan should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { planStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const plan = JSON.parse(planStdout.join(""));
+    const planRunPlanPath = path.join(tmp, ".generated", "ruhroh", "ruhroh-run-plan.json");
+    assert.equal(planCode, 0);
+    assert.equal(plan.version, "ruhroh_plan_report_v1");
+    assert.equal(plan.runPlanPath, planRunPlanPath);
+    assert.equal(plan.sampleCount, 3);
+    assert.deepEqual(plan.scenarios, ["simple-newsletter"]);
+    assert.deepEqual(plan.adapters, ["custom-shell"]);
+    assert.equal(plan.runPlan.sampleCount, 3);
+    assert.equal(plan.runPlan.samples[0].sampleId, "simple-newsletter/custom-shell/1-of-3");
+    assert.match(plan.runPlan.samples[0].sampleSeed, /^[a-f0-9]{16}$/u);
+    assert.equal(existsSync(planRunPlanPath), true);
+
+    const shardPlanStdout: string[] = [];
+    const shardPlanCode = await runRuhrohCli([
+      "plan",
+      "--scenario-dir",
+      "ruhroh/scenarios",
+      "--suite-dir",
+      "ruhroh/suites",
+      "--suite",
+      "local-smoke",
+      "--adapter",
+      "custom-shell",
+      "--runs",
+      "5",
+      "--shard",
+      "2/2",
+      "--json",
+    ], {
+      spawn: (() => assert.fail("sharded plan should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { shardPlanStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const shardPlan = JSON.parse(shardPlanStdout.join(""));
+    assert.equal(shardPlanCode, 0);
+    assert.equal(shardPlan.sampleCount, 2);
+    assert.deepEqual(shardPlan.runPlan.selection.shard, { index: 2, total: 2 });
+    assert.deepEqual(shardPlan.runPlan.samples.map((sample: { sampleId: string }) => sample.sampleId), [
+      "simple-newsletter/custom-shell/2-of-5",
+      "simple-newsletter/custom-shell/4-of-5",
+    ]);
+    assert.deepEqual(shardPlan.runPlan.samples.map((sample: { runIndex: number; runCount: number }) => [sample.runIndex, sample.runCount]), [[2, 5], [4, 5]]);
 
     const validateStdout: string[] = [];
     const validateCode = await runRuhrohCli([
@@ -1288,10 +2144,16 @@ test("public CLI parses doctor command", () => {
 });
 
 test("public CLI parses init command target directory", () => {
-  const parsed = parseRuhrohCliArgs(["init", "benchmarks", "--json"], "/tmp/project");
+  const parsed = parseRuhrohCliArgs(["init", "benchmarks", "--adapter", "codex-cli", "--json"], "/tmp/project");
   assert.equal(parsed.command, "init");
   assert.equal(parsed.inputPath, path.join("/tmp/project", "benchmarks"));
+  assert.equal(parsed.adapter, "codex-cli");
   assert.equal(parsed.json, true);
+
+  const templateParsed = parseRuhrohCliArgs(["init", "--template", "claude-code"], "/tmp/project");
+  assert.equal(templateParsed.command, "init");
+  assert.equal(templateParsed.adapterTemplate, "claude-code");
+  assert.equal(templateParsed.templateExplicit, true);
 });
 
 test("public CLI parses suite selection as mutually exclusive with tiers", () => {
@@ -1307,6 +2169,12 @@ test("public CLI parses repeated run counts", () => {
   assert.equal(parsed.runs, 5);
 });
 
+test("public CLI parses run shards", () => {
+  const parsed = parseRuhrohCliArgs(["plan", "--suite", "ruhroh-smoke", "--adapter", "custom-shell", "--runs", "10", "--shard", "3/4"], "/tmp/project");
+  assert.deepEqual(parsed.shard, { index: 3, total: 4 });
+  assert.throws(() => parseRuhrohCliArgs(["plan", "--suite", "ruhroh-smoke", "--adapter", "custom-shell", "--shard", "5/4"], "/tmp/project"), /index must be less than or equal to total/u);
+});
+
 test("public CLI parses repeated adapter selections", () => {
   const parsed = parseRuhrohCliArgs([
     "--scenario",
@@ -1320,6 +2188,26 @@ test("public CLI parses repeated adapter selections", () => {
   assert.deepEqual(parsed.adapters, ["custom-shell", "./adapters/agent-two.mjs"]);
 });
 
+test("public CLI parses plan command", () => {
+  const parsed = parseRuhrohCliArgs(["plan", "--suite", "ruhroh-smoke", "--adapter", "custom-shell", "--runs", "5", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "plan");
+  assert.equal(parsed.suiteId, "ruhroh-smoke");
+  assert.deepEqual(parsed.adapters, ["custom-shell"]);
+  assert.equal(parsed.runs, 5);
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses benchmark pack inspection command", () => {
+  const parsed = parseRuhrohCliArgs(["inspect-pack", "--scenario-dir", "scenarios", "--suite-dir", "suites", "--require-calibrated", "--require-risk-reviewed", "--html", "pack.html", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "inspect-pack");
+  assert.equal(parsed.scenarioDir, path.join("/tmp/project", "scenarios"));
+  assert.equal(parsed.suiteDir, path.join("/tmp/project", "suites"));
+  assert.equal(parsed.requireCalibrated, true);
+  assert.equal(parsed.requireRiskReviewed, true);
+  assert.equal(parsed.htmlPath, path.join("/tmp/project", "pack.html"));
+  assert.equal(parsed.json, true);
+});
+
 test("public CLI parses compare publishability gate", () => {
   const parsed = parseRuhrohCliArgs(["compare", "results", "--require-publishable", "--benchmark-claim", "claim.json", "--benchmark-summary", "summary.json"], "/tmp/project");
   assert.equal(parsed.command, "compare");
@@ -1327,6 +2215,110 @@ test("public CLI parses compare publishability gate", () => {
   assert.equal(parsed.requirePublishable, true);
   assert.equal(parsed.benchmarkClaimPath, path.join("/tmp/project", "claim.json"));
   assert.equal(parsed.benchmarkSummaryPath, path.join("/tmp/project", "summary.json"));
+});
+
+test("public CLI parses review queue command", () => {
+  const parsed = parseRuhrohCliArgs(["review", "results", "--html", "review.html", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "review");
+  assert.equal(parsed.inputPath, path.join("/tmp/project", "results"));
+  assert.equal(parsed.htmlPath, path.join("/tmp/project", "review.html"));
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses eval-quality command", () => {
+  const parsed = parseRuhrohCliArgs(["eval-quality", "results", "--html", "eval-quality.html", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "eval-quality");
+  assert.equal(parsed.inputPath, path.join("/tmp/project", "results"));
+  assert.equal(parsed.htmlPath, path.join("/tmp/project", "eval-quality.html"));
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses examples command", () => {
+  const parsed = parseRuhrohCliArgs(["examples", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "examples");
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses adapter template scaffolding", () => {
+  const parsed = parseRuhrohCliArgs(["new-adapter", "codex-local", "--template", "codex-cli", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "new-adapter");
+  assert.equal(parsed.adapter, "codex-local");
+  assert.equal(parsed.adapterTemplate, "codex-cli");
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses first-run onboarding command", () => {
+  const parsed = parseRuhrohCliArgs(["first-run", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "first-run");
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses workflow guide command", () => {
+  const parsed = parseRuhrohCliArgs(["workflow", "results", "--html", "workflow.html", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "workflow");
+  assert.equal(parsed.inputPath, path.join("/tmp/project", "results"));
+  assert.equal(parsed.htmlPath, path.join("/tmp/project", "workflow.html"));
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses publish-check workflow", () => {
+  const parsed = parseRuhrohCliArgs([
+    "publish-check",
+    "results",
+    "--suite",
+    "ruhroh-smoke",
+    "--run-plan",
+    ".generated/ruhroh/ruhroh-run-plan.json",
+    "--rerun-ledger",
+    "ruhroh-rerun-ledger.json",
+    "--benchmark-claim",
+    "claim.json",
+    "--benchmark-summary",
+    "summary.json",
+    "--html",
+    "compare.html",
+    "--summary-md",
+    "step-summary.md",
+    "--bundle",
+    "publication",
+    "--verify-sources",
+    "--json",
+  ], "/tmp/project");
+  assert.equal(parsed.command, "publish-check");
+  assert.equal(parsed.inputPath, path.join("/tmp/project", "results"));
+  assert.equal(parsed.suiteId, "ruhroh-smoke");
+  assert.equal(parsed.runPlanPath, path.join("/tmp/project", ".generated/ruhroh/ruhroh-run-plan.json"));
+  assert.equal(parsed.rerunLedgerPath, path.join("/tmp/project", "ruhroh-rerun-ledger.json"));
+  assert.equal(parsed.benchmarkClaimPath, path.join("/tmp/project", "claim.json"));
+  assert.equal(parsed.benchmarkSummaryPath, path.join("/tmp/project", "summary.json"));
+  assert.equal(parsed.htmlPath, path.join("/tmp/project", "compare.html"));
+  assert.equal(parsed.summaryMarkdownPath, path.join("/tmp/project", "step-summary.md"));
+  assert.equal(parsed.bundlePath, path.join("/tmp/project", "publication"));
+  assert.equal(parsed.verifySources, true);
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses explain remediation command", () => {
+  const parsed = parseRuhrohCliArgs(["explain", "run_plan_mismatch", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "explain");
+  assert.equal(parsed.explainCode, "run_plan_mismatch");
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses new-evaluator command", () => {
+  const parsed = parseRuhrohCliArgs(["new-evaluator", "local-evaluator", "--template", "hybrid", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "new-evaluator");
+  assert.equal(parsed.evaluator, "local-evaluator");
+  assert.equal(parsed.evaluatorTemplate, "hybrid");
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses evaluator calibration command", () => {
+  const parsed = parseRuhrohCliArgs(["calibrate-evaluator", "--scenario", "calibration-demo", "--generated-dir", ".generated/calibration", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "calibrate-evaluator");
+  assert.equal(parsed.scenarioId, "calibration-demo");
+  assert.equal(parsed.generatedDir, path.join("/tmp/project", ".generated/calibration"));
+  assert.equal(parsed.json, true);
 });
 
 test("public CLI parses benchmark claim validation", () => {
@@ -1343,6 +2335,504 @@ test("public CLI parses benchmark summary validation", () => {
   assert.equal(parsed.command, "validate-summary");
   assert.equal(parsed.inputPath, path.join("/tmp/project", "summary.json"));
   assert.equal(parsed.json, true);
+});
+
+test("public CLI parses publication bundle validation", () => {
+  const parsed = parseRuhrohCliArgs(["validate-bundle", "publication", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "validate-bundle");
+  assert.equal(parsed.inputPath, path.join("/tmp/project", "publication"));
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI parses claim index command", () => {
+  const parsed = parseRuhrohCliArgs(["claim-index", "claims", "--html", "claims.html", "--json"], "/tmp/project");
+  assert.equal(parsed.command, "claim-index");
+  assert.equal(parsed.inputPath, path.join("/tmp/project", "claims"));
+  assert.equal(parsed.htmlPath, path.join("/tmp/project", "claims.html"));
+  assert.equal(parsed.json, true);
+});
+
+test("public CLI lists bundled examples for adapter discovery", async () => {
+  const jsonStdout: string[] = [];
+  const jsonCode = await runRuhrohCli(["examples", "--json"], {
+    spawn: (() => assert.fail("examples should not spawn Harbor")) as never,
+    env: {},
+    cwd: process.cwd(),
+    stdout: { write: (chunk: string) => { jsonStdout.push(chunk); return true; } },
+    stderr: { write: () => true },
+  });
+  const catalog = JSON.parse(jsonStdout.join(""));
+  assert.equal(jsonCode, 0);
+  assert.equal(catalog.version, "ruhroh_examples_v1");
+  assert.equal(catalog.adapters.some((item: { id: string; command: string }) => item.id === "codex-cli" && item.command === "examples/adapters/codex-cli/run.sh"), true);
+  assert.equal(catalog.adapters.some((item: { id: string; command: string }) => item.id === "aider" && item.command === "examples/adapters/aider/run.sh"), true);
+  assert.equal(catalog.adapters.some((item: { id: string; credentialFree: boolean }) => item.id === "fixture-newsletter" && item.credentialFree), true);
+  assert.equal(catalog.evaluators.some((item: { id: string; credentialFree: boolean }) => item.id === "fixture-newsletter" && item.credentialFree), true);
+  assert.equal(catalog.evaluatorTemplates.some((item: { template: string; command: string }) => item.template === "deterministic" && item.command.includes("new-evaluator")), true);
+  assert.equal(catalog.evaluatorTemplates.some((item: { template: string; nextCommand: string }) => item.template === "hybrid" && item.nextCommand.includes("calibrate-evaluator")), true);
+  assert.equal(catalog.scenarios.some((item: { id: string }) => item.id === "simple-newsletter"), true);
+  assert.equal(existsSync(catalog.adapters.find((item: { id: string }) => item.id === "codex-cli").docs), true);
+  assert.equal(existsSync(catalog.adapters.find((item: { id: string }) => item.id === "aider").docs), true);
+
+  const textStdout: string[] = [];
+  const textCode = await runRuhrohCli(["examples"], {
+    spawn: (() => assert.fail("text examples should not spawn Harbor")) as never,
+    env: {},
+    cwd: process.cwd(),
+    stdout: { write: (chunk: string) => { textStdout.push(chunk); return true; } },
+    stderr: { write: () => true },
+  });
+  const text = textStdout.join("");
+  assert.equal(textCode, 0);
+  assert.match(text, /Ruhroh examples/u);
+  assert.match(text, /fixture-newsletter/u);
+  assert.match(text, /Evaluator templates:/u);
+  assert.match(text, /local-deterministic --template deterministic/u);
+  assert.match(text, /calibrate-evaluator/u);
+  assert.match(text, /Live agent wrapper pattern:/u);
+  assert.match(text, /RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line/u);
+});
+
+test("public CLI explains publish-check remediation codes", async () => {
+  const jsonStdout: string[] = [];
+  const jsonCode = await runRuhrohCli(["explain", "run_plan_mismatch", "--json"], {
+    spawn: (() => assert.fail("explain should not spawn Harbor")) as never,
+    env: {},
+    cwd: process.cwd(),
+    stdout: { write: (chunk: string) => { jsonStdout.push(chunk); return true; } },
+    stderr: { write: () => true },
+  });
+  const report = JSON.parse(jsonStdout.join(""));
+  assert.equal(jsonCode, 0);
+  assert.equal(report.version, "ruhroh_explain_v1");
+  assert.equal(report.code, "run_plan_mismatch");
+  assert.equal(report.remediation.length, 1);
+  assert.equal(report.remediation[0].code, "run_plan_mismatch");
+  assert.equal(report.remediation[0].category, "run_plan");
+  assert.match(report.remediation[0].action, /run plan/u);
+  assert.match(report.remediation[0].docs, /publish-claims/u);
+
+  const textStdout: string[] = [];
+  const textCode = await runRuhrohCli(["explain"], {
+    spawn: (() => assert.fail("text explain should not spawn Harbor")) as never,
+    env: {},
+    cwd: process.cwd(),
+    stdout: { write: (chunk: string) => { textStdout.push(chunk); return true; } },
+    stderr: { write: () => true },
+  });
+  const text = textStdout.join("");
+  assert.equal(textCode, 0);
+  assert.match(text, /Ruhroh publish-check remediation codes/u);
+  assert.match(text, /suite_required/u);
+  assert.match(text, /run_plan_mismatch/u);
+  assert.match(text, /example blocker:/u);
+
+  const unknownStderr: string[] = [];
+  const unknownCode = await runRuhrohCli(["explain", "not_a_code"], {
+    spawn: (() => assert.fail("unknown explain should not spawn Harbor")) as never,
+    env: {},
+    cwd: process.cwd(),
+    stdout: { write: () => true },
+    stderr: { write: (chunk: string) => { unknownStderr.push(chunk); return true; } },
+  });
+  assert.equal(unknownCode, 1);
+  assert.match(unknownStderr.join(""), /Unknown remediation code: not_a_code/u);
+  assert.match(unknownStderr.join(""), /run_plan_mismatch/u);
+});
+
+test("public CLI checks first-run fixture readiness", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-first-run-"));
+  const harborOk = (() => ({ status: 0, error: undefined, stdout: "", stderr: "" })) as never;
+  try {
+    const missingStdout: string[] = [];
+    const missingCode = await runRuhrohCli(["first-run", "--json"], {
+      spawn: harborOk,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { missingStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const missing = JSON.parse(missingStdout.join(""));
+    assert.equal(missingCode, 1);
+    assert.equal(missing.version, "ruhroh_first_run_check_v1");
+    assert.equal(missing.ready, false);
+    assert.equal(missing.dryRunReady, false);
+    assert.equal(missing.fullRunReady, false);
+    assert.equal(missing.nextAction.stageId, "first_fixture_loop");
+    assert.equal(missing.nextAction.command, "pnpm exec ruhroh init");
+    assert.match(missing.nextAction.summary, /Fix local-starter/u);
+    assert.equal(missing.checks.some((check: { name: string; status: string }) => check.name === "local-starter" && check.status === "failed"), true);
+    assert.equal(missing.checks.some((check: { name: string; status: string }) => check.name === "adapter-env" && check.status === "failed"), true);
+    assert.deepEqual(missing.nextCommands, ["pnpm exec ruhroh init", "pnpm exec ruhroh first-run"]);
+
+    const initCode = await runRuhrohCli(["init"], {
+      spawn: (() => assert.fail("init should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: () => true },
+      stderr: { write: () => true },
+    });
+    assert.equal(initCode, 0);
+
+    const adapterCommand = path.join(tmp, "ruhroh", "adapters", "fixture-newsletter", "run.sh");
+    const evaluatorCommand = path.join(tmp, "ruhroh", "evaluators", "fixture-newsletter", "run.sh");
+    const envMissingStdout: string[] = [];
+    const envMissingCode = await runRuhrohCli(["first-run", "--json"], {
+      spawn: harborOk,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { envMissingStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const envMissing = JSON.parse(envMissingStdout.join(""));
+    assert.equal(envMissingCode, 1);
+    assert.equal(envMissing.nextAction.command, "export RUHROH_RUN_AGENT_COMMAND=\"$PWD/ruhroh/adapters/fixture-newsletter/run.sh\"");
+    assert.deepEqual(envMissing.nextCommands, [
+      "export RUHROH_RUN_AGENT_COMMAND=\"$PWD/ruhroh/adapters/fixture-newsletter/run.sh\"",
+      "export RUHROH_EVAL_COMMAND=\"$PWD/ruhroh/evaluators/fixture-newsletter/run.sh\"",
+      "pnpm exec ruhroh first-run",
+    ]);
+
+    const readyStdout: string[] = [];
+    const readyCode = await runRuhrohCli(["first-run", "--json"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { readyStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const ready = JSON.parse(readyStdout.join(""));
+    assert.equal(readyCode, 0);
+    assert.equal(ready.ready, true);
+    assert.equal(ready.dryRunReady, true);
+    assert.equal(ready.fullRunReady, true);
+    assert.equal(ready.mode, "local_fixture");
+    assert.equal(ready.scenarioId, "simple-newsletter");
+    assert.equal(ready.suiteId, "ruhroh-smoke");
+    assert.equal(ready.nextAction.stageId, "first_fixture_loop");
+    assert.match(ready.nextAction.command, /--adapter custom-shell/u);
+    assert.match(ready.nextAction.summary, /credential-free fixture loop/u);
+    assert.equal(ready.checks.every((check: { status: string }) => check.status === "ok"), true);
+    assert.equal(ready.nextCommands.some((command: string) => command.includes("--dry-run")), true);
+    assert.equal(ready.nextCommands.some((command: string) => command.endsWith("--adapter custom-shell")), true);
+
+    const textStdout: string[] = [];
+    const textCode = await runRuhrohCli(["first-run"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { textStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(textCode, 0);
+    assert.match(textStdout.join(""), /Ruhroh first-run: ready/u);
+    assert.match(textStdout.join(""), /dry-run ready: yes/u);
+    assert.match(textStdout.join(""), /full-run ready: yes/u);
+    assert.match(textStdout.join(""), /next action: Run the credential-free fixture loop/u);
+    assert.match(textStdout.join(""), /command: pnpm exec ruhroh run --scenario-dir ruhroh\/scenarios/u);
+    assert.match(textStdout.join(""), /next commands:/u);
+
+    const harborMissing = (() => ({ status: 1, error: undefined, stdout: "", stderr: "harbor missing" })) as never;
+    const dryRunOnlyStdout: string[] = [];
+    const dryRunOnlyCode = await runRuhrohCli(["first-run", "--json"], {
+      spawn: harborMissing,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { dryRunOnlyStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const dryRunOnly = JSON.parse(dryRunOnlyStdout.join(""));
+    assert.equal(dryRunOnlyCode, 1);
+    assert.equal(dryRunOnly.ready, false);
+    assert.equal(dryRunOnly.dryRunReady, true);
+    assert.equal(dryRunOnly.fullRunReady, false);
+    assert.equal(dryRunOnly.checks.some((check: { name: string; status: string }) => check.name === "harbor" && check.status === "failed"), true);
+    assert.match(dryRunOnly.nextAction.summary, /dry-run now/u);
+    assert.match(dryRunOnly.nextAction.command, /--dry-run/u);
+
+    const dryRunAllowedStdout: string[] = [];
+    const dryRunAllowedCode = await runRuhrohCli(["first-run", "--allow-dry-run", "--json"], {
+      spawn: harborMissing,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { dryRunAllowedStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const dryRunAllowed = JSON.parse(dryRunAllowedStdout.join(""));
+    assert.equal(dryRunAllowedCode, 0);
+    assert.equal(dryRunAllowed.ready, false);
+    assert.equal(dryRunAllowed.dryRunReady, true);
+    assert.equal(dryRunAllowed.fullRunReady, false);
+    assert.match(dryRunAllowed.nextAction.command, /--dry-run/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("public CLI guides the end-to-end workflow", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-workflow-"));
+  const harborOk = (() => ({ status: 0, error: undefined, stdout: "", stderr: "" })) as never;
+  try {
+    const missingStdout: string[] = [];
+    const missingCode = await runRuhrohCli(["workflow", "--json"], {
+      spawn: harborOk,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { missingStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const missing = JSON.parse(missingStdout.join(""));
+    assert.equal(missingCode, 0);
+    assert.equal(missing.version, "ruhroh_workflow_guide_v1");
+    assert.equal(missing.currentStage, "first_fixture_loop");
+    assert.equal(missing.nextAction.stageId, "first_fixture_loop");
+    assert.equal(missing.nextAction.command, "pnpm exec ruhroh init");
+    assert.match(missing.nextAction.summary, /First local fixture loop/u);
+    assert.equal(missing.stages.length, 7);
+    assert.equal(missing.stages[0].id, "first_fixture_loop");
+    assert.equal(missing.stages[0].status, "needs_action");
+    assert.equal(missing.stages[0].commands[0], "pnpm exec ruhroh init");
+    assert.equal(missing.stages.some((stage: { id: string; commands: string[] }) => stage.id === "pack_preflight" && stage.commands[0].includes("inspect-pack --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --require-calibrated --require-risk-reviewed")), true);
+    assert.equal(missing.stages.some((stage: { id: string; commands: string[] }) => stage.id === "compare_results" && stage.commands.some((command) => command.includes("compare results --suite-dir ruhroh/suites --suite ruhroh-smoke"))), true);
+    assert.equal(missing.stages.some((stage: { id: string; commands: string[] }) => stage.id === "publish_claim" && stage.commands.some((command) => command.includes("publish-check results --suite-dir ruhroh/suites --suite ruhroh-smoke"))), true);
+    assert.equal(missing.stages.find((stage: { id: string }) => stage.id === "publish_claim").checks.some((check: { name: string; status: string }) => check.name === "registry-index" && check.status === "warning"), true);
+    assert.equal(missing.stages.find((stage: { id: string }) => stage.id === "publish_claim").commands.includes("pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html --json > claim-index.json"), true);
+
+    const initCode = await runRuhrohCli(["init"], {
+      spawn: (() => assert.fail("init should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: () => true },
+      stderr: { write: () => true },
+    });
+    assert.equal(initCode, 0);
+
+    const adapterCommand = path.join(tmp, "ruhroh", "adapters", "fixture-newsletter", "run.sh");
+    const evaluatorCommand = path.join(tmp, "ruhroh", "evaluators", "fixture-newsletter", "run.sh");
+    const readyStdout: string[] = [];
+    const readyCode = await runRuhrohCli(["workflow", "--json"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { readyStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const ready = JSON.parse(readyStdout.join(""));
+    assert.equal(readyCode, 0);
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "first_fixture_loop").status, "needs_action");
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "first_fixture_loop").checks.some((check: { name: string; status: string }) => check.name === "fixture-result" && check.status === "failed"), true);
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "author_benchmark").status, "ready");
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "evaluator_quality").checks.some((check: { name: string; status: string }) => check.name === "calibration-report" && check.status === "failed"), true);
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "pack_preflight").commands[0].includes("--require-calibrated --require-risk-reviewed"), true);
+    assert.equal(ready.docs.includes("benchmark-pack-registry"), true);
+    assert.equal(ready.currentStage, "first_fixture_loop");
+    assert.equal(ready.nextAction.stageId, "first_fixture_loop");
+    assert.match(ready.nextAction.command, /ruhroh run/u);
+    assert.doesNotMatch(ready.nextAction.command, /--dry-run/u);
+    assert.match(ready.nextAction.summary, /No ruhroh-loop-result\.json artifact was found/u);
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "compare_results").commands[0].includes("--suite-dir ruhroh/suites --suite ruhroh-smoke"), true);
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "publish_claim").commands[0].includes("--suite-dir ruhroh/suites --suite ruhroh-smoke"), true);
+    assert.equal(ready.stages.find((stage: { id: string }) => stage.id === "publish_claim").commands.includes("pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html --json > claim-index.json"), true);
+    assert.equal(ready.docs.includes("publish-claims"), true);
+    assert.equal(ready.docs.includes("claim-registry"), true);
+
+    const fixtureResultDir = path.join(tmp, "results", "run-one");
+    mkdirSync(fixtureResultDir, { recursive: true });
+    writeFileSync(path.join(fixtureResultDir, "ruhroh-loop-result.json"), `${JSON.stringify(loopResultFixture({ scenarioId: "simple-newsletter", task_id: "simple-newsletter" }), null, 2)}\n`);
+    const completedFirstLoopStdout: string[] = [];
+    const completedFirstLoopCode = await runRuhrohCli(["workflow", "--json"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { completedFirstLoopStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const completedFirstLoop = JSON.parse(completedFirstLoopStdout.join(""));
+    assert.equal(completedFirstLoopCode, 0);
+    assert.equal(completedFirstLoop.stages.find((stage: { id: string }) => stage.id === "first_fixture_loop").status, "ready");
+    assert.equal(completedFirstLoop.stages.find((stage: { id: string }) => stage.id === "first_fixture_loop").checks.some((check: { name: string; status: string }) => check.name === "fixture-result" && check.status === "ok"), true);
+    assert.equal(completedFirstLoop.stages.find((stage: { id: string }) => stage.id === "first_fixture_loop").commands.some((command: string) => command.includes("ruhroh report results/run-one/ruhroh-loop-result.json")), true);
+    assert.equal(completedFirstLoop.currentStage, "evaluator_quality");
+    assert.equal(completedFirstLoop.nextAction.stageId, "evaluator_quality");
+    assert.match(completedFirstLoop.nextAction.command, /calibrate-evaluator/u);
+    assert.match(completedFirstLoop.nextAction.summary, /No preserved evaluator calibration report was found/u);
+
+    const calibrationReportPath = path.join(tmp, ".generated", "ruhroh", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json");
+    mkdirSync(path.dirname(calibrationReportPath), { recursive: true });
+    writeFileSync(calibrationReportPath, JSON.stringify({
+      version: "ruhroh_eval_calibration_report_v1",
+      ok: true,
+      caseCount: 1,
+      mismatchCount: 0,
+      infraFailedCount: 0,
+    }, null, 2));
+    const calibratedWorkflowStdout: string[] = [];
+    const calibratedWorkflowCode = await runRuhrohCli(["workflow", "--json"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { calibratedWorkflowStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const calibratedWorkflow = JSON.parse(calibratedWorkflowStdout.join(""));
+    assert.equal(calibratedWorkflowCode, 0);
+    assert.equal(calibratedWorkflow.stages.find((stage: { id: string }) => stage.id === "evaluator_quality").checks.some((check: { name: string; status: string; details: string }) => check.name === "calibration-report" && check.status === "ok" && /passed 1 case/.test(check.details)), true);
+    assert.equal(calibratedWorkflow.stages.find((stage: { id: string }) => stage.id === "pack_preflight").checks.some((check: { name: string; status: string; details: string }) => check.name === "strict-pack-inspection" && check.status === "ok" && /calibration and risk-review gates satisfied/.test(check.details)), true);
+    assert.equal(calibratedWorkflow.currentStage, "plan_runs");
+    assert.equal(calibratedWorkflow.nextAction.stageId, "plan_runs");
+    assert.match(calibratedWorkflow.nextAction.command, /ruhroh plan/u);
+    assert.match(calibratedWorkflow.nextAction.summary, /Plan repeated agent runs/u);
+
+    const harborMissing = (() => ({ status: 1, error: undefined, stdout: "", stderr: "harbor missing" })) as never;
+    const dryRunOnlyWorkflowStdout: string[] = [];
+    const dryRunOnlyWorkflowCode = await runRuhrohCli(["workflow", "empty-results", "--json"], {
+      spawn: harborMissing,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { dryRunOnlyWorkflowStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const dryRunOnlyWorkflow = JSON.parse(dryRunOnlyWorkflowStdout.join(""));
+    assert.equal(dryRunOnlyWorkflowCode, 0);
+    assert.equal(dryRunOnlyWorkflow.currentStage, "first_fixture_loop");
+    assert.match(dryRunOnlyWorkflow.nextAction.summary, /dry-run now/u);
+    assert.match(dryRunOnlyWorkflow.nextAction.command, /--dry-run/u);
+    assert.match(dryRunOnlyWorkflow.stages[0].commands[0], /--dry-run/u);
+
+    const customPathWorkflowStdout: string[] = [];
+    const customPathWorkflowCode = await runRuhrohCli(["workflow", "custom-results", "--run-plan", "custom-plan.json", "--json"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { customPathWorkflowStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const customPathWorkflow = JSON.parse(customPathWorkflowStdout.join(""));
+    assert.equal(customPathWorkflowCode, 0);
+    assert.equal(customPathWorkflow.stages.find((stage: { id: string }) => stage.id === "compare_results").commands[0].includes("compare custom-results"), true);
+    assert.equal(customPathWorkflow.stages.find((stage: { id: string }) => stage.id === "compare_results").commands[0].includes("--run-plan custom-plan.json"), true);
+    assert.equal(customPathWorkflow.stages.find((stage: { id: string }) => stage.id === "compare_results").commands.some((command: string) => command.includes("review custom-results")), true);
+    assert.equal(customPathWorkflow.stages.find((stage: { id: string }) => stage.id === "compare_results").commands.some((command: string) => command.includes("eval-quality custom-results")), true);
+    assert.equal(customPathWorkflow.stages.find((stage: { id: string }) => stage.id === "publish_claim").commands[0].includes("publish-check custom-results"), true);
+    assert.equal(customPathWorkflow.stages.find((stage: { id: string }) => stage.id === "publish_claim").commands[0].includes("--run-plan custom-plan.json"), true);
+    assert.equal(customPathWorkflow.stages.find((stage: { id: string }) => stage.id === "publish_claim").commands.includes("pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html --json > claim-index.json"), true);
+
+    const sampleRoot = path.join(tmp, "docs", "public", "samples");
+    const sampleResultsPath = path.join(sampleRoot, "sample-results");
+    const sampleRunDir = path.join(sampleResultsPath, "run-one");
+    const sampleRunPlanPath = path.join(sampleRoot, "ruhroh-run-plan.json");
+    mkdirSync(sampleRunDir, { recursive: true });
+    mkdirSync(path.join(sampleRoot, "ruhroh-publication"), { recursive: true });
+    writeFileSync(path.join(sampleRunDir, "ruhroh-loop-result.json"), `${JSON.stringify(loopResultFixture({ scenarioId: "simple-newsletter", task_id: "simple-newsletter" }), null, 2)}\n`);
+    writeFileSync(sampleRunPlanPath, "{\"version\":\"ruhroh_run_plan_v1\"}\n");
+    writeFileSync(path.join(sampleRoot, "ruhroh-publication", "manifest.json"), "{\"version\":\"ruhroh_publish_bundle_manifest_v1\"}\n");
+    writeFileSync(path.join(sampleRoot, "claim-index.json"), "{\"version\":\"ruhroh_claim_index_v1\"}\n");
+
+    const nestedWorkflowStdout: string[] = [];
+    const nestedWorkflowCode = await runRuhrohCli(["workflow", sampleResultsPath, "--run-plan", sampleRunPlanPath, "--json"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { nestedWorkflowStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const nestedWorkflow = JSON.parse(nestedWorkflowStdout.join(""));
+    const nestedPublishStage = nestedWorkflow.stages.find((stage: { id: string }) => stage.id === "publish_claim");
+    assert.equal(nestedWorkflowCode, 0);
+    assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "claim-or-bundle" && check.status === "ok" && check.details === "publication bundle manifest exists"), true);
+    assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "bundle-validation" && check.status === "failed" && check.details.includes("Publication bundle validation failed")), true);
+    assert.equal(nestedPublishStage.checks.some((check: { name: string; status: string; details: string }) => check.name === "registry-index" && check.status === "failed" && check.details.includes("registryReady is false")), true);
+    assert.equal(nestedPublishStage.commands[0].includes("--bundle docs/public/samples/ruhroh-publication"), true);
+    assert.equal(nestedPublishStage.commands.includes("pnpm exec ruhroh claim-index docs/public/samples/ruhroh-publication --html docs/public/samples/ruhroh-claims.html --json > docs/public/samples/claim-index.json"), true);
+
+    const nestedWorkflowHtmlPath = path.join(sampleRoot, "ruhroh-workflow.html");
+    const nestedWorkflowHtmlCode = await runRuhrohCli(["workflow", sampleResultsPath, "--run-plan", sampleRunPlanPath, "--html", nestedWorkflowHtmlPath], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: () => true },
+      stderr: { write: () => true },
+    });
+    const nestedWorkflowHtml = readFileSync(nestedWorkflowHtmlPath, "utf8");
+    assert.equal(nestedWorkflowHtmlCode, 0);
+    assert.match(nestedWorkflowHtml, /<strong>Next action<\/strong><span class="fail">Publish an audit-ready claim<\/span>/u);
+    assert.match(nestedWorkflowHtml, /Publication bundle validation failed/u);
+    assert.equal(nestedWorkflowHtml.includes(tmp), false);
+
+    const htmlStdout: string[] = [];
+    const workflowHtmlPath = path.join(tmp, "ruhroh-workflow.html");
+    const htmlCode = await runRuhrohCli(["workflow", "custom-results", "--run-plan", "custom-plan.json", "--html", workflowHtmlPath], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { htmlStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const workflowHtml = readFileSync(workflowHtmlPath, "utf8");
+    assert.equal(htmlCode, 0);
+    assert.match(htmlStdout.join(""), /Wrote Ruhroh workflow HTML guide/u);
+    assert.match(workflowHtml, /Ruhroh workflow guide/u);
+    assert.match(workflowHtml, /Next Action/u);
+    assert.match(workflowHtml, /publish-check custom-results/u);
+    assert.match(workflowHtml, /Compare agents with evidence/u);
+
+    const textStdout: string[] = [];
+    const textCode = await runRuhrohCli(["workflow"], {
+      spawn: harborOk,
+      env: {
+        RUHROH_RUN_AGENT_COMMAND: adapterCommand,
+        RUHROH_EVAL_COMMAND: evaluatorCommand,
+      },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { textStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const text = textStdout.join("");
+    assert.equal(textCode, 0);
+    assert.match(text, /Ruhroh workflow guide/u);
+    assert.match(text, /next action: Plan repeated agent runs/u);
+    assert.match(text, /command: pnpm exec ruhroh plan/u);
+    assert.match(text, /First local fixture loop/u);
+    assert.match(text, /Publish an audit-ready claim/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
 });
 
 test("public CLI doctor reports readiness checks as JSON", async () => {
@@ -1406,6 +2896,7 @@ test("public CLI doctor reports readiness checks as JSON", async () => {
       "python-import",
       "harbor",
       "adapter",
+      "adapter-metadata",
       "eval",
       "command-safety",
     ]);
@@ -1413,6 +2904,8 @@ test("public CLI doctor reports readiness checks as JSON", async () => {
     assert.match(parsed.checks.find((check: { name: string }) => check.name === "package-assets").details, /schemas, bundled scenarios, suites/u);
     assert.equal(parsed.checks.find((check: { name: string }) => check.name === "scenarios").status, "warning");
     assert.equal(parsed.checks.find((check: { name: string }) => check.name === "suites").status, "warning");
+    assert.equal(parsed.checks.find((check: { name: string }) => check.name === "adapter-metadata").status, "warning");
+    assert.match(parsed.checks.find((check: { name: string }) => check.name === "adapter-metadata").details, /RUHROH_RESULT_PATH/u);
     assert.equal(parsed.checks.find((check: { name: string }) => check.name === "eval").status, "warning");
     assert.equal(parsed.checks.find((check: { name: string }) => check.name === "command-safety").status, "ok");
     assert.equal(spawned.some((command) => command.startsWith("python3 -c")), true);
@@ -1470,6 +2963,28 @@ test("public CLI doctor checks configured eval command", async () => {
     const parsed = JSON.parse(stdout.join(""));
     assert.equal(code, 0);
     assert.equal(parsed.checks.find((check: { name: string }) => check.name === "eval").status, "ok");
+    assert.equal(parsed.checks.find((check: { name: string }) => check.name === "adapter-metadata").status, "warning");
+
+    const templateStdout: string[] = [];
+    const templateCode = await runRuhrohCli([
+      "doctor",
+      "--scenario-dir",
+      "ruhroh/scenarios",
+      "--adapter",
+      path.resolve("examples", "adapters", "codex-cli", "run.sh"),
+      "--json",
+    ], {
+      spawn: (() => ({ status: 0, stdout: "", stderr: "" })) as never,
+      env: { RUHROH_EVAL_COMMAND: "./eval.sh" },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { templateStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const templateParsed = JSON.parse(templateStdout.join(""));
+    assert.equal(templateCode, 0);
+    assert.equal(templateParsed.checks.find((check: { name: string }) => check.name === "adapter-metadata").status, "ok");
+    assert.match(templateParsed.checks.find((check: { name: string }) => check.name === "adapter-metadata").details, /ready for repeated comparisons with adapterVersion, model, artifacts/u);
+    assert.match(templateParsed.checks.find((check: { name: string }) => check.name === "adapter-metadata").details, /optional missing: usage/u);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -1525,7 +3040,9 @@ test("public CLI doctor warns about risky command-backed adapter and eval shell 
 
     const parsed = JSON.parse(stdout.join(""));
     const commandSafety = parsed.checks.find((check: { name: string }) => check.name === "command-safety");
+    const adapterMetadata = parsed.checks.find((check: { name: string }) => check.name === "adapter-metadata");
     assert.equal(code, 0);
+    assert.equal(adapterMetadata.status, "warning");
     assert.equal(commandSafety.status, "warning");
     assert.match(commandSafety.details, /adapter adapter\.sh command contains shell syntax \(&&\) but shell execution is disabled/u);
     assert.match(commandSafety.details, /eval enables shell execution via RUHROH_EVAL_COMMAND_SHELL/u);
@@ -1605,6 +3122,7 @@ test("public CLI doctor validates local benchmark suites", async () => {
     const parsed = JSON.parse(stdout.join(""));
     assert.equal(code, 0);
     assert.equal(parsed.checks.find((check: { name: string }) => check.name === "suites").status, "ok");
+    assert.equal(parsed.checks.find((check: { name: string }) => check.name === "adapter-metadata").status, "warning");
     assert.match(parsed.checks.find((check: { name: string }) => check.name === "suites").details, /1 suite\(s\) valid/u);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
@@ -1627,19 +3145,35 @@ test("public CLI init scaffolds a local benchmark starter without overwriting ch
     const root = path.join(tmp, "starter", "ruhroh");
     assert.equal(code, 0);
     assert.equal(parsed.version, "ruhroh_init_v1");
-    assert.equal(parsed.files.length, 16);
+    assert.equal(parsed.files.length, 21);
     assert.equal(parsed.files.every((file: { status: string }) => file.status === "created"), true);
+    assert.deepEqual(parsed.nextCommands.fixture.slice(0, 3), [
+      "cd starter",
+      "export RUHROH_RUN_AGENT_COMMAND=\"$PWD/ruhroh/adapters/fixture-newsletter/run.sh\"",
+      "export RUHROH_EVAL_COMMAND=\"$PWD/ruhroh/evaluators/fixture-newsletter/run.sh\"",
+    ]);
+    assert.deepEqual(parsed.nextCommands.selectedAdapter, []);
     assert.equal(existsSync(path.join(root, "README.md")), true);
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "benchmark-claim-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_benchmark_claim_v1");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "benchmark-summary-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_benchmark_summary_v1");
+    assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "claim-index-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_claim_index_v1");
+    assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "eval-calibration-report-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_eval_calibration_report_v1");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "eval-result-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_eval_result_v1");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "loop-result-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_loop_result_v1");
+    assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "publish-bundle-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_publish_bundle_v1");
+    assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "publish-check-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_publish_check_v1");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "run-manifest-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_run_manifest_v1");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "run-plan-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_run_plan_v1");
+    assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "rerun-ledger-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_rerun_ledger_v1");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "scenario-v2.schema.json"), "utf8")).properties.version.const, "ruhroh_scenario_v2");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "suite-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_suite_v1");
     assert.equal(JSON.parse(readFileSync(path.join(root, "schemas", "workspace-summary-v1.schema.json"), "utf8")).properties.version.const, "ruhroh_workspace_summary_v1");
     assert.equal(existsSync(path.join(root, "scenarios", "simple-newsletter", "scenario.json")), true);
+    const starterReadmeText = readFileSync(path.join(root, "README.md"), "utf8");
+    assert.match(starterReadmeText, /pnpm exec ruhroh first-run/u);
+    assert.match(starterReadmeText, /pnpm exec ruhroh workflow --html ruhroh-workflow\.html/u);
+    assert.match(starterReadmeText, /dry-run command previews the\s+Harbor invocation/u);
+    assert.match(starterReadmeText, /ruhroh publish-check --bundle/u);
     assert.equal(JSON.parse(readFileSync(path.join(root, "suites", "ruhroh-smoke", "suite.json"), "utf8")).id, "ruhroh-smoke");
     assert.equal(existsSync(path.join(root, "adapters", "fixture-newsletter", "run.sh")), true);
     assert.equal(existsSync(path.join(root, "evaluators", "fixture-newsletter", "run.sh")), true);
@@ -1681,6 +3215,44 @@ test("public CLI init scaffolds a local benchmark starter without overwriting ch
   }
 });
 
+test("public CLI init can include a maintained adapter template", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-init-adapter-"));
+  try {
+    const stdout: string[] = [];
+    const code = await runRuhrohCli(["init", "starter", "--adapter", "codex-cli", "--json"], {
+      spawn: (() => assert.fail("init should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { stdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+
+    const parsed = JSON.parse(stdout.join(""));
+    const root = path.join(tmp, "starter", "ruhroh");
+    assert.equal(code, 0);
+    assert.equal(parsed.version, "ruhroh_init_v1");
+    assert.deepEqual(parsed.adapter, { id: "codex-cli", template: "codex-cli" });
+    assert.equal(parsed.nextCommands.fixture[0], "cd starter");
+    assert.deepEqual(parsed.nextCommands.selectedAdapter, [
+      "cd starter",
+      "pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapters/codex-cli/run.sh",
+      "pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newsletter --adapter ./ruhroh/adapters/codex-cli/run.sh --dry-run",
+    ]);
+    assert.equal(parsed.files.length, 23);
+    assert.equal(existsSync(path.join(root, "schemas", "publish-bundle-v1.schema.json")), true);
+    assert.equal(existsSync(path.join(root, "schemas", "publish-check-v1.schema.json")), true);
+    assert.equal(existsSync(path.join(root, "schemas", "rerun-ledger-v1.schema.json")), true);
+    assert.equal(existsSync(path.join(root, "adapters", "fixture-newsletter", "run.sh")), true);
+    assert.equal(existsSync(path.join(root, "adapters", "codex-cli", "run.sh")), true);
+    assert.equal(existsSync(path.join(root, "adapters", "codex-cli", "README.md")), true);
+    assert.equal(existsSync(path.join(root, "evaluators", "fixture-newsletter", "run.sh")), true);
+    assert.match(readFileSync(path.join(root, "adapters", "codex-cli", "run.sh"), "utf8"), /codex/u);
+    assert.match(readFileSync(path.join(root, "adapters", "codex-cli", "README.md"), "utf8"), /Template: `codex-cli`/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("public CLI new-scenario scaffolds a validation-ready local scenario", async () => {
   const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-new-scenario-"));
   try {
@@ -1700,6 +3272,12 @@ test("public CLI new-scenario scaffolds a validation-ready local scenario", asyn
     assert.equal(parsed.scenarioDir, scenarioDir);
     assert.equal(parsed.files.length, 2);
     assert.equal(parsed.files.every((file: { status: string }) => file.status === "created"), true);
+    assert.deepEqual(parsed.nextCommands, [
+      "$EDITOR scenarios/csv-cleanup/instruction.md",
+      "$EDITOR scenarios/csv-cleanup/scenario.json",
+      "pnpm exec ruhroh validate --scenario-dir scenarios --scenario csv-cleanup --json",
+      "pnpm exec ruhroh new-suite local-smoke --scenario-dir scenarios --suite-dir suites --scenario csv-cleanup",
+    ]);
 
     const manifest = JSON.parse(readFileSync(path.join(scenarioDir, "scenario.json"), "utf8"));
     assert.equal(manifest.id, "csv-cleanup");
@@ -1707,11 +3285,14 @@ test("public CLI new-scenario scaffolds a validation-ready local scenario", asyn
     assert.equal(manifest.tier, "nightly");
     assert.equal(manifest.metadata.visibility, "private");
     assert.equal(manifest.userPromptPath, "instruction.md");
+    assert.deepEqual(manifest.evaluation.calibrationCases.map((item: { expectedStatus: string }) => item.expectedStatus), ["passed", "failed", "review"]);
     assert.match(readFileSync(path.join(scenarioDir, "instruction.md"), "utf8"), /Describe the user task/u);
 
     const validation = validateRuhrohScenarioSource(scenarioDir);
     assert.deepEqual(validation.errors, []);
     assert.deepEqual(validation.warnings, []);
+    assert.deepEqual(validation.calibration?.missingStatuses, []);
+    assert.deepEqual(validation.calibration?.warnings, []);
 
     const secondStdout: string[] = [];
     const secondCode = await runRuhrohCli(["new-scenario", "csv-cleanup", "--scenario-dir", "scenarios", "--tier", "nightly", "--json"], {
@@ -1779,6 +3360,12 @@ test("public CLI new-suite scaffolds a version-locked local suite", async () => 
     assert.equal(parsed.suiteDir, suiteDir);
     assert.equal(parsed.files.length, 1);
     assert.equal(parsed.files[0].status, "created");
+    assert.deepEqual(parsed.nextCommands, [
+      "pnpm exec ruhroh validate --scenario-dir scenarios --suite-dir suites --suite local-data --json",
+      "pnpm exec ruhroh inspect-pack --scenario-dir scenarios --suite-dir suites --json",
+      "pnpm exec ruhroh inspect-pack --scenario-dir scenarios --suite-dir suites --require-calibrated --require-risk-reviewed --json",
+      "pnpm exec ruhroh plan --scenario-dir scenarios --suite-dir suites --suite local-data --adapter <adapter-command> --runs 7 --json",
+    ]);
 
     const manifest = JSON.parse(readFileSync(path.join(suiteDir, "suite.json"), "utf8"));
     assert.equal(manifest.id, "local-data");
@@ -1884,13 +3471,27 @@ test("public CLI new-adapter scaffolds an edit-me command adapter", async () => 
     assert.equal(code, 0);
     assert.equal(parsed.version, "ruhroh_new_adapter_v1");
     assert.equal(parsed.adapterDir, adapterDir);
+    assert.equal(parsed.template, "generic");
     assert.equal(parsed.files.length, 2);
     assert.equal(parsed.files.every((file: { status: string }) => file.status === "created"), true);
+    assert.deepEqual(parsed.nextCommands, [
+      "$EDITOR ruhroh/adapters/local-agent/run.sh",
+      "pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapters/local-agent/run.sh",
+      "pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapters/local-agent/run.sh --json",
+      "pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario <scenario-id> --adapter ./ruhroh/adapters/local-agent/run.sh --dry-run",
+    ]);
     assert.equal(existsSync(runPath), true);
     assert.equal((statSync(runPath).mode & 0o111) !== 0, true);
     assert.match(readFileSync(runPath, "utf8"), /ruhroh_run_agent_result_v1/u);
     assert.match(readFileSync(runPath, "utf8"), /status": "runtime_failure"/u);
-    assert.match(readFileSync(path.join(adapterDir, "README.md"), "utf8"), /custom-shell adapter scaffold/u);
+    const readme = readFileSync(path.join(adapterDir, "README.md"), "utf8");
+    assert.match(readme, /custom-shell adapter scaffold/u);
+    assert.match(readme, /Comparison Readiness/u);
+    assert.match(readme, /adapter-metadata/u);
+    assert.match(readme, /adapterVersion/u);
+    assert.match(readme, /model\.provider/u);
+    assert.match(readme, /artifacts\.transcript/u);
+    assert.match(readme, /ruhroh-run-manifest\.json/u);
     assert.equal(spawnSync("bash", ["-n", runPath]).status, 0);
 
     const runResultPath = path.join(tmp, "result.json");
@@ -1937,6 +3538,351 @@ test("public CLI new-adapter scaffolds an edit-me command adapter", async () => 
   }
 });
 
+test("public CLI new-adapter scaffolds maintained CLI wrapper templates", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-new-adapter-template-"));
+  try {
+    for (const template of ["codex-cli", "claude-code", "gemini-cli", "aider", "fixture"] as const) {
+      const adapterId = `${template}-adapter`;
+      const stdout: string[] = [];
+      const code = await runRuhrohCli(["new-adapter", adapterId, "--template", template, "--json"], {
+        spawn: (() => assert.fail("new-adapter template should not spawn Harbor")) as never,
+        env: {},
+        cwd: tmp,
+        stdout: { write: (chunk: string) => { stdout.push(chunk); return true; } },
+        stderr: { write: () => true },
+      });
+      const parsed = JSON.parse(stdout.join(""));
+      const adapterDir = path.join(tmp, "ruhroh", "adapters", adapterId);
+      const runPath = path.join(adapterDir, "run.sh");
+      const readme = readFileSync(path.join(adapterDir, "README.md"), "utf8");
+      const script = readFileSync(runPath, "utf8");
+      assert.equal(code, 0);
+      assert.equal(parsed.template, template);
+      assert.equal(parsed.files.every((file: { status: string }) => file.status === "created"), true);
+      assert.equal(parsed.nextCommands.at(2), `pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapters/${adapterId}/run.sh --json`);
+      assert.equal(parsed.nextCommands.at(-1), `pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario <scenario-id> --adapter ./ruhroh/adapters/${adapterId}/run.sh --dry-run`);
+      assert.equal((statSync(runPath).mode & 0o111) !== 0, true);
+      assert.equal(spawnSync("bash", ["-n", runPath]).status, 0);
+      assert.equal(readme.includes(`Template: \`${template}\``), true);
+      assert.match(readme, /Comparison Readiness/u);
+      assert.match(readme, /adapter-metadata/u);
+      assert.match(readme, /ruhroh_run_agent_result_v1/u);
+      assert.match(script, /ruhroh_run_agent_result_v1/u);
+      if (template === "codex-cli") {
+        assert.match(script, /CODEX_CLI_BIN/u);
+        assert.match(readme, /Codex CLI setup/u);
+      }
+      if (template === "claude-code") {
+        assert.match(script, /CLAUDE_CODE_BIN/u);
+        assert.match(readme, /Claude Code setup/u);
+      }
+      if (template === "gemini-cli") {
+        assert.match(script, /GEMINI_CLI_BIN/u);
+        assert.match(readme, /Gemini CLI setup/u);
+      }
+      if (template === "aider") {
+        assert.match(script, /AIDER_BIN/u);
+        assert.match(script, /--message-file/u);
+        assert.match(readme, /Aider setup/u);
+      }
+      if (template === "fixture") {
+        assert.match(script, /Fixture Newsletter/u);
+        assert.match(readme, /deterministic adapter/u);
+      }
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("public CLI new-evaluator scaffolds a review-first command evaluator", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-new-evaluator-"));
+  try {
+    const stdout: string[] = [];
+    const code = await runRuhrohCli(["new-evaluator", "local-evaluator", "--json"], {
+      spawn: (() => assert.fail("new-evaluator should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { stdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+
+    const parsed = JSON.parse(stdout.join(""));
+    const evaluatorDir = path.join(tmp, "ruhroh", "evaluators", "local-evaluator");
+    const runPath = path.join(evaluatorDir, "run.sh");
+    assert.equal(code, 0);
+    assert.equal(parsed.version, "ruhroh_new_evaluator_v1");
+    assert.equal(parsed.evaluatorDir, evaluatorDir);
+    assert.equal(parsed.files.length, 2);
+    assert.equal(parsed.files.every((file: { status: string }) => file.status === "created"), true);
+    assert.deepEqual(parsed.nextCommands, [
+      "$EDITOR ruhroh/evaluators/local-evaluator/run.sh",
+      "export RUHROH_EVAL_COMMAND=\"$PWD/ruhroh/evaluators/local-evaluator/run.sh\"",
+      "pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter custom-shell",
+      "pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --json",
+      "pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario <scenario-id>",
+    ]);
+    assert.equal(existsSync(runPath), true);
+    assert.equal((statSync(runPath).mode & 0o111) !== 0, true);
+    assert.match(readFileSync(runPath, "utf8"), /ruhroh_eval_result_v1/u);
+    assert.match(readFileSync(runPath, "utf8"), /"status": "review"/u);
+    const readme = readFileSync(path.join(evaluatorDir, "README.md"), "utf8");
+    assert.match(readme, /command-backed evaluator scaffold/u);
+    assert.match(readme, /pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh\/scenarios --scenario <scenario-id>/u);
+    assert.equal(spawnSync("bash", ["-n", runPath]).status, 0);
+
+    const workspace = path.join(tmp, "workspace");
+    const outputPath = path.join(tmp, "eval-result.json");
+    const inputPath = path.join(tmp, "eval-input.json");
+    mkdirSync(workspace, { recursive: true });
+    writeFileSync(path.join(workspace, "README.md"), "# Delivered workspace\n");
+    writeFileSync(inputPath, JSON.stringify({ version: "ruhroh_eval_input_v1", scenarioId: "example" }));
+    const scaffoldRun = spawnSync(runPath, [], {
+      env: {
+        ...process.env,
+        RUHROH_EVAL_INPUT_PATH: inputPath,
+        RUHROH_EVAL_OUTPUT_PATH: outputPath,
+        RUHROH_EVAL_WORKSPACE_PATH: workspace,
+      },
+      encoding: "utf8",
+    });
+    assert.equal(scaffoldRun.status, 0);
+    const evalResult = JSON.parse(readFileSync(outputPath, "utf8"));
+    assert.equal(evalResult.$schema, "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json");
+    assert.equal(evalResult.version, "ruhroh_eval_result_v1");
+    assert.equal(evalResult.status, "review");
+    assert.equal(evalResult.goalMet, false);
+    assert.equal(evalResult.evidenceRefs.length, 1);
+    assert.equal(evalResult.criteriaResults[0].status, "review");
+    assert.equal(evalResult.judge.kind, "command");
+    assert.equal(evalResult.judge.model, "local-evaluator");
+
+    const secondStdout: string[] = [];
+    const secondCode = await runRuhrohCli(["new-evaluator", "local-evaluator", "--json"], {
+      spawn: (() => assert.fail("new-evaluator rerun should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { secondStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(secondCode, 0);
+    assert.equal(JSON.parse(secondStdout.join("")).files.every((file: { status: string }) => file.status === "unchanged"), true);
+
+    writeFileSync(path.join(evaluatorDir, "README.md"), "# Local edits\n");
+    const stderr: string[] = [];
+    const overwriteCode = await runRuhrohCli(["new-evaluator", "local-evaluator"], {
+      spawn: (() => assert.fail("new-evaluator overwrite check should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: () => true },
+      stderr: { write: (chunk: string) => { stderr.push(chunk); return true; } },
+    });
+    assert.equal(overwriteCode, 1);
+    assert.match(stderr.join(""), /refusing to overwrite existing file/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("public CLI new-evaluator supports evaluator quality templates", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-new-evaluator-template-"));
+  try {
+    for (const template of ["deterministic", "model", "hybrid"] as const) {
+      const stdout: string[] = [];
+      const evaluatorId = `${template}-evaluator`;
+      const code = await runRuhrohCli(["new-evaluator", evaluatorId, "--template", template, "--json"], {
+        spawn: (() => assert.fail("new-evaluator template should not spawn Harbor")) as never,
+        env: {},
+        cwd: tmp,
+        stdout: { write: (chunk: string) => { stdout.push(chunk); return true; } },
+        stderr: { write: () => true },
+      });
+      const parsed = JSON.parse(stdout.join(""));
+      const evaluatorDir = path.join(tmp, "ruhroh", "evaluators", evaluatorId);
+      const runPath = path.join(evaluatorDir, "run.sh");
+      const readme = readFileSync(path.join(evaluatorDir, "README.md"), "utf8");
+      assert.equal(code, 0);
+      assert.equal(parsed.template, template);
+      assert.equal(parsed.nextCommands.at(-1), "pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario <scenario-id>");
+      assert.equal(spawnSync("bash", ["-n", runPath]).status, 0);
+      assert.match(readme, new RegExp(`Template: \`${template}\``, "u"));
+      assert.match(readme, /calibrate-evaluator/u);
+
+      const workspace = path.join(tmp, `${template}-workspace`);
+      const outputPath = path.join(tmp, `${template}-eval-result.json`);
+      const inputPath = path.join(tmp, `${template}-eval-input.json`);
+      mkdirSync(workspace, { recursive: true });
+      writeFileSync(path.join(workspace, "README.md"), "# Delivered workspace\n");
+      writeFileSync(inputPath, JSON.stringify({
+        version: "ruhroh_eval_input_v1",
+        scenarioId: "example",
+        goalRubric: ["The delivered workspace satisfies the task."],
+      }));
+      const scaffoldRun = spawnSync(runPath, [], {
+        env: {
+          ...process.env,
+          RUHROH_EVAL_INPUT_PATH: inputPath,
+          RUHROH_EVAL_OUTPUT_PATH: outputPath,
+          RUHROH_EVAL_WORKSPACE_PATH: workspace,
+        },
+        encoding: "utf8",
+      });
+      assert.equal(scaffoldRun.status, 0);
+      const evalResult = JSON.parse(readFileSync(outputPath, "utf8"));
+      assert.equal(evalResult.version, "ruhroh_eval_result_v1");
+      assert.equal(evalResult.status, "review");
+      assert.equal(evalResult.goalMet, false);
+      if (template === "model") {
+        assert.equal(evalResult.judge.kind, "model");
+        assert.match(evalResult.reasons.join("\n"), /RUHROH_EVAL_MODEL_COMMAND/u);
+      }
+      if (template === "hybrid") {
+        assert.equal(evalResult.judge.kind, "hybrid");
+        assert.equal(evalResult.judgeVotes.length, 2);
+      }
+      if (template === "deterministic") {
+        assert.equal(evalResult.judge.kind, "command");
+        assert.match(evalResult.reasons.join("\n"), /Deterministic evaluator template needs/u);
+      }
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("public CLI calibrates evaluator against scenario anchors", async () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-calibrate-evaluator-"));
+  try {
+    const scenarioRoot = path.join(tmp, "ruhroh", "scenarios");
+    const scenarioDir = path.join(scenarioRoot, "calibration-demo");
+    mkdirSync(scenarioDir, { recursive: true });
+    writeFileSync(path.join(scenarioDir, "instruction.md"), "Deliver the calibration demo outcome.\n");
+    writeFileSync(path.join(scenarioDir, "scenario.json"), JSON.stringify({
+      version: "ruhroh_scenario_v2",
+      id: "calibration-demo",
+      title: "Calibration Demo",
+      tier: "smoke",
+      kind: "real_user",
+      userPromptPath: "instruction.md",
+      run: { timeoutSeconds: 600 },
+      requires: { continuity: "workspace_only", tools: ["filesystem"], network: false },
+      loop: { defaultMaxIterations: 2, stopPolicy: "goal_satisfied_or_max" },
+      evaluation: {
+        mode: "agentic_goal_review",
+        scenarioContext: ["Calibration test scenario.", "Evaluator should follow expected anchors."],
+        goalRubric: [
+          "The evaluator distinguishes successful delivery from failed delivery.",
+          "The evaluator can request review for ambiguous evidence.",
+          "The evaluator cites concrete evidence.",
+        ],
+        evidenceGuidance: ["Read the calibration workspace summary.", "Use the active calibration case as the anchor."],
+        calibrationCases: [{
+          id: "good-delivery",
+          inputSummary: "The workspace includes the intended feature and clear evidence.",
+          expectedStatus: "passed",
+          rationale: "Complete delivery should pass.",
+        }, {
+          id: "broken-delivery",
+          inputSummary: "The workspace is incomplete and misses the intended feature.",
+          expectedStatus: "failed",
+          rationale: "Incomplete delivery should fail.",
+        }],
+      },
+    }, null, 2));
+
+    const evaluatorPath = path.join(tmp, "calibration-evaluator.cjs");
+    writeFileSync(evaluatorPath, `#!/usr/bin/env node
+const fs = require("node:fs");
+const active = JSON.parse(process.env.RUHROH_EVAL_ACTIVE_CALIBRATION_CASE_JSON || "{}");
+const status = process.env.RUHROH_FORCE_STATUS || active.expectedStatus || "review";
+const outputPath = process.env.RUHROH_EVAL_OUTPUT_PATH;
+fs.mkdirSync(require("node:path").dirname(outputPath), { recursive: true });
+fs.writeFileSync(outputPath, JSON.stringify({
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+  version: "ruhroh_eval_result_v1",
+  status,
+  goalMet: status === "passed",
+  confidence: "high",
+  reasons: ["calibrated " + active.id],
+  unmetCriteria: status === "passed" ? [] : ["calibration unmet"],
+  evidenceRefs: [{ kind: "file", ref: "CALIBRATION.md", summary: active.inputSummary || "" }],
+  commandsRun: [],
+  artifacts: { workspacePath: process.env.RUHROH_EVAL_WORKSPACE_PATH },
+  finalSummary: "calibration " + active.id,
+  criteriaResults: [{
+    id: "calibration-anchor",
+    description: "Calibration anchor matched.",
+    status,
+    score: status === "passed" ? 1 : 0,
+    evidenceRefs: [{ kind: "file", ref: "CALIBRATION.md", summary: active.rationale || "" }]
+  }],
+  judge: { kind: "command", model: "calibration-evaluator", version: "test" }
+}, null, 2) + "\\n");
+`, "utf8");
+    chmodSync(evaluatorPath, 0o755);
+
+    const stdout: string[] = [];
+    const code = await runRuhrohCli([
+      "calibrate-evaluator",
+      "--scenario-dir",
+      scenarioRoot,
+      "--scenario",
+      "calibration-demo",
+      "--generated-dir",
+      path.join(tmp, ".generated", "ruhroh"),
+      "--json",
+    ], {
+      spawn: spawnSync,
+      env: { ...process.env, RUHROH_EVAL_COMMAND: evaluatorPath },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { stdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const report = JSON.parse(stdout.join(""));
+    assert.equal(code, 0);
+    assert.equal(report.$schema, "https://lumicorp.github.io/ruhroh/schemas/eval-calibration-report-v1.schema.json");
+    assert.equal(report.version, "ruhroh_eval_calibration_report_v1");
+    assert.equal(report.ok, true);
+    assert.equal(report.caseCount, 2);
+    assert.equal(report.matchedCount, 2);
+    assert.equal(report.results[0].expectedStatus, "passed");
+    assert.equal(report.results[0].actualStatus, "passed");
+    assert.equal(existsSync(report.source.reportPath), true);
+    assert.equal(JSON.parse(readFileSync(report.source.reportPath, "utf8")).$schema, "https://lumicorp.github.io/ruhroh/schemas/eval-calibration-report-v1.schema.json");
+    assert.equal(JSON.parse(readFileSync(report.source.reportPath, "utf8")).version, "ruhroh_eval_calibration_report_v1");
+    assert.equal(existsSync(report.results[0].outputPath), true);
+    const calibrationInput = JSON.parse(readFileSync(report.results[0].inputPath, "utf8"));
+    assert.equal(calibrationInput.calibrationCase.id, "good-delivery");
+
+    const mismatchStdout: string[] = [];
+    const mismatchStderr: string[] = [];
+    const mismatchCode = await runRuhrohCli([
+      "calibrate-evaluator",
+      "--scenario-dir",
+      scenarioRoot,
+      "--scenario",
+      "calibration-demo",
+      "--generated-dir",
+      path.join(tmp, ".generated", "mismatch"),
+      "--json",
+    ], {
+      spawn: spawnSync,
+      env: { ...process.env, RUHROH_EVAL_COMMAND: evaluatorPath, RUHROH_FORCE_STATUS: "failed" },
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { mismatchStdout.push(chunk); return true; } },
+      stderr: { write: (chunk: string) => { mismatchStderr.push(chunk); return true; } },
+    });
+    const mismatch = JSON.parse(mismatchStdout.join(""));
+    assert.equal(mismatchCode, 2);
+    assert.equal(mismatch.ok, false);
+    assert.equal(mismatch.mismatchCount, 1);
+    assert.equal(mismatch.results.some((item: { caseId: string; expectedStatus: string; actualStatus: string; matched: boolean }) => item.caseId === "good-delivery" && item.expectedStatus === "passed" && item.actualStatus === "failed" && item.matched === false), true);
+    assert.match(mismatchStderr.join(""), /calibrate-evaluator failed calibration gate/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("public CLI validates scenarios with JSON output", async () => {
   const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-validate-"));
   try {
@@ -1976,6 +3922,13 @@ test("public CLI validates scenarios with JSON output", async () => {
     assert.equal(parsed.version, "ruhroh_validation_report_v1");
     assert.equal(parsed.results[0].scenario.id, "simple-newsletter");
     assert.deepEqual(parsed.results[0].errors, []);
+    assert.deepEqual(parsed.results[0].calibration, {
+      total: 0,
+      byExpectedStatus: { passed: 0, failed: 0, review: 0 },
+      coveredStatuses: [],
+      missingStatuses: ["passed", "failed", "review"],
+      warnings: ["evaluation.calibrationCases has no expected judgment anchors"],
+    });
     assert.deepEqual(parsed.results[0].warningDetails.map((diagnostic: { code: string }) => diagnostic.code), [
       "evaluation_context_minimum",
       "evaluation_calibration_cases_minimum",
@@ -2172,6 +4125,45 @@ test("run summaries and aggregates include enriched evaluator evidence", () => {
       transcriptsTarball: "/tmp/ruhroh-loop-transcripts.tar.gz",
     },
   })), []);
+
+  const resultApiTmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-results-api-"));
+  try {
+    mkdirSync(path.join(resultApiTmp, "run-one"), { recursive: true });
+    mkdirSync(path.join(resultApiTmp, "run-two"), { recursive: true });
+    writeFileSync(path.join(resultApiTmp, "run-one", "ruhroh-loop-result.json"), `${JSON.stringify(passedRun, null, 2)}\n`);
+    writeFileSync(path.join(resultApiTmp, "run-two", "ruhroh-loop-result.json"), `${JSON.stringify(failedRun, null, 2)}\n`);
+    writeFileSync(path.join(resultApiTmp, "ignore.json"), "{\"version\":\"not_ruhroh\"}\n");
+
+    const resultArtifacts = loadRuhrohRunResultArtifacts(resultApiTmp);
+    assert.equal(resultArtifacts.length, 2);
+    assert.deepEqual(resultArtifacts.map((artifact) => path.basename(path.dirname(artifact.path))), ["run-one", "run-two"]);
+    assert.match(resultArtifacts[0]?.sha256 ?? "", /^[a-f0-9]{64}$/u);
+    assert.equal(loadRuhrohRunResults(resultApiTmp).length, 2);
+
+    const resultReport = buildRuhrohRunResultsReport({
+      resultsPath: resultApiTmp,
+      aggregate: { minRuns: 2, expectedScenarioVersions: { "simple-newsletter": "1.0.0" } },
+      createdAt: "2026-07-07T12:30:00.000Z",
+      tool: { name: "@kestrel-agents/ruhroh", version: "0.6.0-beta.0" },
+      source: { runPlanPath: path.join(resultApiTmp, "ruhroh-run-plan.json") },
+      runPlanPresent: true,
+    });
+    assert.equal(resultReport.version, "ruhroh_run_results_report_v1");
+    assert.equal(resultReport.source.resultCount, 2);
+    assert.equal(resultReport.artifacts.length, 2);
+    assert.equal(resultReport.summaries.length, 2);
+    assert.equal(resultReport.groups[0]?.runs, 2);
+    assert.equal(resultReport.groups[0]?.statisticalWarnings.includes("fewer than 5 runs; treat pass rate and pass@k as directional"), false);
+    assert.equal(resultReport.reviewQueue.length, 2);
+    assert.equal(resultReport.claimReadiness.scope, "ad_hoc_compare");
+    assert.equal(resultReport.claimReadiness.blockers.some((blocker) => blocker.includes("no suite selected")), true);
+    assert.equal(resultReport.benchmarkClaim.source?.resultsPath, resultApiTmp);
+    assert.equal(resultReport.benchmarkClaim.source?.resultArtifacts?.length, 2);
+    assert.equal(resultReport.benchmarkClaim.evidence.runPlanPresent, true);
+    assert.equal(resultReport.benchmarkSummary.rows.length, resultReport.benchmarkClaim.scenarioResults.length);
+  } finally {
+    rmSync(resultApiTmp, { recursive: true, force: true });
+  }
 
   const agentBPass = loopResultFixture({
     runId: "agent-b-pass",
@@ -2772,10 +4764,26 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.match(compareHtmlStdout.join(""), /Wrote Ruhroh compare HTML report/u);
     assert.match(compareHtml, /Ruhroh compare/u);
     assert.match(compareHtml, /simple-newsletter/u);
+    assert.match(compareHtml, /Publication and Evidence Overview/u);
+    assert.match(compareHtml, /Result sources/u);
+    assert.match(compareHtml, /Named artifacts/u);
+    assert.match(compareHtml, /Review queue/u);
+    assert.match(compareHtml, /2 hashed result JSON sources/u);
     assert.match(compareHtml, /Claim Readiness/u);
+    assert.match(compareHtml, /Comparison Matrix/u);
+    assert.match(compareHtml, /50% \(1\/2\); CI/u);
+    assert.match(compareHtml, /Failure Triage/u);
+    assert.match(compareHtml, /goal_mismatch=1/u);
+    assert.match(compareHtml, /Restore missing or incomplete artifacts before publication\./u);
+    assert.match(compareHtml, /Cost and Efficiency/u);
+    assert.match(compareHtml, /1\/2 runs/u);
     assert.match(compareHtml, /Run Plan Warnings/u);
     assert.match(compareHtml, /run plan sample has no result artifact/u);
     assert.match(compareHtml, /Review Queue/u);
+    assert.match(compareHtml, /Evidence Browser/u);
+    assert.match(compareHtml, /Open the preserved evidence for each run/u);
+    assert.match(compareHtml, /<strong>manifest<\/strong>: <a href="\.\/run-one\/ruhroh-run-manifest\.json">/u);
+    assert.match(compareHtml, /<strong>journey<\/strong>: <a href="\.\/run-one\/ruhroh-journey\.jsonl">/u);
     assert.match(compareHtml, /Result Artifacts/u);
     assert.match(compareHtml, /href="\.\/run-one\/ruhroh-loop-result\.json"/u);
     assert.match(compareHtml, /href="\.\/run-one\/ruhroh-journey\.jsonl"/u);
@@ -2821,6 +4829,119 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(compare.groups[0].evalQualityWarnings["eval result has no top-level evidenceRefs"], 2);
     assert.equal(compare.reviewQueue.length, 2);
     assert.equal(compare.reviewQueue.some((item: { reasons: string[] }) => item.reasons.includes("non-passing run: goal_mismatch")), true);
+
+    const compareTextStdout: string[] = [];
+    const compareTextCode = await runRuhrohCli(["compare", "."], {
+      spawn: (() => assert.fail("text compare should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { compareTextStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const compareText = compareTextStdout.join("");
+    assert.equal(compareTextCode, 0);
+    assert.match(compareText, /Comparison matrix:/u);
+    assert.match(compareText, /simple-newsletter \| agent-a: 50% \(1\/2\)/u);
+
+    const evalQualityStdout: string[] = [];
+    const evalQualityStderr: string[] = [];
+    const evalQualityHtmlPath = path.join(tmp, "eval-quality.html");
+    const evalQualityCode = await runRuhrohCli(["eval-quality", ".", "--html", evalQualityHtmlPath, "--json"], {
+      spawn: (() => assert.fail("eval-quality should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { evalQualityStdout.push(chunk); return true; } },
+      stderr: { write: (chunk: string) => { evalQualityStderr.push(chunk); return true; } },
+    });
+    const evalQuality = JSON.parse(evalQualityStdout.join(""));
+    const evalQualityHtml = readFileSync(evalQualityHtmlPath, "utf8");
+    assert.equal(evalQualityCode, 2);
+    assert.equal(evalQuality.version, "ruhroh_eval_quality_v1");
+    assert.equal(evalQuality.ok, false);
+    assert.equal(evalQuality.source.resultsPath, tmp);
+    assert.equal(evalQuality.source.resultCount, 2);
+    assert.equal(evalQuality.htmlPath, evalQualityHtmlPath);
+    assert.equal(evalQuality.warningCounts["eval result has no top-level evidenceRefs"], 2);
+    assert.equal(evalQuality.warningCount >= 2, true);
+    assert.equal(evalQuality.humanReviewRequiredCount, 0);
+    assert.equal(evalQuality.runs.some((run: { runId: string; evidenceRefCount: number; judge: string }) => run.runId === "simple-newsletter-agent-a-1" && run.evidenceRefCount === 0 && run.judge === "hybrid/arbiter@2026-07-07"), true);
+    assert.equal(evalQuality.nextActions.some((action: string) => action.includes("evidenceRefs")), true);
+    assert.match(evalQualityStderr.join(""), /eval-quality failed audit gate: \d+ warnings/u);
+    assert.match(evalQualityHtml, /Ruhroh eval-quality/u);
+    assert.match(evalQualityHtml, /Gate/u);
+    assert.match(evalQualityHtml, /needs attention/u);
+    assert.match(evalQualityHtml, /Warning Counts/u);
+    assert.match(evalQualityHtml, /eval result has no top-level evidenceRefs/u);
+    assert.match(evalQualityHtml, /Next Actions/u);
+    assert.match(evalQualityHtml, /Evaluator Runs/u);
+    assert.match(evalQualityHtml, /hybrid\/arbiter@2026-07-07/u);
+    assert.match(evalQualityHtml, /href="\.\/run-one\/ruhroh-loop-result\.json"/u);
+
+    const evalQualityHtmlOnlyStdout: string[] = [];
+    const evalQualityHtmlOnlyStderr: string[] = [];
+    const evalQualityHtmlOnlyPath = path.join(tmp, "eval-quality-only.html");
+    const evalQualityHtmlOnlyCode = await runRuhrohCli(["eval-quality", ".", "--html", evalQualityHtmlOnlyPath], {
+      spawn: (() => assert.fail("html eval-quality should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { evalQualityHtmlOnlyStdout.push(chunk); return true; } },
+      stderr: { write: (chunk: string) => { evalQualityHtmlOnlyStderr.push(chunk); return true; } },
+    });
+    assert.equal(evalQualityHtmlOnlyCode, 2);
+    assert.match(evalQualityHtmlOnlyStdout.join(""), /Wrote Ruhroh eval-quality HTML/u);
+    assert.match(evalQualityHtmlOnlyStderr.join(""), /eval-quality failed audit gate/u);
+    assert.match(readFileSync(evalQualityHtmlOnlyPath, "utf8"), /Evaluator Runs/u);
+
+    const evalQualityTextStdout: string[] = [];
+    const evalQualityTextCode = await runRuhrohCli(["eval-quality", "."], {
+      spawn: (() => assert.fail("text eval-quality should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { evalQualityTextStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(evalQualityTextCode, 2);
+    assert.match(evalQualityTextStdout.join(""), /Ruhroh eval-quality/u);
+    assert.match(evalQualityTextStdout.join(""), /warning: eval result has no top-level evidenceRefs/u);
+    assert.match(evalQualityTextStdout.join(""), /next actions:/u);
+
+    const reviewStdout: string[] = [];
+    const reviewPath = path.join(tmp, "review.html");
+    const reviewCode = await runRuhrohCli(["review", ".", "--html", reviewPath, "--json"], {
+      spawn: (() => assert.fail("review should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { reviewStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const review = JSON.parse(reviewStdout.join(""));
+    const reviewHtml = readFileSync(reviewPath, "utf8");
+    assert.equal(reviewCode, 0);
+    assert.equal(review.version, "ruhroh_review_queue_v1");
+    assert.equal(review.source.resultsPath, tmp);
+    assert.equal(review.source.resultCount, 2);
+    assert.equal(review.itemCount, 2);
+    assert.equal(review.requiredCount, 0);
+    assert.equal(review.recommendedCount, 2);
+    assert.equal(review.reviewQueue.some((item: { priority: string; reasons: string[] }) => item.priority === "recommended" && item.reasons.includes("non-passing run: goal_mismatch")), true);
+    assert.equal(review.htmlPath, reviewPath);
+    assert.match(reviewHtml, /Ruhroh review queue/u);
+    assert.match(reviewHtml, /Adjudication Checklist/u);
+    assert.match(reviewHtml, /transcript\.log/u);
+
+    const reviewTextStdout: string[] = [];
+    const reviewTextCode = await runRuhrohCli(["review", "."], {
+      spawn: (() => assert.fail("text review should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { reviewTextStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const reviewText = reviewTextStdout.join("");
+    assert.equal(reviewTextCode, 0);
+    assert.match(reviewText, /Ruhroh review queue:/u);
+    assert.match(reviewText, /items: 2 required=0 recommended=2/u);
+    assert.match(reviewText, /Next steps:/u);
   assert.equal(compare.groups[0].usage.runsWithUsage, 1);
   assert.equal(compare.groups[0].usage.runsWithCost, 1);
   assert.equal(compare.groups[0].usage.runsWithTokens, 1);
@@ -2910,6 +5031,36 @@ test("public CLI reports and compares run artifacts", async () => {
     const exportedSummary = JSON.parse(readFileSync(benchmarkSummaryPath, "utf8"));
     assert.deepEqual(exportedSummary, compareRunPlan.benchmarkSummary);
 
+    const rerunLedgerPath = path.join(tmp, "ruhroh-rerun-ledger.json");
+    writeFileSync(rerunLedgerPath, `${JSON.stringify({
+      version: "ruhroh_rerun_ledger_v1",
+      entries: [{
+        sampleId: "simple-newsletter/agent-a/2-of-2",
+        decision: "exclude",
+        reasonKind: "infrastructure",
+        reason: "Harbor worker was interrupted before artifacts were uploaded.",
+        decidedBy: "benchmark-owner",
+        decidedAt: "2026-07-07T12:45:00.000Z",
+      }],
+    }, null, 2)}\n`);
+    const ledgerCompareStdout: string[] = [];
+    const ledgerCompareCode = await runRuhrohCli(["compare", ".", "--run-plan", "ruhroh-run-plan.json", "--rerun-ledger", "ruhroh-rerun-ledger.json", "--json"], {
+      spawn: (() => assert.fail("rerun-ledger compare should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { ledgerCompareStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const ledgerCompare = JSON.parse(ledgerCompareStdout.join(""));
+    assert.equal(ledgerCompareCode, 0);
+    assert.equal(ledgerCompare.rerunLedger.version, "ruhroh_rerun_ledger_v1");
+    assert.equal(ledgerCompare.rerunLedger.acceptedExclusionCount, 1);
+    assert.deepEqual(ledgerCompare.rerunLedger.acceptedExclusions, ["simple-newsletter/agent-a/2-of-2"]);
+    assert.equal(ledgerCompare.runPlanWarnings.some((warning: string) => warning.includes("simple-newsletter/agent-a/2-of-2")), false);
+    assert.equal(ledgerCompare.runPlanWarnings.some((warning: string) => warning.includes("result has no sample id")), true);
+    assert.equal(ledgerCompare.benchmarkClaim.source.rerunLedgerPath, rerunLedgerPath);
+    assert.equal(ledgerCompare.benchmarkClaim.source.rerunLedgerSha256, sha256File(rerunLedgerPath));
+
     const validateSummaryStdout: string[] = [];
     const validateSummaryCode = await runRuhrohCli(["validate-summary", "benchmark-summary.json", "--json"], {
       spawn: (() => assert.fail("summary validation should not spawn Harbor")) as never,
@@ -2980,6 +5131,386 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(verifySources.sourceVerification.checks.some((check: { name: string; status: string }) => check.name === "runPlan" && check.status === "ok"), true);
     assert.equal(verifySources.sourceVerification.checks.some((check: { name: string; status: string }) => check.name === "resultArtifacts[0]" && check.status === "ok"), true);
     assert.equal(verifySources.sourceVerification.checks.some((check: { name: string; status: string }) => check.name === "resultArtifacts[0].artifactInventory[0]" && check.status === "ok"), true);
+
+    const publishCheckStdout: string[] = [];
+    const publishCheckStderr: string[] = [];
+    const publishCheckClaimPath = path.join(tmp, "publish-check-claim.json");
+    const publishCheckSummaryPath = path.join(tmp, "publish-check-summary.json");
+    const publishCheckMarkdownPath = path.join(tmp, "publish-check-summary.md");
+    const publishBundlePath = path.join(tmp, "publish-bundle");
+    const calibrationReportPath = path.join(tmp, ".generated", "ruhroh", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json");
+    const calibrationCaseDir = path.join(tmp, ".generated", "ruhroh", "evaluator-calibration", "clear-pass");
+    const calibrationInputPath = path.join(calibrationCaseDir, "ruhroh-eval-calibration-input.json");
+    const calibrationOutputPath = path.join(calibrationCaseDir, "ruhroh-eval-result.json");
+    const calibrationWorkspacePath = path.join(calibrationCaseDir, "workspace");
+    mkdirSync(path.dirname(calibrationReportPath), { recursive: true });
+    mkdirSync(calibrationWorkspacePath, { recursive: true });
+    writeFileSync(path.join(calibrationWorkspacePath, "CALIBRATION.md"), "complete delivery should pass\n", "utf8");
+    writeFileSync(calibrationInputPath, `${JSON.stringify({
+      version: "ruhroh_eval_calibration_input_v1",
+      scenarioId: "simple-newsletter",
+      calibrationCase: {
+        id: "clear-pass",
+        inputSummary: "The app is complete.",
+        expectedStatus: "passed",
+        rationale: "Complete delivery should pass.",
+      },
+      workspacePath: calibrationWorkspacePath,
+    }, null, 2)}\n`, "utf8");
+    writeFileSync(calibrationOutputPath, `${JSON.stringify({
+      $schema: "https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json",
+      version: "ruhroh_eval_result_v1",
+      status: "passed",
+      goalMet: true,
+      confidence: "high",
+      reasons: ["calibrated clear-pass"],
+      unmetCriteria: [],
+      evidenceRefs: [{ kind: "file", ref: "CALIBRATION.md", summary: "complete delivery should pass" }],
+      commandsRun: [],
+      artifacts: { workspacePath: calibrationWorkspacePath },
+      finalSummary: "calibrated clear-pass",
+      criteriaResults: [{
+        id: "calibration-anchor",
+        description: "Calibration anchor matched.",
+        status: "passed",
+        score: 1,
+        evidenceRefs: [{ kind: "file", ref: "CALIBRATION.md", summary: "complete delivery should pass" }],
+      }],
+      judge: { kind: "command", model: "calibration-evaluator", version: "test" },
+    }, null, 2)}\n`, "utf8");
+    writeFileSync(calibrationReportPath, `${JSON.stringify({
+      $schema: "https://lumicorp.github.io/ruhroh/schemas/eval-calibration-report-v1.schema.json",
+      version: "ruhroh_eval_calibration_report_v1",
+      source: {
+        scenarioDir: path.join(tmp, "scenarios"),
+        generatedDir: path.join(tmp, ".generated", "ruhroh"),
+        evaluatorCommand: path.join(tmp, "eval.sh"),
+        reportPath: calibrationReportPath,
+      },
+      ok: true,
+      scenarioCount: 1,
+      caseCount: 1,
+      matchedCount: 1,
+      mismatchCount: 0,
+      infraFailedCount: 0,
+      warnings: [],
+      nextActions: [],
+      results: [{
+        scenarioId: "simple-newsletter",
+        caseId: "clear-pass",
+        expectedStatus: "passed",
+        actualStatus: "passed",
+        matched: true,
+        outputPath: calibrationOutputPath,
+        inputPath: calibrationInputPath,
+        workspacePath: calibrationWorkspacePath,
+        details: "clear-pass matched",
+      }],
+    }, null, 2)}\n`, "utf8");
+    const publishCheckCode = await runRuhrohCli([
+      "publish-check",
+      ".",
+      "--run-plan",
+      "ruhroh-run-plan.json",
+      "--benchmark-claim",
+      "publish-check-claim.json",
+      "--benchmark-summary",
+      "publish-check-summary.json",
+      "--summary-md",
+      "publish-check-summary.md",
+      "--bundle",
+      "publish-bundle",
+      "--verify-sources",
+      "--json",
+    ], {
+      spawn: (() => assert.fail("publish-check should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { publishCheckStdout.push(chunk); return true; } },
+      stderr: { write: (chunk: string) => { publishCheckStderr.push(chunk); return true; } },
+    });
+    const publishCheck = JSON.parse(publishCheckStdout.join(""));
+    assert.equal(publishCheckCode, 2);
+    assert.equal(publishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
+    assert.equal(publishCheck.version, "ruhroh_publish_check_v1");
+    assert.equal(publishCheck.publishable, false);
+    assert.equal(publishCheck.source.resultsPath, tmp);
+    assert.equal(publishCheck.source.runPlanPath, runPlanPath);
+    assert.equal(publishCheck.source.benchmarkClaimPath, publishCheckClaimPath);
+    assert.equal(publishCheck.source.benchmarkSummaryPath, publishCheckSummaryPath);
+    assert.equal(publishCheck.source.summaryMarkdownPath, publishCheckMarkdownPath);
+    assert.equal(publishCheck.source.bundlePath, publishBundlePath);
+    assert.equal(publishCheck.source.evaluatorCalibrationReportPath, calibrationReportPath);
+    assert.equal(existsSync(publishCheckClaimPath), true);
+    assert.equal(existsSync(publishCheckSummaryPath), true);
+    assert.equal(existsSync(publishCheckMarkdownPath), true);
+    assert.match(readFileSync(publishCheckMarkdownPath, "utf8"), /# Ruhroh Publish Check/u);
+    assert.match(readFileSync(publishCheckMarkdownPath, "utf8"), /\*\*Status:\*\* blocked/u);
+    assert.match(readFileSync(publishCheckMarkdownPath, "utf8"), /## Next Actions/u);
+    assert.equal(existsSync(path.join(publishBundlePath, "manifest.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "publish-check.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "ruhroh-compare.html")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "benchmark-claim.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "benchmark-summary.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "ruhroh-review.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "ruhroh-review.html")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "ruhroh-eval-quality.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "ruhroh-eval-quality.html")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "README.md")), true);
+    assert.equal(publishCheck.sourceVerification.checked, true);
+    assert.deepEqual(publishCheck.sourceVerification.errors, []);
+    assert.equal(publishCheck.sourceVerification.checks.some((check: { name: string; status: string }) => check.name === "evaluatorCalibrationReport" && check.status === "ok"), true);
+    assert.equal(publishCheck.blockers.some((item: string) => item.includes("no suite selected")), true);
+    assert.equal(publishCheck.blockers.some((item: string) => item.includes("run plan warning")), true);
+    assert.equal(publishCheck.remediation.some((item: { code: string; category: string; action: string }) => item.code === "suite_required" && item.category === "suite" && item.action.includes("--suite")), true);
+    assert.equal(publishCheck.remediation.some((item: { code: string; category: string; action: string }) => item.code === "run_plan_mismatch" && item.category === "run_plan" && item.action.includes("run plan")), true);
+    assert.equal(publishCheck.remediation.some((item: { code: string; category: string }) => item.code === "artifact_evidence_incomplete" && item.category === "artifacts"), true);
+    assert.equal(publishCheck.remediation.every((item: { severity: string; blocker: string; docs: string }) => item.severity === "blocker" && item.blocker.length > 0 && item.docs.length > 0), true);
+    assert.equal(publishCheck.compare.benchmarkClaim.source.benchmarkClaimPath, publishCheckClaimPath);
+    assert.equal(publishCheck.compare.benchmarkClaim.source.evaluatorCalibrationReportPath, calibrationReportPath);
+    assert.equal(typeof publishCheck.compare.benchmarkClaim.source.evaluatorCalibrationReportSha256, "string");
+    assert.deepEqual(buildRuhrohPublishCheckReport({
+      source: publishCheck.source,
+      compare: publishCheck.compare,
+      sourceVerification: publishCheck.sourceVerification,
+    }), publishCheck);
+    const publishBundleManifest = JSON.parse(readFileSync(path.join(publishBundlePath, "manifest.json"), "utf8"));
+    assert.equal(publishBundleManifest.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json");
+    assert.equal(publishBundleManifest.version, "ruhroh_publish_bundle_v1");
+    assert.equal(publishBundleManifest.source.resultsPath, "sources/results");
+    assert.equal(publishBundleManifest.source.bundlePath, ".");
+    assert.equal(publishBundleManifest.publishable, false);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "review-html" && file.path === "ruhroh-review.html"), true);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "eval-quality" && file.path === "ruhroh-eval-quality.json"), true);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "eval-quality-html" && file.path === "ruhroh-eval-quality.html"), true);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "evaluator-calibration-report" && file.path === "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json"), true);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "evaluator-calibration-clear-pass-input" && file.path === "sources/evaluator-calibration/clear-pass/ruhroh-eval-calibration-input.json"), true);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "evaluator-calibration-clear-pass-output" && file.path === "sources/evaluator-calibration/clear-pass/ruhroh-eval-result.json"), true);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "source-run-plan" && file.path === "sources/ruhroh-run-plan.json"), true);
+    assert.equal(publishBundleManifest.files.some((file: { role: string; path: string }) => file.role === "source-result-1" && file.path === "sources/results/run-1/ruhroh-loop-result.json"), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "sources", "ruhroh-run-plan.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "sources", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "sources", "evaluator-calibration", "clear-pass", "ruhroh-eval-calibration-input.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "sources", "evaluator-calibration", "clear-pass", "ruhroh-eval-result.json")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "sources", "evaluator-calibration", "clear-pass", "workspace", "CALIBRATION.md")), true);
+    assert.equal(existsSync(path.join(publishBundlePath, "sources", "results", "run-1", "ruhroh-loop-result.json")), true);
+    const bundledPublishCheck = JSON.parse(readFileSync(path.join(publishBundlePath, "publish-check.json"), "utf8"));
+    assert.equal(bundledPublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
+    assert.equal(bundledPublishCheck.version, "ruhroh_publish_check_v1");
+    assert.equal(bundledPublishCheck.source.bundlePath, ".");
+    assert.equal(bundledPublishCheck.source.resultsPath, "sources/results");
+    assert.equal(bundledPublishCheck.source.evaluatorCalibrationReportPath, "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json");
+    assert.deepEqual(bundledPublishCheck.sourceVerification.errors, []);
+    assert.deepEqual(bundledPublishCheck.sourceVerification.warnings, []);
+    const bundledClaim = JSON.parse(readFileSync(path.join(publishBundlePath, "benchmark-claim.json"), "utf8"));
+    assert.equal(bundledClaim.source.resultsPath, "sources/results");
+    assert.equal(bundledClaim.source.runPlanPath, "sources/ruhroh-run-plan.json");
+    assert.equal(bundledClaim.source.evaluatorCalibrationReportPath, "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json");
+    assert.equal(bundledClaim.source.evaluatorCalibrationReportSha256, sha256File(path.join(publishBundlePath, "sources", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json")));
+    assert.equal(bundledClaim.source.benchmarkClaimPath, "benchmark-claim.json");
+    assert.equal(bundledClaim.source.resultArtifacts[0].path, "sources/results/run-1/ruhroh-loop-result.json");
+    assert.deepEqual(bundledClaim, bundledPublishCheck.compare.benchmarkClaim);
+    const bundledCalibrationReportPath = path.join(publishBundlePath, "sources", "evaluator-calibration", "ruhroh-evaluator-calibration-report.json");
+    const bundledCalibrationReport = JSON.parse(readFileSync(bundledCalibrationReportPath, "utf8"));
+    assert.equal(bundledCalibrationReport.source.reportPath, "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json");
+    assert.equal(bundledCalibrationReport.results[0].inputPath, "sources/evaluator-calibration/clear-pass/ruhroh-eval-calibration-input.json");
+    assert.equal(bundledCalibrationReport.results[0].outputPath, "sources/evaluator-calibration/clear-pass/ruhroh-eval-result.json");
+    assert.equal(bundledCalibrationReport.results[0].workspacePath, "sources/evaluator-calibration/clear-pass/workspace");
+    const bundledSummary = JSON.parse(readFileSync(path.join(publishBundlePath, "benchmark-summary.json"), "utf8"));
+    assert.equal(bundledSummary.source.resultsPath, "sources/results");
+    assert.deepEqual(bundledSummary, bundledPublishCheck.compare.benchmarkSummary);
+    const bundledReview = JSON.parse(readFileSync(path.join(publishBundlePath, "ruhroh-review.json"), "utf8"));
+    assert.equal(bundledReview.version, "ruhroh_review_queue_v1");
+    assert.equal(bundledReview.source.resultCount, 2);
+    const bundledReviewHtml = readFileSync(path.join(publishBundlePath, "ruhroh-review.html"), "utf8");
+    assert.match(bundledReviewHtml, /Ruhroh review queue/u);
+    const bundledEvalQuality = JSON.parse(readFileSync(path.join(publishBundlePath, "ruhroh-eval-quality.json"), "utf8"));
+    assert.equal(bundledEvalQuality.version, "ruhroh_eval_quality_v1");
+    assert.equal(bundledEvalQuality.source.resultCount, 2);
+    const bundledEvalQualityHtml = readFileSync(path.join(publishBundlePath, "ruhroh-eval-quality.html"), "utf8");
+    assert.match(bundledEvalQualityHtml, /Ruhroh eval-quality/u);
+    assert.match(bundledEvalQualityHtml, /Evaluator Runs/u);
+    const bundledReadme = readFileSync(path.join(publishBundlePath, "README.md"), "utf8");
+    assert.match(bundledReadme, /Status: blocked/u);
+    assert.match(bundledReadme, /## Review Order/u);
+    assert.match(bundledReadme, /Open ruhroh-eval-quality\.html to inspect evaluator evidence warnings/u);
+    assert.match(publishCheckStderr.join(""), /publish-check failed publishability gate: \d+ blockers/u);
+
+    const implicitBundleStdout: string[] = [];
+    const implicitBundlePath = path.join(tmp, "publish-bundle-implicit");
+    const implicitBundleCode = await runRuhrohCli([
+      "publish-check",
+      ".",
+      "--run-plan",
+      "ruhroh-run-plan.json",
+      "--bundle",
+      "publish-bundle-implicit",
+      "--verify-sources",
+      "--json",
+    ], {
+      spawn: (() => assert.fail("implicit bundle publish-check should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { implicitBundleStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const implicitBundle = JSON.parse(implicitBundleStdout.join(""));
+    assert.equal(implicitBundleCode, 2);
+    assert.equal(implicitBundle.source.benchmarkClaimPath, path.join(implicitBundlePath, "benchmark-claim.json"));
+    assert.equal(implicitBundle.source.benchmarkSummaryPath, path.join(implicitBundlePath, "benchmark-summary.json"));
+    assert.equal(implicitBundle.sourceVerification.warnings.some((warning: string) => warning.includes("benchmarkClaimPath")), false);
+    assert.equal(implicitBundle.compare.benchmarkClaim.source.benchmarkClaimPath, path.join(implicitBundlePath, "benchmark-claim.json"));
+    const implicitBundledClaim = JSON.parse(readFileSync(path.join(implicitBundlePath, "benchmark-claim.json"), "utf8"));
+    const implicitBundledPublishCheck = JSON.parse(readFileSync(path.join(implicitBundlePath, "publish-check.json"), "utf8"));
+    assert.equal(implicitBundledClaim.source.benchmarkClaimPath, "benchmark-claim.json");
+    assert.equal(implicitBundledClaim.source.resultArtifacts[0].path, "sources/results/run-1/ruhroh-loop-result.json");
+    assert.deepEqual(implicitBundledPublishCheck.sourceVerification.errors, []);
+
+    const validateBundleStdout: string[] = [];
+    const validateBundleStderr: string[] = [];
+    const validateBundleCode = await runRuhrohCli(["validate-bundle", "publish-bundle", "--json"], {
+      spawn: (() => assert.fail("bundle validation should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { validateBundleStdout.push(chunk); return true; } },
+      stderr: { write: (chunk: string) => { validateBundleStderr.push(chunk); return true; } },
+    });
+    const validateBundle = JSON.parse(validateBundleStdout.join(""));
+    assert.equal(validateBundleCode, 2);
+    assert.equal(validateBundle.version, "ruhroh_publish_bundle_validation_report_v1");
+    assert.equal(validateBundle.valid, true);
+    assert.equal(validateBundle.publishable, false);
+    assert.equal(validateBundle.source.bundlePath, publishBundlePath);
+    assert.equal(validateBundle.errors.length, 0);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "manifest.$schema" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.version" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.source.reportPath" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.results[0].inputPath" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.results[0].outputPath" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.results[0].workspacePath" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "benchmark-claim.cross-reference" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "benchmark-summary.cross-reference" && check.status === "ok"), true);
+    assert.match(validateBundleStderr.join(""), /validate-bundle failed publishability gate/u);
+    const apiSourceVerification = verifyRuhrohBenchmarkClaimSources(bundledClaim, path.join(publishBundlePath, "benchmark-claim.json"));
+    assert.equal(apiSourceVerification.version, "ruhroh_claim_source_verification_v1");
+    assert.deepEqual(apiSourceVerification.errors, []);
+    assert.equal(apiSourceVerification.checks.some((check) => check.name === "evaluatorCalibrationReport" && check.status === "ok"), true);
+    const apiBundleValidation = validateRuhrohPublishBundle(publishBundlePath);
+    assert.equal(apiBundleValidation.version, "ruhroh_publish_bundle_validation_report_v1");
+    assert.equal(apiBundleValidation.valid, true);
+    assert.equal(apiBundleValidation.publishable, false);
+    assert.deepEqual(apiBundleValidation.errors, []);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "manifest.$schema" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "benchmark-claim.source.evaluatorCalibrationReport" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "evaluator-calibration-report.version" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "evaluator-calibration-report.source.reportPath" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "evaluator-calibration-report.results[0].inputPath" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "evaluator-calibration-report.results[0].outputPath" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "evaluator-calibration-report.results[0].workspacePath" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "files.eval-quality-html" && check.status === "ok"), true);
+
+    const originalBundledCalibrationReportText = readFileSync(bundledCalibrationReportPath, "utf8");
+    const brokenBundledCalibrationReport = JSON.parse(originalBundledCalibrationReportText);
+    brokenBundledCalibrationReport.results[0].inputPath = "sources/evaluator-calibration/clear-pass/missing-input.json";
+    writeFileSync(bundledCalibrationReportPath, `${JSON.stringify(brokenBundledCalibrationReport, null, 2)}\n`, "utf8");
+    const brokenCalibrationEvidenceBundle = validateRuhrohPublishBundle(publishBundlePath);
+    assert.equal(brokenCalibrationEvidenceBundle.valid, false);
+    assert.equal(brokenCalibrationEvidenceBundle.errors.some((error) => error.includes("evaluator-calibration-report.results[0].inputPath")), true);
+    writeFileSync(bundledCalibrationReportPath, originalBundledCalibrationReportText, "utf8");
+
+    const claimIndexStdout: string[] = [];
+    const claimIndexHtmlPath = path.join(tmp, "claim-index.html");
+    const claimIndexCode = await runRuhrohCli(["claim-index", ".", "--html", claimIndexHtmlPath, "--json"], {
+      spawn: (() => assert.fail("claim-index should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { claimIndexStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const claimIndex = JSON.parse(claimIndexStdout.join(""));
+    const claimIndexHtml = readFileSync(claimIndexHtmlPath, "utf8");
+    assert.equal(claimIndexCode, 0);
+    assert.equal(claimIndex.$schema, "https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json");
+    assert.equal(claimIndex.version, "ruhroh_claim_index_v1");
+    assert.equal(claimIndex.registryReady, false);
+    assert.equal(claimIndex.registryBlockers.some((blocker: string) => blocker.includes("blocked claim")), true);
+    assert.equal(claimIndex.claimCount >= 3, true);
+    assert.equal(claimIndex.invalidCount, 0);
+    assert.equal(claimIndex.blockedCount >= 1, true);
+    assert.equal(claimIndex.totalRuns >= 2, true);
+    assert.equal(claimIndex.claims.some((claim: { bundlePath?: string; claimPath: string; publishable: boolean; blockers: string[] }) => claim.bundlePath === publishBundlePath && claim.claimPath === path.join(publishBundlePath, "benchmark-claim.json") && claim.publishable === false && claim.blockers.some((blocker) => blocker.includes("run plan warning"))), true);
+    assert.match(claimIndexHtml, /Ruhroh claim index/u);
+    assert.match(claimIndexHtml, /benchmark-claim\.json/u);
+    assert.match(claimIndexHtml, /Review Packet/u);
+    assert.match(claimIndexHtml, /href="\.\/publish-bundle\/README\.md">README<\/a>/u);
+    assert.match(claimIndexHtml, /href="\.\/publish-bundle\/ruhroh-eval-quality\.html">eval-quality<\/a>/u);
+    assert.match(claimIndexHtml, /href="\.\/publish-bundle\/ruhroh-review\.html">review<\/a>/u);
+
+    const claimIndexTextStdout: string[] = [];
+    const claimIndexTextCode = await runRuhrohCli(["claim-index", "publish-bundle"], {
+      spawn: (() => assert.fail("text claim-index should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { claimIndexTextStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(claimIndexTextCode, 0);
+    assert.match(claimIndexTextStdout.join(""), /Ruhroh claim index: 1 claim/u);
+    assert.match(claimIndexTextStdout.join(""), /registry ready: no/u);
+    assert.match(claimIndexTextStdout.join(""), /bundle: publish-bundle/u);
+
+    const claimIndexStrictStderr: string[] = [];
+    const claimIndexStrictCode = await runRuhrohCli(["claim-index", "publish-bundle", "--require-publishable", "--json"], {
+      spawn: (() => assert.fail("strict claim-index should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: () => true },
+      stderr: { write: (chunk: string) => { claimIndexStrictStderr.push(chunk); return true; } },
+    });
+    assert.equal(claimIndexStrictCode, 2);
+    assert.match(claimIndexStrictStderr.join(""), /claim-index failed registry readiness gate/u);
+
+    const originalBundleManifestText = readFileSync(path.join(publishBundlePath, "manifest.json"), "utf8");
+    const missingEvalQualityHtmlManifest = JSON.parse(originalBundleManifestText);
+    missingEvalQualityHtmlManifest.files = missingEvalQualityHtmlManifest.files.filter((file: { role: string }) => file.role !== "eval-quality-html");
+    writeFileSync(path.join(publishBundlePath, "manifest.json"), `${JSON.stringify(missingEvalQualityHtmlManifest, null, 2)}\n`, "utf8");
+    const missingEvalQualityHtmlBundle = validateRuhrohPublishBundle(publishBundlePath);
+    assert.equal(missingEvalQualityHtmlBundle.valid, false);
+    assert.equal(missingEvalQualityHtmlBundle.errors.some((error) => error.includes("required role eval-quality-html")), true);
+    writeFileSync(path.join(publishBundlePath, "manifest.json"), originalBundleManifestText, "utf8");
+
+    writeFileSync(path.join(publishBundlePath, "benchmark-claim.json"), "{}\n");
+    const invalidBundleStdout: string[] = [];
+    const invalidBundleCode = await runRuhrohCli(["validate-bundle", "publish-bundle", "--json"], {
+      spawn: (() => assert.fail("invalid bundle validation should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { invalidBundleStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const invalidBundle = JSON.parse(invalidBundleStdout.join(""));
+    assert.equal(invalidBundleCode, 1);
+    assert.equal(invalidBundle.valid, false);
+    assert.equal(invalidBundle.errors.some((error: string) => error.includes("benchmark-claim.version")), true);
+    assert.equal(invalidBundle.errors.some((error: string) => error.includes("benchmark-claim.cross-reference")), true);
+
+    const publishCheckTextStdout: string[] = [];
+    const publishCheckTextCode = await runRuhrohCli([
+      "publish-check",
+      ".",
+      "--run-plan",
+      "ruhroh-run-plan.json",
+    ], {
+      spawn: (() => assert.fail("text publish-check should not spawn Harbor")) as never,
+      env: {},
+      cwd: tmp,
+      stdout: { write: (chunk: string) => { publishCheckTextStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    assert.equal(publishCheckTextCode, 2);
+    assert.match(publishCheckTextStdout.join(""), /next actions:/u);
+    assert.match(publishCheckTextStdout.join(""), /\[suite_required\]/u);
+    assert.match(publishCheckTextStdout.join(""), /\[run_plan_mismatch\]/u);
 
     const driftedClaimPath = path.join(tmp, "drifted-claim.json");
     const driftedClaim = JSON.parse(JSON.stringify(exportedClaim));
@@ -3474,6 +6005,7 @@ test("public CLI dry-run supports adapter override without printing secrets", as
     assert.match(output, /RUHROH_RUN_COUNT=\$\{RUHROH_RUN_COUNT\}/u);
     assert.match(output, /ruhroh\.harbor_agent:RuhrohHarborAgent/u);
     assert.match(output, /OPENAI_API_KEY=\$\{OPENAI_API_KEY\}/u);
+    assert.match(output, /No Harbor task directories, run plan, Harbor process, or agent calls were written or started/u);
     assert.doesNotMatch(output, /secret/u);
     assert.doesNotMatch(output, /benchmarks\.ralph_loop|\/opt\/kestrel-harness|kestrel-harness\.tar\.gz/u);
     assert.equal(existsSync(path.join(tmp, ".generated", "ruhroh", "harbor", "tasks", "simple-newsletter", "task.toml")), false);
@@ -3488,10 +6020,12 @@ test("public CLI spawns Harbor with package Python runtime importable", async ()
   try {
     const scenarioDir = path.join(tmp, "ruhroh", "scenarios", "simple-newsletter");
     const agentTwoPath = path.join(tmp, "agent-two.mjs");
+    const evalPath = path.join(tmp, "eval-agent.mjs");
     const instructionPath = path.join(scenarioDir, "instruction.md");
     const scenarioPath = path.join(scenarioDir, "scenario.json");
     mkdirSync(scenarioDir, { recursive: true });
-    writeFileSync(agentTwoPath, "#!/usr/bin/env node\n");
+    writeFileSync(agentTwoPath, "#!/usr/bin/env node\nconsole.log('agent-two');\n");
+    writeFileSync(evalPath, "#!/usr/bin/env node\nconsole.log('eval-agent');\n");
     writeFileSync(instructionPath, "Build a tiny newsletter page.\n");
     writeFileSync(scenarioPath, JSON.stringify({
       version: "ruhroh_scenario_v2",
@@ -3513,6 +6047,7 @@ test("public CLI spawns Harbor with package Python runtime importable", async ()
     }));
 
     const spawnEnvs: NodeJS.ProcessEnv[] = [];
+    const spawnArgs: string[][] = [];
     const code = await runRuhrohCli([
       "--scenario-dir",
       "ruhroh/scenarios",
@@ -3526,12 +6061,13 @@ test("public CLI spawns Harbor with package Python runtime importable", async ()
       "2",
     ], {
       spawn: ((_, __, options) => {
+        spawnArgs.push(__);
         if (options?.env !== undefined) {
           spawnEnvs.push(options.env);
         }
         return { status: 0 } as never;
       }) as never,
-      env: { PYTHONPATH: "/already-there", OPENAI_API_KEY: "super-secret" },
+      env: { PYTHONPATH: "/already-there", OPENAI_API_KEY: "super-secret", RUHROH_EVAL_COMMAND: evalPath },
       cwd: tmp,
       stdout: { write: () => true },
       stderr: { write: () => true },
@@ -3550,7 +6086,15 @@ test("public CLI spawns Harbor with package Python runtime importable", async ()
     assert.match(spawnEnvs[0]?.RUHROH_SAMPLE_SEED ?? "", /^[a-f0-9]{16}$/u);
     assert.equal(spawnEnvs[0]?.RUHROH_RUN_SEED, spawnEnvs[0]?.RUHROH_SAMPLE_SEED);
     assert.equal(spawnEnvs[0]?.RUHROH_RUN_AGENT_COMMAND, undefined);
-    assert.equal(spawnEnvs[2]?.RUHROH_RUN_AGENT_COMMAND, agentTwoPath);
+    assert.equal(spawnEnvs[2]?.RUHROH_RUN_AGENT_COMMAND, "/installed-agent/local-commands/agent-two.mjs");
+    assert.equal(spawnEnvs[2]?.RUHROH_RUN_AGENT_COMMAND_INLINE_NAME, "agent-two.mjs");
+    assert.equal(Buffer.from(spawnEnvs[2]?.RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64 ?? "", "base64").toString("utf8"), readFileSync(agentTwoPath, "utf8"));
+    assert.equal(spawnEnvs[2]?.RUHROH_EVAL_COMMAND, "/installed-agent/local-commands/eval-agent.mjs");
+    assert.equal(spawnEnvs[2]?.RUHROH_EVAL_COMMAND_INLINE_NAME, "eval-agent.mjs");
+    assert.equal(Buffer.from(spawnEnvs[2]?.RUHROH_EVAL_COMMAND_INLINE_BASE64 ?? "", "base64").toString("utf8"), readFileSync(evalPath, "utf8"));
+    assert.notEqual(spawnEnvs[2]?.RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64, spawnEnvs[2]?.RUHROH_EVAL_COMMAND_INLINE_BASE64);
+    assert.equal(spawnArgs[2]?.includes(`RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64=${spawnEnvs[2]?.RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64}`), true);
+    assert.equal(spawnArgs[2]?.includes(`RUHROH_EVAL_COMMAND_INLINE_BASE64=${spawnEnvs[2]?.RUHROH_EVAL_COMMAND_INLINE_BASE64}`), true);
     assert.equal(spawnEnvs[0]?.PYTHONPATH?.startsWith(`${resolveRuhrohPythonPath()}${path.delimiter}`), true);
     assert.match(spawnEnvs[0]?.PYTHONPATH ?? "", /\/already-there$/u);
 
@@ -3572,6 +6116,9 @@ test("public CLI spawns Harbor with package Python runtime importable", async ()
     assert.equal(runPlan.samples[0].forwardedEnvKeys.includes("RUHROH_SAMPLE_ID"), true);
     assert.match(runPlan.samples[0].harborCommand.display, /OPENAI_API_KEY=\$\{OPENAI_API_KEY\}/u);
     assert.doesNotMatch(runPlanText, /super-secret/u);
+    assert.doesNotMatch(runPlanText, /console\.log\('agent-two'\)|console\.log\('eval-agent'\)/u);
+    assert.equal(runPlanText.includes(spawnEnvs[2]?.RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64 ?? "missing-run-payload"), false);
+    assert.equal(runPlanText.includes(spawnEnvs[2]?.RUHROH_EVAL_COMMAND_INLINE_BASE64 ?? "missing-eval-payload"), false);
     assert.doesNotMatch(runPlanText, new RegExp(agentTwoPath.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&"), "u"));
   } finally {
     rmSync(tmp, { recursive: true, force: true });
@@ -3738,6 +6285,70 @@ test("package Python runtime supports external eval command", () => {
     assert.match(readFileSync(evalInputPath, "utf8"), /The app works\./u);
     assert.match(readFileSync(evalInputPath, "utf8"), /passing-delivery/u);
     assert.match(readFileSync(evalInputPath, "utf8"), /private-rubric\.json/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("package Python runtime overwrites colliding inline command names", () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-inline-command-collision-"));
+  try {
+    const workspace = path.join(tmp, "workspace");
+    const installed = path.join(tmp, "installed");
+    const commandPath = path.join(installed, "local-commands", "run.sh");
+    const adapterScript = [
+      "#!/usr/bin/env bash",
+      "set -euo pipefail",
+      "printf '<article>One</article><article>Two</article><article>Three</article>' > \"$RUHROH_WORKSPACE_PATH/index.html\"",
+      "printf '{\"status\":\"goal_satisfied\"}\\n' > \"$RUHROH_RESULT_PATH\"",
+      "printf '{\"status\":\"goal_satisfied\"}\\n'",
+      "",
+    ].join("\n");
+    const evaluatorScript = [
+      "#!/usr/bin/env bash",
+      "set -euo pipefail",
+      "test -f \"$RUHROH_EVAL_WORKSPACE_PATH/index.html\"",
+      "cat > \"$RUHROH_EVAL_OUTPUT_PATH\" <<'JSON'",
+      "{\"version\":\"ruhroh_eval_result_v1\",\"status\":\"passed\",\"goalMet\":true,\"confidence\":\"high\",\"reasons\":[\"ok\"],\"unmetCriteria\":[],\"evidenceRefs\":[{\"kind\":\"file\",\"ref\":\"index.html\",\"summary\":\"exists\"}],\"commandsRun\":[],\"artifacts\":{},\"finalSummary\":\"ok\",\"judge\":{\"kind\":\"command\",\"model\":\"fixture\"}}",
+      "JSON",
+      "",
+    ].join("\n");
+    const script = [
+      "from pathlib import Path",
+      "from ruhroh.loop_controller import run_ruhroh_trial",
+      `result = run_ruhroh_trial('Build it', 'scenario', 1, Path(${JSON.stringify(workspace)}), Path(${JSON.stringify(installed)}))`,
+      "manifest = result['runManifest']",
+      "print(result['status'])",
+      "print(result['evalResult']['status'])",
+      "print(manifest['runAgent']['command']['inlineSha256'])",
+      "print(manifest['evaluator']['command']['inlineSha256'])",
+      "print(Path(manifest['artifactPaths']['evalResult']).exists())",
+    ].join("\n");
+
+    mkdirSync(workspace, { recursive: true });
+    const result = spawnSync("python3", ["-c", script], {
+      env: {
+        ...process.env,
+        PYTHONPATH: resolveRuhrohPythonPath(),
+        RUHROH_RUN_AGENT_COMMAND: commandPath,
+        RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64: Buffer.from(adapterScript, "utf8").toString("base64"),
+        RUHROH_RUN_AGENT_COMMAND_INLINE_NAME: "run.sh",
+        RUHROH_RUN_AGENT_ADAPTER: "custom-shell",
+        RUHROH_EVAL_COMMAND: commandPath,
+        RUHROH_EVAL_COMMAND_INLINE_BASE64: Buffer.from(evaluatorScript, "utf8").toString("base64"),
+        RUHROH_EVAL_COMMAND_INLINE_NAME: "run.sh",
+      },
+      encoding: "utf8",
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.deepEqual(result.stdout.trim().split(/\r?\n/u), [
+      "completed",
+      "passed",
+      sha256Text(adapterScript),
+      sha256Text(evaluatorScript),
+      "True",
+    ]);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
@@ -3951,12 +6562,90 @@ test("public adapter example scripts pass shell syntax checks", () => {
     path.resolve("examples", "adapters", "codex-cli", "run.sh"),
     path.resolve("examples", "adapters", "claude-code", "run.sh"),
     path.resolve("examples", "adapters", "gemini-cli", "run.sh"),
+    path.resolve("examples", "adapters", "aider", "run.sh"),
     path.resolve("examples", "evaluators", "fixture-newsletter", "run.sh"),
   ];
 
   for (const script of scripts) {
     const result = spawnSync("bash", ["-n", script], { encoding: "utf8" });
     assert.equal(result.status, 0, `${script}\n${result.stderr}`);
+  }
+});
+
+test("public live adapter templates emit valid escaped JSON metadata", () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-adapter-json-"));
+  try {
+    const binDir = path.join(tmp, "bin");
+    const workspace = path.join(tmp, "workspace with \"quotes\"");
+    mkdirSync(binDir, { recursive: true });
+    mkdirSync(workspace, { recursive: true });
+
+    for (const binName of ["codex", "claude", "gemini", "aider"]) {
+      const binPath = path.join(binDir, binName);
+      writeFileSync(binPath, "#!/usr/bin/env bash\ncat >/dev/null || true\nprintf '%s stub\\n' \"$0\"\n", "utf8");
+      chmodSync(binPath, 0o755);
+    }
+
+    const adapters = [
+      {
+        id: "codex-cli",
+        script: path.resolve("examples", "adapters", "codex-cli", "run.sh"),
+        modelEnv: "CODEX_MODEL",
+        versionEnv: "CODEX_CLI_ADAPTER_VERSION",
+        provider: "openai",
+      },
+      {
+        id: "claude-code",
+        script: path.resolve("examples", "adapters", "claude-code", "run.sh"),
+        modelEnv: "CLAUDE_MODEL",
+        versionEnv: "CLAUDE_CODE_ADAPTER_VERSION",
+        provider: "anthropic",
+      },
+      {
+        id: "gemini-cli",
+        script: path.resolve("examples", "adapters", "gemini-cli", "run.sh"),
+        modelEnv: "GEMINI_MODEL",
+        versionEnv: "GEMINI_CLI_ADAPTER_VERSION",
+        provider: "google",
+      },
+      {
+        id: "aider",
+        script: path.resolve("examples", "adapters", "aider", "run.sh"),
+        modelEnv: "AIDER_MODEL",
+        versionEnv: "AIDER_ADAPTER_VERSION",
+        provider: "aider",
+      },
+    ];
+
+    for (const adapter of adapters) {
+      const resultPath = path.join(tmp, `${adapter.id}-result.json`);
+      const model = `${adapter.id} "quoted" model`;
+      const adapterVersion = `${adapter.id} "quoted" adapter`;
+      const env = {
+        ...process.env,
+        PATH: `${binDir}${path.delimiter}${process.env.PATH ?? ""}`,
+        RUHROH_WORKSPACE_PATH: workspace,
+        RUHROH_MESSAGE: "Implement the \"quoted\" benchmark task.\nPreserve evidence.",
+        RUHROH_ITERATION: "7",
+        RUHROH_RESULT_PATH: resultPath,
+        [adapter.modelEnv]: model,
+        [adapter.versionEnv]: adapterVersion,
+      };
+      const result = spawnSync("bash", [adapter.script], { env, encoding: "utf8" });
+      assert.equal(result.status, 0, `${adapter.id}\nstdout:\n${result.stdout}\nstderr:\n${result.stderr}`);
+
+      const completion = JSON.parse(result.stdout.trim().split(/\r?\n/u).at(-1) ?? "{}");
+      const resultJson = JSON.parse(readFileSync(resultPath, "utf8"));
+      assert.equal(completion.status, "goal_satisfied");
+      assert.equal(resultJson.version, "ruhroh_run_agent_result_v1");
+      assert.equal(resultJson.adapterVersion, adapterVersion);
+      assert.deepEqual(resultJson.model, { provider: adapter.provider, model });
+      assert.equal(resultJson.artifacts.prompt.includes(workspace), true);
+      assert.match(readFileSync(resultJson.artifacts.prompt, "utf8"), /"quoted" benchmark task/u);
+      assert.equal(existsSync(resultJson.artifacts.transcript), true);
+    }
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
   }
 });
 

@@ -40,6 +40,8 @@
         "suiteSha256": { "$ref": "#/$defs/sha256" },
         "runPlanPath": { "type": "string", "minLength": 1 },
         "runPlanSha256": { "$ref": "#/$defs/sha256" },
+        "rerunLedgerPath": { "type": "string", "minLength": 1 },
+        "rerunLedgerSha256": { "$ref": "#/$defs/sha256" },
         "htmlPath": { "type": "string", "minLength": 1 },
         "benchmarkClaimPath": { "type": "string", "minLength": 1 },
         "resultArtifacts": {

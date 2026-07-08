@@ -285,6 +285,8 @@ export interface RuhrohBenchmarkClaimSource {
     suiteSha256?: string | undefined;
     runPlanPath?: string | undefined;
     runPlanSha256?: string | undefined;
+    rerunLedgerPath?: string | undefined;
+    rerunLedgerSha256?: string | undefined;
     htmlPath?: string | undefined;
     benchmarkClaimPath?: string | undefined;
     benchmarkSummaryPath?: string | undefined;
@@ -392,6 +394,39 @@ export interface RuhrohBenchmarkSummaryValidationResult {
     version: "ruhroh_benchmark_summary_validation_v1";
     errors: string[];
     warnings: string[];
+}
+export interface RuhrohRunResultArtifact {
+    path: string;
+    sha256: string;
+    run: RuhrohLoopResult;
+}
+export interface BuildRuhrohRunResultsReportInput {
+    resultsPath: string;
+    aggregate?: AggregateRuhrohRunsOptions | undefined;
+    createdAt?: string | undefined;
+    tool?: RuhrohBenchmarkClaimToolSummary | undefined;
+    source?: Omit<RuhrohBenchmarkClaimSource, "resultsPath" | "resultArtifacts"> | undefined;
+    suite?: RuhrohBenchmarkClaimSuiteSummary | undefined;
+    suiteAdapterSummaries?: readonly RuhrohSuiteAdapterSummary[] | undefined;
+    pairwiseComparisons?: readonly RuhrohPairwiseAdapterComparison[] | undefined;
+    runPlanPresent?: boolean | undefined;
+    runPlanWarnings?: readonly string[] | undefined;
+    artifactValidationErrors?: number | undefined;
+    artifactValidationWarnings?: number | undefined;
+}
+export interface RuhrohRunResultsReport {
+    version: "ruhroh_run_results_report_v1";
+    source: {
+        resultsPath: string;
+        resultCount: number;
+    };
+    artifacts: RuhrohRunResultArtifact[];
+    summaries: RuhrohRunSummary[];
+    groups: RuhrohAggregateRunGroup[];
+    reviewQueue: RuhrohReviewQueueItem[];
+    claimReadiness: RuhrohBenchmarkClaimReadiness;
+    benchmarkClaim: RuhrohBenchmarkClaimExport;
+    benchmarkSummary: RuhrohBenchmarkSummaryExport;
 }
 export interface SummarizeRuhrohClaimReadinessOptions {
     suiteId?: string | undefined;
@@ -527,6 +562,10 @@ export interface RuhrohAggregateUsage {
     tokensPerPass?: number | undefined;
 }
 export declare function scoreForEvalStatus(status: RuhrohEvalStatus): number;
+export declare function discoverRuhrohRunResultPaths(inputPath: string): string[];
+export declare function loadRuhrohRunResultArtifacts(inputPath: string): RuhrohRunResultArtifact[];
+export declare function loadRuhrohRunResults(inputPath: string): RuhrohLoopResult[];
+export declare function buildRuhrohRunResultsReport(input: BuildRuhrohRunResultsReportInput): RuhrohRunResultsReport;
 export declare function normalizeRuhrohEvalResult(input: unknown): RuhrohEvalResult;
 export declare function assessRuhrohEvalQuality(evalResult: RuhrohEvalResult): string[];
 export declare function assessRuhrohArtifactCompleteness(run: RuhrohLoopResult): string[];
