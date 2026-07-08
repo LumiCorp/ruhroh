@@ -76,7 +76,7 @@ function packPackage(destination) {
   if (!existsSync(cliPath)) {
     throw new Error("[package-smoke] dist/cli.js is missing. Run the package build before smoke:package.");
   }
-  run(pnpmBin, ["pack", "--pack-destination", destination, "--json"], { cwd: repoRoot });
+  run(pnpmBin, ["pack", "--pack-destination", destination], { cwd: repoRoot });
   const packageJson = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
   const scopePrefix = packageJson.name.startsWith("@") ? packageJson.name.slice(1).replace("/", "-") : packageJson.name;
   return path.join(destination, `${scopePrefix}-${packageJson.version}.tgz`);
