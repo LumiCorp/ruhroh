@@ -3,8 +3,8 @@ layout: home
 
 hero:
   name: Ruhroh
-  text: Realistic user-task benchmarks for coding agents.
-  tagline: Run agents through adapters, preserve their implementation journeys, and compare delivered outcomes with auditable evidence.
+  text: Did the coding agent actually build the thing?
+  tagline: Run agents on realistic software tasks, check the finished project, and keep the logs, files, and reports behind every score.
   image:
     light: /ruhroh-logo.png
     dark: /ruhroh-logo-dark.png
@@ -21,12 +21,12 @@ hero:
       link: https://www.npmjs.com/package/@kestrel-agents/ruhroh
 
 features:
-  - title: Outcome-focused
-    details: Evaluate finished workspaces and full implementation journeys instead of brittle source-text heuristics.
-  - title: Agent-agnostic
-    details: Bring your own run-agent adapter. Ruhroh owns scenarios, generation, runtime contracts, and artifacts.
-  - title: Publishable claims
-    details: Compare repeated runs with suites, run plans, artifact validation, confidence intervals, pass@k, and readiness gates.
+  - title: Real tasks
+    details: Write tasks that read like user requests, not tiny filename or route checks.
+  - title: Real evidence
+    details: Keep what the agent tried, what it changed, how it was checked, and where the final files are.
+  - title: Defensible scores
+    details: Compare repeated runs and see when a result is strong enough to cite.
 ---
 
 ## First commands
@@ -38,27 +38,42 @@ pnpm exec ruhroh first-run
 pnpm exec ruhroh workflow
 ```
 
-Ruhroh is for benchmark authors who want tasks that behave more like real user
-requests: goals, constraints, assets, iteration evidence, and outcome judgment.
-It remains Harbor-compatible, but the user-facing contract is the benchmark
-pack and its evidence, not a Harbor task folder alone.
+Ruhroh is for teams and benchmark authors who need a clearer answer than “the
+agent passed.” It helps you ask three questions:
 
-## See the evidence model
+- Did the agent finish the requested software task?
+- How do we know?
+- Can someone else inspect or rerun the result?
 
-Open the [sample workflow guide](/ruhroh/samples/ruhroh-workflow.html) before running
-anything. It shows a complete local fixture path, evaluator calibration, run
-plan, comparison inputs, publication bundle, and claim index in one staged
-artifact. Then inspect the [compare report](/ruhroh/samples/ruhroh-compare.html),
-[publication bundle manifest](/ruhroh/samples/ruhroh-publication/manifest.json), and
-[claim index](/ruhroh/samples/ruhroh-claims.html). The sample is structurally valid but
-not publishable, so the first impression is the core product behavior: every
-score is backed by evidence, and weak claims stay blocked.
+## How Ruhroh works
 
-## First proof loop
+1. Write a realistic task.
+2. Run one or more coding agents.
+3. Check the finished project.
+4. Compare results and keep the evidence.
 
-Start with the credential-free fixture path. It proves the scenario, suite,
-adapter, evaluator, artifact, and report contracts before you spend time wiring
-a live coding agent.
+The deeper machinery is still there when you need it: adapters, Harbor
+execution, versioned suites, evaluator calibration, source hashes, and
+publication bundles. You do not need to understand all of that to start. The
+first useful loop is a local sample run with a report you can inspect.
+
+## See what a result looks like
+
+Open the [sample workflow guide](/ruhroh/samples/ruhroh-workflow.html) before
+running anything. It shows the path from a first local run to a result that is
+safe to cite. Then inspect the [compare report](/ruhroh/samples/ruhroh-compare.html),
+[publication bundle manifest](/ruhroh/samples/ruhroh-publication/manifest.json),
+and [claim index](/ruhroh/samples/ruhroh-claims.html).
+
+The sample is intentionally too small to publish. That is the point: every score
+should have evidence behind it, and weak scores should be blocked before anyone
+cites them.
+
+## First local run
+
+Start with the credential-free fixture path. It proves that Ruhroh can run a
+sample task, check the finished project, and write a report before you spend
+time wiring a live coding agent.
 
 ```bash
 export RUHROH_RUN_AGENT_COMMAND="$PWD/ruhroh/adapters/fixture-newsletter/run.sh"
@@ -70,18 +85,18 @@ pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newslette
 
 When Harbor is available, remove `--dry-run` to execute the fixture-backed
 loop. After a real run, `ruhroh report`, `ruhroh review`, `ruhroh
-eval-quality`, `ruhroh compare`, and `ruhroh publish-check` turn the preserved
-artifacts into an inspectable claim workflow.
+eval-quality`, `ruhroh compare`, and `ruhroh publish-check` turn the saved
+files into an inspectable benchmark result.
 
 ## Next steps
 
 - [Getting Started](./getting-started.md): install, scaffold, and follow the
   full local workflow.
-- [Benchmark Pack Tutorial](./benchmark-pack-tutorial.md): author a scenario,
-  evaluator, suite, five-run plan, and publication packet.
-- [Core Concepts](./concepts.md): learn the scenario, suite, adapter,
-  evaluator, run-plan, artifact, and claim model.
+- [Benchmark Pack Tutorial](./benchmark-pack-tutorial.md): write a task,
+  checker, suite, five-run plan, and result packet.
+- [Core Concepts](./concepts.md): learn the names Ruhroh uses for tasks,
+  agents, checkers, saved files, and published results.
 - [Report Gallery](./report-gallery.md): inspect the generated HTML and JSON
-  artifacts behind a claim.
-- [Write an Evaluator](./write-an-evaluator.md): make outcome judgment
-  evidence-backed before collecting publishable runs.
+  files behind a benchmark result.
+- [Write an Evaluator](./write-an-evaluator.md): write a checker that explains
+  why the finished project passed, failed, or needs review.

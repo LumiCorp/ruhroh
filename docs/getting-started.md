@@ -11,36 +11,42 @@ depends_on:
 
 # Getting Started
 
-If you want to understand Ruhroh before touching your repo, start with the
-generated sample packet:
+Ruhroh helps you answer a simple benchmark question:
 
-- [Workflow guide](/ruhroh/samples/ruhroh-workflow.html): the staged path from fixture
-  readiness to claim publication.
-- [Compare report](/ruhroh/samples/ruhroh-compare.html): aggregate outcomes with
-  source artifacts, review state, and readiness blockers.
-- [Publication bundle manifest](/ruhroh/samples/ruhroh-publication/manifest.json): the
-  relocatable evidence packet produced by `publish-check --bundle`.
-- [Claim index](/ruhroh/samples/ruhroh-claims.html): the registry view over bundle
-  claims.
+**Did the coding agent actually deliver the requested software?**
+
+It does that by running agents on realistic tasks, checking the finished
+project, comparing repeated attempts, and saving the logs, files, reports, and
+metadata behind each score.
+
+If you want to understand Ruhroh before touching your repo, start with a sample
+result:
+
+- [Workflow guide](/ruhroh/samples/ruhroh-workflow.html): the path from a first
+  local run to a result that is safe to cite.
+- [Compare report](/ruhroh/samples/ruhroh-compare.html): scores, failures,
+  review notes, and links to the files behind each run.
+- [Publication bundle manifest](/ruhroh/samples/ruhroh-publication/manifest.json):
+  a portable result packet with copied source files and hashes.
+- [Claim index](/ruhroh/samples/ruhroh-claims.html): a simple registry view for
+  published benchmark results.
 
 The sample is intentionally too small to publish. It still validates
-structurally, preserves evidence, and shows exactly why the claim remains
-blocked.
+structurally, keeps its evidence, and shows why the score is not safe to cite.
 
-Install Ruhroh in a project where you want to generate and run repeatable agent
-tasks:
+Install Ruhroh in a project where you want to run repeatable coding-agent
+benchmarks:
 
 ```bash
 pnpm add -D @kestrel-agents/ruhroh
 pnpm exec ruhroh init
 ```
 
-`init` creates a local `ruhroh/` directory with a v2 smoke scenario, matching
-`ruhroh-smoke` suite, fixture adapter, fixture evaluator, schemas, and starter
-README. It is safe to rerun when files are unchanged and refuses to overwrite
-local edits.
+`init` creates a local `ruhroh/` directory with a sample task, matching sample
+suite, fixture agent script, fixture checker, schemas, and starter README. It is
+safe to rerun when files are unchanged and refuses to overwrite local edits.
 
-Check whether the local fixture loop is ready:
+Check whether the local sample run is ready:
 
 ```bash
 pnpm exec ruhroh first-run
@@ -49,27 +55,26 @@ pnpm exec ruhroh first-run --allow-dry-run --json
 pnpm exec ruhroh workflow --html ruhroh-workflow.html
 ```
 
-`first-run` is a read-only onboarding gate. It checks for the scaffolded
-fixture files, scenario and suite validation, exported adapter/evaluator
-commands, and Harbor availability, then prints the exact next commands for the
-credential-free smoke path. The command list is staged so a missing scaffold
-only asks you to run `init` and re-check; once files exist it asks for the
-fixture exports; once those are set it shows validation, dry-run, and full-run
-commands.
+`first-run` is read-only. It checks what exists, tells you what is missing, and
+prints the exact next commands for the credential-free smoke path. The command
+list is staged: if files are missing it asks you to run `init`; once files
+exist it asks for the sample agent and checker exports; once those are set it
+shows validation, dry-run, and full-run commands.
+
 Use `--allow-dry-run` in setup automation when Harbor is not installed yet but
-you still want a zero exit code after the local fixture files and exported
-commands are ready for dry-run preview. It does not mark the first local loop as
-complete; `workflow` still waits for a preserved `ruhroh-loop-result.json`.
+you still want a zero exit code after the local files and exported commands are
+ready for dry-run preview. It does not mark the first local run as complete;
+`workflow` still waits for a saved `ruhroh-loop-result.json`.
+
 `workflow` is the broader read-only guide. It inspects the current project and
-shows the next stage from first fixture loop, to benchmark authoring, evaluator
-quality, run planning, comparison, and publication readiness. JSON output is
-versioned for setup scripts and docs automation; `--html` writes the same staged
-guide as a shareable artifact. The first fixture stage stays open until Ruhroh
-finds a preserved `ruhroh-loop-result.json`; setup readiness alone is not
-treated as a completed local loop. The evaluator-quality stage also stays open
-until a passing
+shows the next step from first local run, to writing your own tasks, to repeated
+comparisons, to results that are safe to cite. JSON output is versioned for
+setup scripts and docs automation; `--html` writes the same guide as a shareable
+report. The first stage stays open until Ruhroh finds a saved
+`ruhroh-loop-result.json`; setup readiness alone is not treated as a completed
+local run. The checker quality stage also stays open until a passing
 `.generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json`
-exists, so repeated run planning starts from a calibrated scoring boundary.
+exists, so repeated run planning starts from a checker you have tested.
 
 List the bundled scenarios:
 
@@ -87,14 +92,14 @@ pnpm exec ruhroh validate
 Bundled scenarios and suites are the default. Add `--scenario-dir` or
 `--suite-dir` only when you want Ruhroh to read project-local content.
 
-The core lifecycle is:
+The basic workflow is:
 
 ```text
-scenario -> suite -> adapter run -> artifacts -> compare -> publish check
+write a task -> run an agent -> check the finished project -> compare results
 ```
 
-See [Core Concepts](./concepts.md) for the terms before authoring your own
-benchmark pack.
+See [Core Concepts](./concepts.md) for the names Ruhroh uses once you start
+authoring your own benchmark pack.
 
 Check local runtime readiness before a live run:
 
@@ -107,8 +112,8 @@ pnpm exec ruhroh doctor \
 Harbor availability, and the selected adapter. Add `--json` when wiring this
 into CI or setup scripts.
 
-To exercise the full loop without live model credentials, use the fixture
-adapter and evaluator created by `init`:
+To exercise the full loop without live model credentials, use the fixture agent
+script and checker created by `init`:
 
 ```bash
 export RUHROH_RUN_AGENT_COMMAND="$PWD/ruhroh/adapters/fixture-newsletter/run.sh"
@@ -119,11 +124,11 @@ pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newslette
 ```
 
 Add `--suite-dir ruhroh/suites --suite <id>` when your project includes a local
-benchmark suite. `doctor` then validates suite membership and scenario-version
-locks before you spend time collecting runs.
+benchmark suite. `doctor` then checks suite membership and task-version locks
+before you spend time collecting runs.
 The dry-run is only a command preview. When Harbor is installed, remove
-`--dry-run` to produce a real result artifact, then rerun `ruhroh workflow` so
-the guide can advance from first-loop proof to benchmark authoring and run
+`--dry-run` to produce a real result file, then rerun `ruhroh workflow` so the
+guide can advance from the first local run to benchmark authoring and run
 planning.
 
 See [Local Fixture Run](./local-fixture-run.md) for the complete smoke path.
@@ -133,16 +138,16 @@ wires a command adapter, and swaps in a local evaluator, see
 For a focused end-to-end authoring path from scenario to five-run claim packet,
 use the [Benchmark Pack Tutorial](./benchmark-pack-tutorial.md).
 
-Create your first local scenario draft:
+Create your first local task draft:
 
 ```bash
 pnpm exec ruhroh new-scenario csv-cleanup --scenario-dir ruhroh/scenarios
 pnpm exec ruhroh validate --scenario-dir ruhroh/scenarios --scenario csv-cleanup
 ```
 
-The scaffold is private by default and includes governance metadata, a rubric,
-evidence guidance, and pass/fail/review calibration anchors so validation works
-before you start hardening the task for a suite.
+The scaffold is private by default and includes review metadata, a rubric,
+evidence guidance, and pass/fail/review examples so validation works before you
+start hardening the task for a suite.
 
 Group local scenarios into a version-locked benchmark suite:
 

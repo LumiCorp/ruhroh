@@ -7,49 +7,58 @@
 
 # <picture><source media="(prefers-color-scheme: dark)" srcset="https://lumicorp.github.io/ruhroh/ruhroh-badge-dark.png"><img src="https://lumicorp.github.io/ruhroh/ruhroh-badge.png" alt="" width="28" align="absmiddle"></picture> Ruhroh
 
-Ruhroh turns realistic user requests into repeatable coding-agent benchmarks.
-It preserves the full implementation journey, runs agents through clean
-adapters, and judges the final delivered workspace through a terminal evaluator.
-Harbor compatibility is the execution substrate; the product promise is
-outcome-based evaluation for real coding agents.
+Ruhroh is a benchmark framework for answering one practical question:
 
-Ruhroh exists because most agent benchmarks are either too static or too easy to
-overfit. Real users do not ask for a required filename or a magic route; they ask
-for an outcome, watch the agent iterate, and care whether the finished workspace
-actually works. Ruhroh packages that loop into repeatable Harbor tasks while
-keeping the benchmark itself agent-agnostic.
+**Did the coding agent actually deliver the requested software?**
+
+Many coding-agent benchmarks can tell you that an agent passed. They do not
+always show whether the finished project works, what the agent tried, or whether
+the score has enough evidence behind it to trust. Ruhroh runs agents on
+realistic software tasks, checks the finished project, compares repeated runs,
+and keeps the logs, files, reports, and metadata needed to inspect every score.
 
 Use Ruhroh when you want to:
 
-- turn product-like user requests into repeatable agent tasks;
-- compare agents or prompts on delivered outcomes, not source-text heuristics;
-- preserve transcripts, intermediate attempts, final workspaces, and eval
-  judgments for review;
-- publish benchmark packs with methodology, artifact evidence, and readiness
-  checks reviewers can audit.
+- test agents on tasks that look like real user requests;
+- compare agents or prompts by what they deliver, not by shallow source-text
+  checks;
+- keep the logs, outputs, files, and reports behind each result;
+- publish benchmark results that another person can inspect, rerun, and
+  challenge.
 
-Ruhroh is not a native agent runner or a giant general-purpose eval platform.
-You bring the run-agent adapter. Ruhroh owns the scenario format, benchmark
-suites, generator, CLI, result contracts, artifact preservation, and a
-package-owned Python Harbor runtime for command-backed adapters.
+Ruhroh is not another coding agent. You bring the agent you want to test.
+Ruhroh gives you the task format, local scaffolding, result files, reports, and
+review checks for turning agent runs into defensible benchmark results.
 
-## See The Audit Loop First
+## How Ruhroh Works
 
-Before installing anything, inspect the generated evidence packet:
+1. Write a realistic task.
+2. Run one or more coding agents on it.
+3. Check the finished project.
+4. Compare the results and keep the evidence.
+
+Under the hood, Ruhroh still supports Harbor-compatible execution, agent
+adapters, versioned suites, evaluator calibration, source hashes, and
+publication bundles. Those pieces matter when you are ready to automate or cite
+scores. The first job is simpler: prove that the agent built the thing and that
+the proof is easy to inspect.
+
+## See What a Result Looks Like
+
+Before installing anything, inspect a generated sample result:
 
 - [Workflow guide](https://lumicorp.github.io/ruhroh/samples/ruhroh-workflow.html):
-  the staged path from local fixture loop to publication readiness.
+  the path from first local run to a result that is safe to cite.
 - [Compare report](https://lumicorp.github.io/ruhroh/samples/ruhroh-compare.html):
-  scenario-by-adapter results, artifact links, review queues, and readiness
-  blockers.
+  scores, failures, review notes, and links to the files behind each run.
 - [Publication bundle](https://lumicorp.github.io/ruhroh/samples/ruhroh-publication/manifest.json):
-  a relocatable claim packet with copied source evidence and hashes.
+  a portable result packet with copied source files and hashes.
 - [Claim index](https://lumicorp.github.io/ruhroh/samples/ruhroh-claims.html):
-  the registry view over one or more benchmark claims.
+  a simple registry view for published benchmark results.
 
-The sample is intentionally blocked for publication because it has only two
-synthetic runs. That is the point: Ruhroh should make unsupported claims obvious
-while keeping every source artifact inspectable.
+The sample has only two synthetic runs, so Ruhroh marks it as not safe to cite.
+That is intentional: weak scores should be easy to spot, and the evidence behind
+every score should stay easy to inspect.
 
 ## Install
 
@@ -60,9 +69,9 @@ pnpm exec ruhroh init
 
 ## Quickstart
 
-Start with the credential-free fixture loop before wiring a live coding agent.
-The first milestone is not a published benchmark claim; it is proving that the
-scenario, adapter, evaluator, artifact, and report path works locally.
+Start with the credential-free fixture run before wiring a live coding agent.
+The first goal is small: prove that Ruhroh can run a sample task, check the
+finished project, and write a report on your machine.
 
 ```bash
 pnpm exec ruhroh init
@@ -73,25 +82,23 @@ pnpm exec ruhroh first-run
 pnpm exec ruhroh workflow --html ruhroh-workflow.html
 ```
 
-`first-run` is the read-only onboarding gate. The first call shows what is
-missing; after the exports it prints the next stage-specific commands for
-`doctor`, `validate`, dry-run, and the full fixture run. The dry-run command is
-only a Harbor command preview, so it never counts as a completed loop. When
-Harbor is not installed yet, `pnpm exec ruhroh first-run --allow-dry-run --json`
-can still exit `0` once the scaffold and exported commands are ready for dry-run
-preview. When Harbor is installed, run the full fixture command to preserve a
-real `ruhroh-loop-result.json`:
+`first-run` checks what is ready and tells you the next command to run. The
+first call usually asks you to export the sample agent and checker commands.
+After that, it shows validation, dry-run, and full-run commands. A dry run only
+previews the Harbor command, so it does not count as a completed benchmark run.
+When Harbor is installed, run the full fixture command to produce a real
+`ruhroh-loop-result.json`:
 
 ```bash
 pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newsletter --adapter custom-shell
 pnpm exec ruhroh workflow --html ruhroh-workflow.html
 ```
 
-`workflow` keeps showing the next stage as your project moves from fixture
-smoke, to authoring, to repeated runs, to publication readiness, and `--html`
-writes that staged guide as a shareable artifact. By default, Ruhroh reads
-bundled scenarios and suites; use `--scenario-dir` and `--suite-dir` when you
-are working in a project-local `ruhroh/` tree.
+`workflow` keeps showing the next step as you move from a first local run, to
+writing your own tasks, to repeated comparisons, to results that are safe to
+cite. `--html` writes the same guide as a shareable report. By default, Ruhroh
+reads bundled examples; use `--scenario-dir` and `--suite-dir` when you are
+working in a project-local `ruhroh/` tree.
 
 See the [local fixture run guide](https://lumicorp.github.io/ruhroh/local-fixture-run)
 for the full smoke path, or
@@ -100,8 +107,9 @@ for a repo integration walkthrough.
 
 ## Author A Benchmark Pack
 
-Once the fixture path works, create the three pieces that define a benchmark
-pack: scenarios, a version-locked suite, and an evaluator you can defend.
+Once the fixture path works, create the three pieces that define a benchmark:
+the task, the group of tasks you want to compare, and the checker that decides
+whether the finished project satisfies the request.
 
 ```bash
 pnpm exec ruhroh new-scenario csv-cleanup --scenario-dir ruhroh/scenarios
@@ -113,26 +121,27 @@ export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/deterministic-evaluator/run.s
 pnpm exec ruhroh calibrate-evaluator --scenario-dir ruhroh/scenarios --scenario csv-cleanup
 ```
 
-Scenario prompts should read like realistic user requests. Suites freeze
-scenario versions and methodology. Evaluators inspect the final delivered
-workspace and must cite evidence; fresh evaluator scaffolds return `review`
-until you replace the placeholder checks. Add `--require-calibrated` to
-`inspect-pack` when the pack should fail CI unless every scenario has complete
+Scenario prompts should read like realistic user requests. Suites freeze task
+versions and collection rules. Evaluators are checkers: they inspect the
+finished project and cite the evidence they used. New evaluator scaffolds return
+`review` until you replace the placeholder checks. Add `--require-calibrated`
+to `inspect-pack` when the pack should fail CI unless every task has complete
 pass/fail/review calibration coverage. `inspect-pack --json` also emits
-scenario, prompt, public asset, and private evaluator asset fingerprints for
-registry preflight and contamination review. See
+fingerprints for the task prompt, public files, and private checker files so
+reviewers can see what changed. See
 [Write a Scenario](https://lumicorp.github.io/ruhroh/write-a-scenario),
 [Benchmark Suites](https://lumicorp.github.io/ruhroh/benchmark-suites), and
 [Write an Evaluator](https://lumicorp.github.io/ruhroh/write-an-evaluator).
-When you want a pack to be shared or reviewed before result collection, run the
+When you want a pack reviewed before collecting results, run the
 [Benchmark Pack Registry](https://lumicorp.github.io/ruhroh/benchmark-pack-registry)
-gate so scenario versions, suite locks, calibration coverage, evaluator
-readiness, and content fingerprints are visible in one inspection artifact.
+gate so task versions, suite locks, checker readiness, and content fingerprints
+are visible in one inspection file.
 
 ## Wire An Agent
 
-Ruhroh is adapter-neutral. Use the maintained wrapper templates as starting
-points, then run `doctor` before collecting samples.
+Ruhroh can test different agents because each agent is connected through a small
+adapter script. Use the maintained wrapper templates as starting points, then
+run `doctor` before collecting samples.
 
 ```bash
 pnpm exec ruhroh examples
@@ -145,17 +154,16 @@ pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario csv-cleanup --ad
 Adapter templates include `generic`, `codex-cli`, `claude-code`, `gemini-cli`,
 `aider`, and `fixture`. `init --adapter <template>` puts one selected wrapper
 directly in the starter alongside the credential-free fixture path;
-`new-adapter` adds one later. The `examples` catalog also shows evaluator
-templates (`review`, `deterministic`, `model`, and `hybrid`) with scaffold and
-calibration commands, because credible scores depend on outcome judgment as
-much as agent wiring. The generic template fails fast until edited; live CLI
-templates still need the matching CLI installed and authenticated.
+`new-adapter` adds one later. The `examples` catalog also shows checker
+templates (`review`, `deterministic`, `model`, and `hybrid`) because credible
+scores depend on the review step as much as the agent wiring. The generic
+template fails fast until edited; live CLI templates still need the matching CLI
+installed and authenticated.
 
 ## Compare Repeated Runs
 
-Use a run plan when collecting repeated samples. The plan is the reproducibility
-contract that later proves which scenario, adapter, and sample matrix was
-intended.
+Use a run plan when collecting repeated samples. It records what you meant to
+run: which tasks, which agents, how many attempts, and which sample ids.
 
 ```bash
 pnpm exec ruhroh plan --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-data --adapter ./ruhroh/adapters/codex-local/run.sh --runs 10
@@ -165,21 +173,20 @@ pnpm exec ruhroh compare ./path/to/results
 pnpm exec ruhroh compare ./path/to/results --html ruhroh-compare.html
 ```
 
-After a run, inspect one preserved artifact directory with `ruhroh report`,
+After a run, inspect one preserved result directory with `ruhroh report`,
 `ruhroh validate-artifacts`, `ruhroh eval-quality --html`, and `ruhroh review`.
-`compare` then aggregates repeated runs into pass rates, confidence intervals,
-pass@k, cost/token metadata when available, evaluator warnings, human-review
-queues, and claim-readiness blockers. `compare --html` adds a shareable matrix,
-failure triage, cost/efficiency view, and artifact links so reviewers can move
-from aggregate scores to preserved evidence.
+`compare` then turns repeated runs into pass rates, score summaries, cost/token
+metadata when available, review warnings, and blockers that would make a score
+unsafe to cite. `compare --html` adds a shareable matrix, failure triage,
+cost/efficiency view, and links to the files behind each result.
 Use `--shard <index>/<total>` to split expensive repeated cohorts across
 workers while keeping sample ids tied to the full requested `--runs` count.
 
 ## Publish A Claim
 
 Use `publish-check` when you want the one answer that matters before citing a
-score: is this suite-scoped comparison publishable, and can the evidence be
-independently inspected?
+score: is this benchmark result safe to publish, and can someone else inspect
+the evidence?
 
 ```bash
 pnpm exec ruhroh publish-check ./path/to/results \
@@ -192,11 +199,11 @@ pnpm exec ruhroh validate-bundle ruhroh-publication --json
 pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html
 ```
 
-The bundle contains the claim, summary, compare report, review queue,
-eval-quality report, manifest, README, and copied `sources/` evidence referenced
-by the claim. A valid bundle can still return exit code `2` when the evidence is
-structurally sound but not yet publishable, for example because the sample count
-is too low or human review is still required. See
+The bundle contains the score, summary, compare report, review queue,
+eval-quality report, manifest, README, and copied `sources/` evidence used by
+the result. A valid bundle can still return exit code `2` when the files are
+sound but the score is not yet safe to cite, for example because the sample
+count is too low or human review is still required. See
 [Publish Claims](https://lumicorp.github.io/ruhroh/publish-claims) and the
 [Report Gallery](https://lumicorp.github.io/ruhroh/report-gallery).
 
