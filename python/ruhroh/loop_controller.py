@@ -145,6 +145,7 @@ def run_ruhroh_trial(
             journey_path=journey_path,
             eval_input_path=eval_input_path,
             eval_output_path=eval_result_path,
+            installed_dir=installed_dir,
         )
         write_workspace_summary(workspace_root, workspace_summary_path)
         write_workspace_tarball(workspace_root, workspace_tarball_path)
@@ -368,6 +369,7 @@ class CommandRunAgentAdapter(RunAgentAdapter):
         super().__init__(scenario_id, workspace_root, installed_dir, run_root)
 
     def run_turn(self, *, iteration: int, message: str) -> dict[str, Any]:
+        materialize_inline_command(self.command_env_key, self.installed_dir)
         command = os.environ.get(self.command_env_key)
         if command is None or command.strip() == "":
             raise RuntimeError(f"{self.command_env_key} is required for Ruhroh adapter {self.id}")
@@ -611,7 +613,9 @@ def run_eval_agent(
     journey_path: Path,
     eval_input_path: Path,
     eval_output_path: Path,
+    installed_dir: Path | None = None,
 ) -> dict[str, Any]:
+    installed_dir = installed_dir or eval_output_path.parent
     eval_input = build_eval_input(
         scenario_id=scenario_id,
         eval_workspace_root=eval_workspace_root,
@@ -630,6 +634,7 @@ def run_eval_agent(
             fixture["artifacts"].setdefault("journeyPath", str(journey_path))
         eval_output_path.write_text(json.dumps(fixture, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return fixture
+    materialize_inline_command("RUHROH_EVAL_COMMAND", installed_dir)
     command = os.environ.get("RUHROH_EVAL_COMMAND")
     if command is not None and command.strip() != "":
         env = {
@@ -1110,16 +1115,39 @@ def command_manifest(env_key: str) -> dict[str, Any]:
     command = os.environ.get(env_key)
     if command is None or command.strip() == "":
         return {"configured": False}
-    return {
+    manifest = {
         "configured": True,
         "envKey": env_key,
         "sha256": hashlib.sha256(command.encode("utf-8")).hexdigest(),
         "shellEnabled": command_shell_enabled(f"{env_key}_SHELL"),
     }
+    inline_base64 = os.environ.get(f"{env_key}_INLINE_BASE64")
+    if inline_base64:
+        try:
+            manifest["inlineSha256"] = hashlib.sha256(base64.b64decode(inline_base64)).hexdigest()
+        except Exception:
+            manifest["inlineSha256"] = "invalid-inline-base64"
+    return manifest
 
 
 def command_shell_enabled(env_key: str) -> bool:
     return str(os.environ.get(env_key, "")).strip().lower() in {"1", "true", "yes", "on"}
+
+
+def materialize_inline_command(command_env_key: str, installed_dir: Path) -> None:
+    inline_base64 = os.environ.get(f"{command_env_key}_INLINE_BASE64")
+    if not inline_base64:
+        return
+    inline_name = os.environ.get(f"{command_env_key}_INLINE_NAME") or f"{command_env_key.lower()}.sh"
+    safe_name = "".join(ch if ch.isalnum() or ch in {".", "_", "-"} else "-" for ch in inline_name).lstrip("-") or f"{command_env_key.lower()}.sh"
+    command_dir = installed_dir / "local-commands"
+    command_dir.mkdir(parents=True, exist_ok=True)
+    command_path = command_dir / safe_name
+    payload = base64.b64decode(inline_base64)
+    if not command_path.exists() or command_path.read_bytes() != payload:
+        command_path.write_bytes(payload)
+        command_path.chmod(0o755)
+    os.environ[command_env_key] = str(command_path)
 
 
 def command_args(command: str, *, shell_env_key: str) -> str | list[str]:
