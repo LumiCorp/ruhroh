@@ -9,9 +9,10 @@ interface RuntimeDeps {
     cwd: string;
     stdout: Pick<NodeJS.WriteStream, "write">;
     stderr: Pick<NodeJS.WriteStream, "write">;
+    stdin?: NodeJS.ReadStream | undefined;
 }
 export interface RuhrohCliOptions {
-    command: "run" | "generate" | "list" | "list-suites" | "plan" | "validate" | "inspect-pack" | "validate-artifacts" | "validate-claim" | "validate-summary" | "validate-bundle" | "claim-index" | "report" | "compare" | "review" | "eval-quality" | "publish-check" | "explain" | "examples" | "first-run" | "workflow" | "doctor" | "init" | "new-scenario" | "new-suite" | "new-adapter" | "new-evaluator" | "calibrate-evaluator";
+    command: "run" | "demo" | "generate" | "list" | "list-suites" | "plan" | "validate" | "inspect-pack" | "validate-artifacts" | "validate-targets" | "validate-claim" | "validate-summary" | "validate-bundle" | "claim-index" | "report" | "compare" | "review" | "eval-quality" | "publish-check" | "explain" | "examples" | "first-run" | "workflow" | "doctor" | "init" | "new-scenario" | "new-suite" | "new-adapter" | "new-evaluator" | "calibrate-evaluator";
     list: boolean;
     listSuites: boolean;
     dryRun: boolean;
@@ -22,6 +23,7 @@ export interface RuhrohCliOptions {
     requireCalibrated: boolean;
     requireRiskReviewed: boolean;
     verifySources: boolean;
+    fresh: boolean;
     harborBin: string;
     scenarioDir: string;
     scenarioDirExplicit: boolean;
@@ -38,6 +40,8 @@ export interface RuhrohCliOptions {
     tier?: RuhrohScenarioTier | undefined;
     iterations?: number | undefined;
     adapter?: string | undefined;
+    targetConfigPath?: string | undefined;
+    targets: string[];
     evaluator?: string | undefined;
     evaluatorTemplate: RuhrohEvaluatorTemplate;
     adapterTemplate: RuhrohAdapterTemplate;
@@ -50,6 +54,7 @@ export interface RuhrohCliOptions {
     benchmarkClaimPath?: string | undefined;
     benchmarkSummaryPath?: string | undefined;
     bundlePath?: string | undefined;
+    demoModel?: string | undefined;
 }
 interface RuhrohRunShard {
     index: number;

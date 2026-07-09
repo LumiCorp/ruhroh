@@ -35,6 +35,7 @@
     },
     "./schemas/benchmark-claim-v1.schema.json": "./schemas/benchmark-claim-v1.schema.json",
     "./schemas/benchmark-summary-v1.schema.json": "./schemas/benchmark-summary-v1.schema.json",
+    "./schemas/benchmark-target-config-v1.schema.json": "./schemas/benchmark-target-config-v1.schema.json",
     "./schemas/claim-index-v1.schema.json": "./schemas/claim-index-v1.schema.json",
     "./schemas/eval-calibration-report-v1.schema.json": "./schemas/eval-calibration-report-v1.schema.json",
     "./schemas/eval-result-v1.schema.json": "./schemas/eval-result-v1.schema.json",

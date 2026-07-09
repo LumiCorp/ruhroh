@@ -18,6 +18,30 @@ const runPlanPath = path.join(sampleRoot, "ruhroh-run-plan.json");
 const publishBundlePath = path.join(sampleRoot, "ruhroh-publication");
 const cliPath = path.join(repoRoot, "dist", "cli.js");
 const publicSampleTimestamp = "2026-07-08T12:00:00.000Z";
+const sampleBenchmarkTarget = {
+  targetId: "docs-fixture-native-stack",
+  stream: "native-stack",
+  adapterId: "agent-a",
+  harness: { name: "fixture-newsletter", version: "docs-sample-v1" },
+  requestedModel: {
+    provider: "docs",
+    model: "sample-agent",
+    canonicalId: "docs/sample-agent",
+    version: "2026-07-08",
+    protocol: "fixture-command",
+    promptVersion: "docs-v1",
+  },
+  actualModel: {
+    provider: "docs",
+    model: "sample-agent",
+    canonicalId: "docs/sample-agent",
+    version: "2026-07-08",
+    protocol: "fixture-command",
+    promptVersion: "docs-v1",
+  },
+  providerPath: { provider: "docs", protocol: "fixture-command" },
+  recommendedStack: { recommended: true, rationale: "Docs sample uses the maintained fixture adapter with its native fixture model." },
+};
 
 rmSync(sampleRoot, { recursive: true, force: true });
 mkdirSync(resultsRoot, { recursive: true });
@@ -98,6 +122,7 @@ writeJson(runPlanPath, {
     suiteId: "ruhroh-sample",
     runs: 2,
     adapters: ["agent-a"],
+    targets: [sampleBenchmarkTarget.targetId],
   },
   suite: {
     id: "ruhroh-sample",
@@ -246,10 +271,12 @@ runCli([
 assertWorkflowSample(readFileSync(path.join(sampleRoot, "ruhroh-workflow.html"), "utf8"));
 assertPublicHtmlDoesNotLeakLocalPaths();
 scrubPublicSampleTextArtifacts();
+refreshScrubbedPublicSampleHashes();
 refreshScrubbedPublishBundleHashes();
 assertPublishCheckSample(JSON.parse(readFileSync(path.join(sampleRoot, "publish-check.json"), "utf8")));
 assertPublishBundleManifestSample(JSON.parse(readFileSync(path.join(publishBundlePath, "manifest.json"), "utf8")));
 assertPublishCheckSample(JSON.parse(readFileSync(path.join(publishBundlePath, "publish-check.json"), "utf8")));
+assertBenchmarkTargetSample(JSON.parse(readFileSync(path.join(sampleRoot, "benchmark-claim.json"), "utf8")));
 const scrubbedPublishBundleValidation = runCli([
   "validate-bundle",
   "ruhroh-publication",
@@ -368,7 +395,7 @@ function writeSampleRun(input) {
       continuityLevel: "workspace_only",
       sessionHandle: input.runId,
       runIds: [input.runId],
-      model: { provider: "docs", model: "sample-agent", version: "2026-07-08", promptVersion: "docs-v1" },
+      model: { provider: "docs", model: "sample-agent", canonicalId: "docs/sample-agent", version: "2026-07-08", promptVersion: "docs-v1" },
     },
     evaluator: {
       model: {
@@ -386,6 +413,7 @@ function writeSampleRun(input) {
     },
     environment: { fingerprint: { sha256: "1".repeat(64), source: "docs sample" } },
     usage: { costUsd: input.score === 1 ? 0.03 : 0.02, totalTokens: input.score === 1 ? 900 : 700 },
+    benchmarkTarget: cloneJson(sampleBenchmarkTarget),
   };
   const result = {
     $schema: "https://lumicorp.github.io/ruhroh/schemas/loop-result-v1.schema.json",
@@ -473,6 +501,7 @@ function plannedSample(index, seed) {
     runCount: 2,
     forwardedEnvKeys: ["RUHROH_SAMPLE_ID"],
     harborCommand: { bin: "harbor", args: [], display: "harbor run ..." },
+    benchmarkTarget: cloneJson(sampleBenchmarkTarget),
   };
 }
 
@@ -539,6 +568,10 @@ function writeSampleCalibrationCase(calibrationCase) {
 function writeJson(filePath, value) {
   mkdirSync(path.dirname(filePath), { recursive: true });
   writeFileSync(filePath, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+function cloneJson(value) {
+  return JSON.parse(JSON.stringify(value));
 }
 
 function sha256File(filePath) {
@@ -626,6 +659,39 @@ function assertClaimIndex(report) {
   }
   if (!Array.isArray(report.claims) || report.claims[0]?.bundlePath === undefined) {
     throw new Error("docs sample claim index must point at the publication packet");
+  }
+  const context = report.claims[0]?.benchmarkContext;
+  if (!context?.streams?.includes("native-stack") || !context?.targets?.includes(sampleBenchmarkTarget.targetId)) {
+    throw new Error("docs sample claim index must expose benchmark stream and target context");
+  }
+  const claimsHtml = readFileSync(path.join(sampleRoot, "ruhroh-claims.html"), "utf8");
+  if (!claimsHtml.includes("Benchmark context") || !claimsHtml.includes("target=docs-fixture-native-stack")) {
+    throw new Error("docs sample claim index HTML must expose benchmark context");
+  }
+}
+
+function assertBenchmarkTargetSample(claim) {
+  const artifactTarget = claim.source?.resultArtifacts?.[0]?.benchmarkTarget;
+  if (artifactTarget?.targetId !== sampleBenchmarkTarget.targetId) {
+    throw new Error("docs sample benchmark claim must preserve the source artifact benchmark target");
+  }
+  const cohort = claim.scenarioResults?.[0]?.cohort;
+  if (!cohort?.benchmarkStreams?.includes("native-stack") || !cohort?.benchmarkTargets?.includes(sampleBenchmarkTarget.targetId)) {
+    throw new Error("docs sample benchmark claim must summarize concrete benchmark target cohort metadata");
+  }
+  const compareHtml = readFileSync(path.join(sampleRoot, "ruhroh-compare.html"), "utf8");
+  for (const expected of [
+    "Stack</strong>: target=docs-fixture-native-stack",
+    "Benchmark target",
+    "stream=native-stack",
+    "harness=fixture-newsletter@docs-sample-v1",
+    "requested=docs/sample-agent",
+    "actual=docs/sample-agent",
+    "providerPath=provider=docs|protocol=fixture-command",
+  ]) {
+    if (!compareHtml.includes(expected)) {
+      throw new Error(`docs sample compare HTML must include benchmark target detail: ${expected}`);
+    }
   }
 }
 
@@ -720,15 +786,23 @@ function isPublicTextArtifact(file) {
   ].some((extension) => file.endsWith(extension));
 }
 
+function refreshScrubbedPublicSampleHashes() {
+  refreshScrubbedClaimArtifacts(sampleRoot);
+}
+
 function refreshScrubbedPublishBundleHashes() {
-  const claimPath = path.join(publishBundlePath, "benchmark-claim.json");
-  const summaryPath = path.join(publishBundlePath, "benchmark-summary.json");
-  const publishCheckPath = path.join(publishBundlePath, "publish-check.json");
+  refreshScrubbedClaimArtifacts(publishBundlePath);
+}
+
+function refreshScrubbedClaimArtifacts(basePath) {
+  const claimPath = path.join(basePath, "benchmark-claim.json");
+  const summaryPath = path.join(basePath, "benchmark-summary.json");
+  const publishCheckPath = path.join(basePath, "publish-check.json");
   const claim = JSON.parse(readFileSync(claimPath, "utf8"));
   const summary = JSON.parse(readFileSync(summaryPath, "utf8"));
   const publishCheck = JSON.parse(readFileSync(publishCheckPath, "utf8"));
-  refreshClaimSourceHashes(claim);
-  refreshClaimSourceHashes(summary);
+  refreshClaimSourceHashes(claim, basePath);
+  refreshClaimSourceHashes(summary, basePath);
   if (publishCheck.compare?.benchmarkClaim !== undefined) {
     publishCheck.compare.benchmarkClaim = claim;
   }
@@ -740,15 +814,15 @@ function refreshScrubbedPublishBundleHashes() {
   writeJson(publishCheckPath, publishCheck);
 }
 
-function refreshClaimSourceHashes(claim) {
+function refreshClaimSourceHashes(claim, basePath) {
   const source = claim.source;
   if (source === undefined || source === null || typeof source !== "object") {
     return;
   }
-  refreshSourceHash(source, "suitePath", "suiteSha256");
-  refreshSourceHash(source, "runPlanPath", "runPlanSha256");
-  refreshSourceHash(source, "rerunLedgerPath", "rerunLedgerSha256");
-  refreshSourceHash(source, "evaluatorCalibrationReportPath", "evaluatorCalibrationReportSha256");
+  refreshSourceHash(source, "suitePath", "suiteSha256", basePath);
+  refreshSourceHash(source, "runPlanPath", "runPlanSha256", basePath);
+  refreshSourceHash(source, "rerunLedgerPath", "rerunLedgerSha256", basePath);
+  refreshSourceHash(source, "evaluatorCalibrationReportPath", "evaluatorCalibrationReportSha256", basePath);
   if (!Array.isArray(source.resultArtifacts)) {
     return;
   }
@@ -756,36 +830,36 @@ function refreshClaimSourceHashes(claim) {
     if (artifact === null || typeof artifact !== "object") {
       continue;
     }
-    refreshPathHash(artifact);
+    refreshPathHash(artifact, basePath);
     if (!Array.isArray(artifact.artifactInventory)) {
       continue;
     }
     for (const item of artifact.artifactInventory) {
       if (item !== null && typeof item === "object") {
-        refreshPathHash(item);
+        refreshPathHash(item, basePath);
       }
     }
   }
 }
 
-function refreshSourceHash(source, pathField, hashField) {
+function refreshSourceHash(source, pathField, hashField, basePath) {
   if (typeof source[pathField] !== "string") {
     return;
   }
-  source[hashField] = sha256File(resolvePublicBundlePath(source[pathField]));
+  source[hashField] = sha256File(resolvePublicArtifactPath(source[pathField], basePath));
 }
 
-function refreshPathHash(item) {
+function refreshPathHash(item, basePath) {
   if (typeof item.path !== "string") {
     return;
   }
-  const resolved = resolvePublicBundlePath(item.path);
+  const resolved = resolvePublicArtifactPath(item.path, basePath);
   item.sha256 = sha256File(resolved);
   item.sizeBytes = statSync(resolved).size;
 }
 
-function resolvePublicBundlePath(itemPath) {
-  return path.isAbsolute(itemPath) ? itemPath : path.join(publishBundlePath, itemPath);
+function resolvePublicArtifactPath(itemPath, basePath) {
+  return path.isAbsolute(itemPath) ? itemPath : path.join(basePath, itemPath);
 }
 
 function assertPublicSamplesDoNotLeakLocalPaths() {

@@ -27,6 +27,7 @@ ruhroh/
     suite-v1.schema.json
     loop-result-v1.schema.json
     benchmark-claim-v1.schema.json
+    benchmark-target-config-v1.schema.json
     publish-check-v1.schema.json
   suites/
     ruhroh-smoke/

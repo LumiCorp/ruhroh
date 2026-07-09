@@ -18,6 +18,7 @@ Use the commands as a staged loop, not as a flat checklist:
 
 | Stage | Primary commands | Proof you should have before moving on |
 | --- | --- | --- |
+| Try the product | `demo` | A live Aider run, local evidence package, and HTML report exist. |
 | Understand the evidence model | `workflow --html`, `report-gallery` samples | You can point to the artifacts and blockers behind a sample claim. |
 | Prove local plumbing | `init`, `first-run`, `doctor`, `validate`, `run --dry-run`, `run` | A real fixture `ruhroh-loop-result.json` exists and `workflow` advances past the first stage. |
 | Author a benchmark pack | `new-scenario`, `new-suite`, `new-evaluator`, `calibrate-evaluator`, `inspect-pack` | Scenarios validate, the suite locks versions, evaluator calibration passes, and pack preflight is clean. |
@@ -60,6 +61,34 @@ starter. JSON output separates the credential-free fixture commands from
 
 `init` is safe to rerun when files are unchanged. It refuses to overwrite local
 edits.
+
+## `ruhroh demo`
+
+Run the canonical live first-run demo:
+
+```bash
+pnpm dlx @kestrel-agents/ruhroh demo
+pnpm dlx @kestrel-agents/ruhroh demo --model z-ai/glm-5.2
+pnpm dlx @kestrel-agents/ruhroh demo --fresh --html ruhroh-report.html
+```
+
+`demo` creates an isolated `.ruhroh/runs/demo-*` workspace, installs the pinned
+Aider package (`aider-chat==0.86.2`) into `.ruhroh/tools/aider/0.86.2`, runs the
+bundled `bookmark-manager-demo` scenario through OpenRouter, evaluates the
+delivered app, and writes `ruhroh-report.html`.
+
+The intended unscoped command is `pnpm dlx ruhroh demo`. Until the unrelated
+existing `ruhroh` npm package name is available, use the scoped package command
+above.
+
+Credential behavior is env-first: if `OPENROUTER_API_KEY` is present, the demo
+uses it without prompting. In an interactive terminal, a missing key triggers a
+masked paste prompt for this run only. Non-interactive runs must set
+`OPENROUTER_API_KEY`.
+
+The default model is `openrouter/z-ai/glm-5.2`. `--model` accepts either a full
+`openrouter/<provider>/<model>` value or a provider/model value such as
+`z-ai/glm-5.2`. `--fresh` recreates only the pinned Aider cache.
 
 ## `ruhroh new-scenario <id>`
 
@@ -356,6 +385,7 @@ pnpm exec ruhroh run --suite ruhroh-productivity --adapter ./adapters/my-agent.s
 pnpm exec ruhroh run --scenario simple-newsletter --adapter ./adapters/my-agent.sh
 pnpm exec ruhroh run --suite ruhroh-smoke --adapter ./adapters/my-agent.sh --runs 5
 pnpm exec ruhroh run --suite ruhroh-smoke --adapter ./adapters/codex.sh --adapter ./adapters/claude.sh --runs 5
+pnpm exec ruhroh plan --suite ruhroh-smoke --target-config ruhroh/benchmark-targets.json --runs 5 --json
 pnpm exec ruhroh run --suite ruhroh-smoke --adapter ./adapters/my-agent.sh --runs 20 --shard 1/4
 ```
 
@@ -374,9 +404,73 @@ Options:
   produce disjoint artifacts that compare against one intended run plan.
 - `--adapter <id-or-command>` selects an agent connector. Repeat the option to
   run the same task selection across multiple agents.
+- `--target-config <path>` selects benchmark target rows instead of raw
+  adapters. Use targets when a run must record harness, requested model,
+  provider path, and native-stack metadata.
+- `--target <id>` filters a target config to one or more target ids. Repeat the
+  option to select multiple rows. Do not combine target configs with
+  `--adapter`.
 - `--generated-dir <path>` changes the generated Harbor task root and run-plan
   output location.
 - `--harbor-bin <path>` changes the Harbor executable.
+
+Minimal benchmark target config:
+
+```json
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/benchmark-target-config-v1.schema.json",
+  "version": "ruhroh_benchmark_target_config_v1",
+  "stream": "harness-controlled",
+  "targets": [
+    {
+      "targetId": "claude-code-openrouter-gpt55",
+      "adapterId": "claude-code",
+      "adapterCommand": "./adapters/claude-code/run.sh",
+      "harness": { "name": "claude-code", "version": "2.1.85" },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openai/gpt-5.5",
+        "canonicalId": "openai/gpt-5.5",
+        "protocol": "anthropic-messages",
+        "promptVersion": "claude-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "anthropic-messages",
+        "gateway": "anthropic-compatible"
+      },
+      "env": {
+        "ANTHROPIC_BASE_URL": "https://openrouter.example/anthropic"
+      }
+    }
+  ]
+}
+```
+
+Validate matrix files before collecting runs:
+
+```bash
+pnpm exec ruhroh validate-targets ruhroh/benchmark-targets.json --json
+```
+
+`stream` is optional for backward compatibility. When present, validation checks
+the declared comparison shape. Prefer a top-level `stream`; if target rows carry
+stream values without a top-level stream, all rows must agree and Ruhroh
+validates that effective stream. Use `requestedModel.canonicalId` when several
+harnesses address the same underlying model with different literal model
+arguments.
+
+The package ships target-config templates for the three common public streams:
+
+```bash
+pnpm exec ruhroh validate-targets examples/benchmark-targets/harness-controlled.openrouter-gpt55.json --json
+pnpm exec ruhroh validate-targets examples/benchmark-targets/model-controlled.aider-openrouter.json --json
+pnpm exec ruhroh validate-targets examples/benchmark-targets/recommended-stacks.json --json
+```
+
+Use `native-stack` for the stream where each harness runs its intended default
+or maintainer-recommended model/provider path. `recommended-stack` is still
+accepted for older target configs.
 
 `ruhroh plan` generates task directories and writes
 `.generated/ruhroh/ruhroh-run-plan.json` without starting Harbor. JSON output is
@@ -481,8 +575,9 @@ confidence intervals, pass@k, failure buckets, cohort metadata, comparability
 warnings, eval-quality warnings, optional cost/token summaries, and a cross-run
 `reviewQueue`. When a scenario has results for multiple adapters, compare
 output includes `pairwiseComparisons` with adapter pass-rate deltas,
-approximate 95% confidence intervals for those deltas, conclusions, and
-warnings when the interval still includes zero. JSON compare output includes a
+approximate 95% confidence intervals for those deltas, conclusions,
+`comparisonVariables` showing which benchmark variables varied or stayed
+controlled, and warnings when the interval still includes zero. JSON compare output includes a
 versioned `benchmarkClaim` object that packages the suite, methodology,
 adapter summaries, scenario results, pairwise comparisons, readiness state, and
 run-plan/review evidence into a compact archive/export record. Add

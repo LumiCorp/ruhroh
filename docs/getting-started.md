@@ -7,6 +7,7 @@ last_verified_at: 2026-06-23
 depends_on:
   - README.md
   - package.json
+  - src/cli.ts
 ---
 
 # Getting Started
@@ -31,14 +32,30 @@ Install Ruhroh in a project where you want to generate and run repeatable agent
 tasks:
 
 ```bash
+pnpm dlx @kestrel-agents/ruhroh demo
+```
+
+`demo` is the live first-run experience. It uses OpenRouter, prompts for an API
+key when `OPENROUTER_API_KEY` is not already set, installs pinned Aider tooling
+under `.ruhroh/tools/`, runs the bundled bookmark-manager task, evaluates the
+delivered app, and writes `ruhroh-report.html` plus local run evidence under
+`.ruhroh/runs/`.
+
+The intended unscoped command is `pnpm dlx ruhroh demo`. Until that npm package
+name is available for this project, use the scoped package command above.
+
+Use `init` when you are ready to add Ruhroh to a project or want the
+no-credentials fixture path:
+
+```bash
 pnpm add -D @kestrel-agents/ruhroh
 pnpm exec ruhroh init
 ```
 
 `init` creates a local `ruhroh/` directory with a small example task, a matching
-example benchmark suite, a no-credentials agent command, a no-credentials reviewer
-command, schemas, and a starter README. It is safe to rerun when files are
-unchanged and refuses to overwrite local edits.
+example benchmark suite, a no-credentials agent command, a no-credentials
+reviewer command, schemas, and a starter README. It is safe to rerun when files
+are unchanged and refuses to overwrite local edits.
 
 Check whether the local fixture loop is ready:
 

@@ -1,0 +1,90 @@
+{
+  "version": "ruhroh_scenario_v2",
+  "id": "bookmark-manager-demo",
+  "title": "Local Bookmark Manager Demo",
+  "tier": "smoke",
+  "kind": "real_user",
+  "metadata": {
+    "scenarioVersion": "1.0.0",
+    "provenance": "Original Ruhroh live demo scenario for first-run coding-agent evaluation.",
+    "createdAt": "2026-07-09",
+    "updatedAt": "2026-07-09",
+    "difficulty": "intro",
+    "tags": [
+      "demo",
+      "local-app",
+      "javascript",
+      "persistence"
+    ],
+    "expectedRuntimeSeconds": 600,
+    "contaminationNotes": "Original small local app task with no canonical public solution.",
+    "maintainers": [
+      "ruhroh-maintainers"
+    ],
+    "visibility": "public",
+    "changelog": [
+      "1.0.0: Initial live demo scenario."
+    ],
+    "lifecycle": {
+      "status": "active"
+    }
+  },
+  "userPromptPath": "instruction.md",
+  "assets": [
+    "assets/starter"
+  ],
+  "run": {
+    "mode": "build",
+    "timeoutSeconds": 600
+  },
+  "requires": {
+    "continuity": "workspace_only",
+    "tools": [
+      "filesystem",
+      "shell"
+    ],
+    "network": false
+  },
+  "loop": {
+    "defaultMaxIterations": 1,
+    "stopPolicy": "goal_satisfied_or_max"
+  },
+  "evaluation": {
+    "mode": "agentic_goal_review",
+    "scenarioContext": [
+      "This is the canonical Ruhroh live demo scenario.",
+      "The user wants a small local-only web app, not a backend service or hosted deployment."
+    ],
+    "goalRubric": [
+      "The delivered workspace runs as a local bookmark manager.",
+      "Users can add, list, search, and delete bookmarks.",
+      "Bookmarks persist locally through browser localStorage or an equivalent local browser persistence mechanism.",
+      "The app remains local-only and does not require a backend, database, or hosted service.",
+      "The included `pnpm test` command succeeds and its output is preserved as evaluator evidence."
+    ],
+    "evidenceGuidance": [
+      "Run the workspace tests and inspect the delivered files.",
+      "Use the implementation transcript as supporting evidence; judge the final delivered state."
+    ],
+    "calibrationCases": [
+      {
+        "id": "complete-bookmark-manager-pass",
+        "inputSummary": "The workspace contains a local page and JavaScript implementation that passes tests for add/list/search/delete/persistence and uses browser-local persistence.",
+        "expectedStatus": "passed",
+        "rationale": "The delivered final state satisfies the user's local bookmark-manager request."
+      },
+      {
+        "id": "missing-persistence-review",
+        "inputSummary": "The app can add and list bookmarks, but bookmarks disappear after refresh and no browser-local persistence is implemented.",
+        "expectedStatus": "review",
+        "rationale": "The user-visible workflow is partially useful, but the required persistence behavior is missing."
+      },
+      {
+        "id": "prose-only-failure",
+        "inputSummary": "The agent only wrote notes describing how to build a bookmark manager and did not deliver runnable app files.",
+        "expectedStatus": "failed",
+        "rationale": "The user asked for delivered software, not implementation advice."
+      }
+    ]
+  }
+}

@@ -163,6 +163,9 @@
         "runs": 2,
         "adapters": [
           "agent-a"
+        ],
+        "targets": [
+          "docs-fixture-native-stack"
         ]
       },
       "suite": {
@@ -201,7 +204,40 @@
           "sampleId": "simple-newsletter/agent-a/1-of-2",
           "sampleSeed": "docs-seed-one",
           "runIndex": 1,
-          "runCount": 2
+          "runCount": 2,
+          "benchmarkTarget": {
+            "targetId": "docs-fixture-native-stack",
+            "stream": "native-stack",
+            "adapterId": "agent-a",
+            "harness": {
+              "name": "fixture-newsletter",
+              "version": "docs-sample-v1"
+            },
+            "requestedModel": {
+              "provider": "docs",
+              "model": "sample-agent",
+              "canonicalId": "docs/sample-agent",
+              "version": "2026-07-08",
+              "protocol": "fixture-command",
+              "promptVersion": "docs-v1"
+            },
+            "actualModel": {
+              "provider": "docs",
+              "model": "sample-agent",
+              "canonicalId": "docs/sample-agent",
+              "version": "2026-07-08",
+              "protocol": "fixture-command",
+              "promptVersion": "docs-v1"
+            },
+            "providerPath": {
+              "provider": "docs",
+              "protocol": "fixture-command"
+            },
+            "recommendedStack": {
+              "recommended": true,
+              "rationale": "Docs sample uses the maintained fixture adapter with its native fixture model."
+            }
+          }
         },
         {
           "label": "agent-a:simple-newsletter#2/2",
@@ -210,7 +246,40 @@
           "sampleId": "simple-newsletter/agent-a/2-of-2",
           "sampleSeed": "docs-seed-two",
           "runIndex": 2,
-          "runCount": 2
+          "runCount": 2,
+          "benchmarkTarget": {
+            "targetId": "docs-fixture-native-stack",
+            "stream": "native-stack",
+            "adapterId": "agent-a",
+            "harness": {
+              "name": "fixture-newsletter",
+              "version": "docs-sample-v1"
+            },
+            "requestedModel": {
+              "provider": "docs",
+              "model": "sample-agent",
+              "canonicalId": "docs/sample-agent",
+              "version": "2026-07-08",
+              "protocol": "fixture-command",
+              "promptVersion": "docs-v1"
+            },
+            "actualModel": {
+              "provider": "docs",
+              "model": "sample-agent",
+              "canonicalId": "docs/sample-agent",
+              "version": "2026-07-08",
+              "protocol": "fixture-command",
+              "promptVersion": "docs-v1"
+            },
+            "providerPath": {
+              "provider": "docs",
+              "protocol": "fixture-command"
+            },
+            "recommendedStack": {
+              "recommended": true,
+              "rationale": "Docs sample uses the maintained fixture adapter with its native fixture model."
+            }
+          }
         }
       ]
     },
@@ -271,6 +340,12 @@
               "status": "ok",
               "path": "./sample-results/run-one/ruhroh-loop-result.json",
               "details": "$schema=https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json"
+            },
+            {
+              "name": "runManifest.embedded.benchmarkTarget",
+              "status": "ok",
+              "path": "./sample-results/run-one/ruhroh-loop-result.json",
+              "details": "target=docs-fixture-native-stack"
             },
             {
               "name": "result",
@@ -363,6 +438,12 @@
               "details": "artifact file is present"
             },
             {
+              "name": "runManifest.benchmarkTarget",
+              "status": "ok",
+              "path": "./sample-results/run-one/ruhroh-run-manifest.json",
+              "details": "target=docs-fixture-native-stack"
+            },
+            {
               "name": "runManifest.runId",
               "status": "ok",
               "path": "./sample-results/run-one/ruhroh-run-manifest.json",
@@ -417,6 +498,12 @@
               "status": "ok",
               "path": "./sample-results/run-two/ruhroh-loop-result.json",
               "details": "$schema=https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json"
+            },
+            {
+              "name": "runManifest.embedded.benchmarkTarget",
+              "status": "ok",
+              "path": "./sample-results/run-two/ruhroh-loop-result.json",
+              "details": "target=docs-fixture-native-stack"
             },
             {
               "name": "result",
@@ -509,6 +596,12 @@
               "details": "artifact file is present"
             },
             {
+              "name": "runManifest.benchmarkTarget",
+              "status": "ok",
+              "path": "./sample-results/run-two/ruhroh-run-manifest.json",
+              "details": "target=docs-fixture-native-stack"
+            },
+            {
               "name": "runManifest.runId",
               "status": "ok",
               "path": "./sample-results/run-two/ruhroh-run-manifest.json",
@@ -561,6 +654,12 @@
           "status": "ok",
           "path": "./sample-results/run-one/ruhroh-loop-result.json",
           "details": "$schema=https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json"
+        },
+        {
+          "name": "runManifest.embedded.benchmarkTarget",
+          "status": "ok",
+          "path": "./sample-results/run-one/ruhroh-loop-result.json",
+          "details": "target=docs-fixture-native-stack"
         },
         {
           "name": "result",
@@ -653,6 +752,12 @@
           "details": "artifact file is present"
         },
         {
+          "name": "runManifest.benchmarkTarget",
+          "status": "ok",
+          "path": "./sample-results/run-one/ruhroh-run-manifest.json",
+          "details": "target=docs-fixture-native-stack"
+        },
+        {
           "name": "runManifest.runId",
           "status": "ok",
           "path": "./sample-results/run-one/ruhroh-run-manifest.json",
@@ -699,6 +804,12 @@
           "status": "ok",
           "path": "./sample-results/run-two/ruhroh-loop-result.json",
           "details": "$schema=https://lumicorp.github.io/ruhroh/schemas/eval-result-v1.schema.json"
+        },
+        {
+          "name": "runManifest.embedded.benchmarkTarget",
+          "status": "ok",
+          "path": "./sample-results/run-two/ruhroh-loop-result.json",
+          "details": "target=docs-fixture-native-stack"
         },
         {
           "name": "result",
@@ -791,6 +902,12 @@
           "details": "artifact file is present"
         },
         {
+          "name": "runManifest.benchmarkTarget",
+          "status": "ok",
+          "path": "./sample-results/run-two/ruhroh-run-manifest.json",
+          "details": "target=docs-fixture-native-stack"
+        },
+        {
           "name": "runManifest.runId",
           "status": "ok",
           "path": "./sample-results/run-two/ruhroh-run-manifest.json",
@@ -828,19 +945,52 @@
         "suitePath": "./ruhroh/suites/ruhroh-sample/suite.json",
         "suiteSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc",
         "runPlanPath": "./ruhroh-run-plan.json",
-        "runPlanSha256": "9b06eb31195f297851e22b67024aa9d1641f67c577f9fde78be8311def2077e3",
+        "runPlanSha256": "f51a0b70f78b792eda39a5b6ef6a3717c6eaa474e7e909eaea126fdb972e437c",
         "htmlPath": "./ruhroh-publication/ruhroh-compare.html",
         "benchmarkClaimPath": "./benchmark-claim.json",
         "benchmarkSummaryPath": "./benchmark-summary.json",
         "resultArtifacts": [
           {
             "path": "./sample-results/run-one/ruhroh-loop-result.json",
-            "sha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
+            "sha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568",
             "scenarioId": "simple-newsletter",
             "adapter": "agent-a",
             "runId": "sample-newsletter-agent-a-1",
             "sampleId": "simple-newsletter/agent-a/1-of-2",
             "scenarioVersion": "1.0.0",
+            "benchmarkTarget": {
+              "targetId": "docs-fixture-native-stack",
+              "stream": "native-stack",
+              "adapterId": "agent-a",
+              "harness": {
+                "name": "fixture-newsletter",
+                "version": "docs-sample-v1"
+              },
+              "requestedModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "actualModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "providerPath": {
+                "provider": "docs",
+                "protocol": "fixture-command"
+              },
+              "recommendedStack": {
+                "recommended": true,
+                "rationale": "Docs sample uses the maintained fixture adapter with its native fixture model."
+              }
+            },
             "artifactInventory": [
               {
                 "name": "evalInput",
@@ -888,15 +1038,15 @@
                 "name": "result",
                 "path": "./sample-results/run-one/ruhroh-loop-result.json",
                 "available": true,
-                "sizeBytes": 7349,
-                "sha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f"
+                "sizeBytes": 8393,
+                "sha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568"
               },
               {
                 "name": "runManifest",
                 "path": "./sample-results/run-one/ruhroh-run-manifest.json",
                 "available": true,
-                "sizeBytes": 1907,
-                "sha256": "fe49f83edd35eef25880ee19f4f25662c4ca2dae1f77d417837e122eff9cb393"
+                "sizeBytes": 2883,
+                "sha256": "ddb29446d073b45540bb387b8bd8d751938580e5cdacce6f4c82ca692492eedc"
               },
               {
                 "name": "transcript",
@@ -916,8 +1066,8 @@
                 "name": "workspaceSummary",
                 "path": "./sample-results/run-one/ruhroh-workspace-summary.json",
                 "available": true,
-                "sizeBytes": 670,
-                "sha256": "ddfc18e19275262cd383cbc3d744e8048a5c9366cf2faaa5bcad065b609e6caa"
+                "sizeBytes": 674,
+                "sha256": "c5bcf5f724511667836f9a56cf409403be4e939d114d69265a4c395295f6cb29"
               },
               {
                 "name": "workspaceTarball",
@@ -926,16 +1076,50 @@
                 "sizeBytes": 57,
                 "sha256": "3c3f9efb11335aa9ef5106a20811c02a379548e6f7c7cedb4ccede370c2a1ca8"
               }
-            ]
+            ],
+            "sizeBytes": 8393
           },
           {
             "path": "./sample-results/run-two/ruhroh-loop-result.json",
-            "sha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
+            "sha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0",
             "scenarioId": "simple-newsletter",
             "adapter": "agent-a",
             "runId": "sample-newsletter-agent-a-2",
             "sampleId": "simple-newsletter/agent-a/2-of-2",
             "scenarioVersion": "1.0.0",
+            "benchmarkTarget": {
+              "targetId": "docs-fixture-native-stack",
+              "stream": "native-stack",
+              "adapterId": "agent-a",
+              "harness": {
+                "name": "fixture-newsletter",
+                "version": "docs-sample-v1"
+              },
+              "requestedModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "actualModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "providerPath": {
+                "provider": "docs",
+                "protocol": "fixture-command"
+              },
+              "recommendedStack": {
+                "recommended": true,
+                "rationale": "Docs sample uses the maintained fixture adapter with its native fixture model."
+              }
+            },
             "artifactInventory": [
               {
                 "name": "evalInput",
@@ -983,15 +1167,15 @@
                 "name": "result",
                 "path": "./sample-results/run-two/ruhroh-loop-result.json",
                 "available": true,
-                "sizeBytes": 7554,
-                "sha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba"
+                "sizeBytes": 8598,
+                "sha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0"
               },
               {
                 "name": "runManifest",
                 "path": "./sample-results/run-two/ruhroh-run-manifest.json",
                 "available": true,
-                "sizeBytes": 1907,
-                "sha256": "6677aa38e65800945a1ef35ca9bb637b3097c9248d2ebcfe040529dff378978e"
+                "sizeBytes": 2883,
+                "sha256": "42c07b94425dd558bf6ffe6f6f99ade0a59868f72c0df9a502966b5633ce86df"
               },
               {
                 "name": "transcript",
@@ -1011,8 +1195,8 @@
                 "name": "workspaceSummary",
                 "path": "./sample-results/run-two/ruhroh-workspace-summary.json",
                 "available": true,
-                "sizeBytes": 670,
-                "sha256": "ddfc18e19275262cd383cbc3d744e8048a5c9366cf2faaa5bcad065b609e6caa"
+                "sizeBytes": 674,
+                "sha256": "c5bcf5f724511667836f9a56cf409403be4e939d114d69265a4c395295f6cb29"
               },
               {
                 "name": "workspaceTarball",
@@ -1021,7 +1205,8 @@
                 "sizeBytes": 57,
                 "sha256": "39f79c358adad823b4d80be383fcadb1187f09bdd8f92722d30ca8eab5e59ff9"
               }
-            ]
+            ],
+            "sizeBytes": 8598
           }
         ],
         "evaluatorCalibrationReportPath": "./.generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
@@ -1162,7 +1347,60 @@
           "reviewRequired": 0,
           "statisticalWarnings": [
             "fewer than 5 runs; treat pass rate and pass@k as directional"
-          ]
+          ],
+          "cohort": {
+            "sampleIds": [
+              "simple-newsletter/agent-a/1-of-2",
+              "simple-newsletter/agent-a/2-of-2"
+            ],
+            "sampleSeeds": [
+              "docs-seed-one",
+              "docs-seed-two"
+            ],
+            "scenarioVersions": [
+              "1.0.0"
+            ],
+            "adapterVersions": [
+              "docs-sample-v1"
+            ],
+            "benchmarkStreams": [
+              "native-stack"
+            ],
+            "benchmarkTargets": [
+              "docs-fixture-native-stack"
+            ],
+            "harnesses": [
+              "fixture-newsletter@docs-sample-v1"
+            ],
+            "providerPaths": [
+              "docs/fixture-command"
+            ],
+            "agentModels": [
+              "docs/sample-agent@2026-07-08"
+            ],
+            "agentCanonicalModels": [
+              "docs/sample-agent@2026-07-08"
+            ],
+            "agentPromptVersions": [
+              "docs-v1"
+            ],
+            "evaluatorModels": [
+              "docs/docs-fixture-evaluator@2026-07-08"
+            ],
+            "evaluatorPromptVersions": [
+              "docs-eval-v1"
+            ],
+            "evaluatorInputSignatures": [
+              "context=unknown;rubric=unknown;evidence=unknown;calibration=unknown;privateAssets=unknown;privateAssetPathHashes=none"
+            ],
+            "judgeIdentities": [
+              "hybrid/docs-fixture-evaluator@2026-07-08"
+            ],
+            "environmentFingerprints": [
+              "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            ],
+            "comparabilityWarnings": []
+          }
         }
       ],
       "pairwiseComparisons": [],
@@ -1206,19 +1444,52 @@
         "suitePath": "./ruhroh/suites/ruhroh-sample/suite.json",
         "suiteSha256": "77d974f71e63ae7bf435f9796a8c7a8dbc282f6bbaa2fd673502791c62b190fc",
         "runPlanPath": "./ruhroh-run-plan.json",
-        "runPlanSha256": "9b06eb31195f297851e22b67024aa9d1641f67c577f9fde78be8311def2077e3",
+        "runPlanSha256": "f51a0b70f78b792eda39a5b6ef6a3717c6eaa474e7e909eaea126fdb972e437c",
         "htmlPath": "./ruhroh-publication/ruhroh-compare.html",
         "benchmarkClaimPath": "./benchmark-claim.json",
         "benchmarkSummaryPath": "./benchmark-summary.json",
         "resultArtifacts": [
           {
             "path": "./sample-results/run-one/ruhroh-loop-result.json",
-            "sha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
+            "sha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568",
             "scenarioId": "simple-newsletter",
             "adapter": "agent-a",
             "runId": "sample-newsletter-agent-a-1",
             "sampleId": "simple-newsletter/agent-a/1-of-2",
             "scenarioVersion": "1.0.0",
+            "benchmarkTarget": {
+              "targetId": "docs-fixture-native-stack",
+              "stream": "native-stack",
+              "adapterId": "agent-a",
+              "harness": {
+                "name": "fixture-newsletter",
+                "version": "docs-sample-v1"
+              },
+              "requestedModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "actualModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "providerPath": {
+                "provider": "docs",
+                "protocol": "fixture-command"
+              },
+              "recommendedStack": {
+                "recommended": true,
+                "rationale": "Docs sample uses the maintained fixture adapter with its native fixture model."
+              }
+            },
             "artifactInventory": [
               {
                 "name": "evalInput",
@@ -1266,15 +1537,15 @@
                 "name": "result",
                 "path": "./sample-results/run-one/ruhroh-loop-result.json",
                 "available": true,
-                "sizeBytes": 7349,
-                "sha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f"
+                "sizeBytes": 8393,
+                "sha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568"
               },
               {
                 "name": "runManifest",
                 "path": "./sample-results/run-one/ruhroh-run-manifest.json",
                 "available": true,
-                "sizeBytes": 1907,
-                "sha256": "fe49f83edd35eef25880ee19f4f25662c4ca2dae1f77d417837e122eff9cb393"
+                "sizeBytes": 2883,
+                "sha256": "ddb29446d073b45540bb387b8bd8d751938580e5cdacce6f4c82ca692492eedc"
               },
               {
                 "name": "transcript",
@@ -1294,8 +1565,8 @@
                 "name": "workspaceSummary",
                 "path": "./sample-results/run-one/ruhroh-workspace-summary.json",
                 "available": true,
-                "sizeBytes": 670,
-                "sha256": "ddfc18e19275262cd383cbc3d744e8048a5c9366cf2faaa5bcad065b609e6caa"
+                "sizeBytes": 674,
+                "sha256": "c5bcf5f724511667836f9a56cf409403be4e939d114d69265a4c395295f6cb29"
               },
               {
                 "name": "workspaceTarball",
@@ -1304,16 +1575,50 @@
                 "sizeBytes": 57,
                 "sha256": "3c3f9efb11335aa9ef5106a20811c02a379548e6f7c7cedb4ccede370c2a1ca8"
               }
-            ]
+            ],
+            "sizeBytes": 8393
           },
           {
             "path": "./sample-results/run-two/ruhroh-loop-result.json",
-            "sha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
+            "sha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0",
             "scenarioId": "simple-newsletter",
             "adapter": "agent-a",
             "runId": "sample-newsletter-agent-a-2",
             "sampleId": "simple-newsletter/agent-a/2-of-2",
             "scenarioVersion": "1.0.0",
+            "benchmarkTarget": {
+              "targetId": "docs-fixture-native-stack",
+              "stream": "native-stack",
+              "adapterId": "agent-a",
+              "harness": {
+                "name": "fixture-newsletter",
+                "version": "docs-sample-v1"
+              },
+              "requestedModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "actualModel": {
+                "provider": "docs",
+                "model": "sample-agent",
+                "canonicalId": "docs/sample-agent",
+                "version": "2026-07-08",
+                "protocol": "fixture-command",
+                "promptVersion": "docs-v1"
+              },
+              "providerPath": {
+                "provider": "docs",
+                "protocol": "fixture-command"
+              },
+              "recommendedStack": {
+                "recommended": true,
+                "rationale": "Docs sample uses the maintained fixture adapter with its native fixture model."
+              }
+            },
             "artifactInventory": [
               {
                 "name": "evalInput",
@@ -1361,15 +1666,15 @@
                 "name": "result",
                 "path": "./sample-results/run-two/ruhroh-loop-result.json",
                 "available": true,
-                "sizeBytes": 7554,
-                "sha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba"
+                "sizeBytes": 8598,
+                "sha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0"
               },
               {
                 "name": "runManifest",
                 "path": "./sample-results/run-two/ruhroh-run-manifest.json",
                 "available": true,
-                "sizeBytes": 1907,
-                "sha256": "6677aa38e65800945a1ef35ca9bb637b3097c9248d2ebcfe040529dff378978e"
+                "sizeBytes": 2883,
+                "sha256": "42c07b94425dd558bf6ffe6f6f99ade0a59868f72c0df9a502966b5633ce86df"
               },
               {
                 "name": "transcript",
@@ -1389,8 +1694,8 @@
                 "name": "workspaceSummary",
                 "path": "./sample-results/run-two/ruhroh-workspace-summary.json",
                 "available": true,
-                "sizeBytes": 670,
-                "sha256": "ddfc18e19275262cd383cbc3d744e8048a5c9366cf2faaa5bcad065b609e6caa"
+                "sizeBytes": 674,
+                "sha256": "c5bcf5f724511667836f9a56cf409403be4e939d114d69265a4c395295f6cb29"
               },
               {
                 "name": "workspaceTarball",
@@ -1399,7 +1704,8 @@
                 "sizeBytes": 57,
                 "sha256": "39f79c358adad823b4d80be383fcadb1187f09bdd8f92722d30ca8eab5e59ff9"
               }
-            ]
+            ],
+            "sizeBytes": 8598
           }
         ],
         "evaluatorCalibrationReportPath": "./.generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json",
@@ -1503,7 +1809,60 @@
           "reviewRequired": 0,
           "statisticalWarnings": [
             "fewer than 5 runs; treat pass rate and pass@k as directional"
-          ]
+          ],
+          "cohort": {
+            "sampleIds": [
+              "simple-newsletter/agent-a/1-of-2",
+              "simple-newsletter/agent-a/2-of-2"
+            ],
+            "sampleSeeds": [
+              "docs-seed-one",
+              "docs-seed-two"
+            ],
+            "scenarioVersions": [
+              "1.0.0"
+            ],
+            "adapterVersions": [
+              "docs-sample-v1"
+            ],
+            "benchmarkStreams": [
+              "native-stack"
+            ],
+            "benchmarkTargets": [
+              "docs-fixture-native-stack"
+            ],
+            "harnesses": [
+              "fixture-newsletter@docs-sample-v1"
+            ],
+            "providerPaths": [
+              "docs/fixture-command"
+            ],
+            "agentModels": [
+              "docs/sample-agent@2026-07-08"
+            ],
+            "agentCanonicalModels": [
+              "docs/sample-agent@2026-07-08"
+            ],
+            "agentPromptVersions": [
+              "docs-v1"
+            ],
+            "evaluatorModels": [
+              "docs/docs-fixture-evaluator@2026-07-08"
+            ],
+            "evaluatorPromptVersions": [
+              "docs-eval-v1"
+            ],
+            "evaluatorInputSignatures": [
+              "context=unknown;rubric=unknown;evidence=unknown;calibration=unknown;privateAssets=unknown;privateAssetPathHashes=none"
+            ],
+            "judgeIdentities": [
+              "hybrid/docs-fixture-evaluator@2026-07-08"
+            ],
+            "environmentFingerprints": [
+              "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+            ],
+            "comparabilityWarnings": []
+          }
         }
       ]
     },
@@ -1572,7 +1931,22 @@
           "adapterVersions": [
             "docs-sample-v1"
           ],
+          "benchmarkStreams": [
+            "native-stack"
+          ],
+          "benchmarkTargets": [
+            "docs-fixture-native-stack"
+          ],
+          "harnesses": [
+            "fixture-newsletter@docs-sample-v1"
+          ],
+          "providerPaths": [
+            "docs/fixture-command"
+          ],
           "agentModels": [
+            "docs/sample-agent@2026-07-08"
+          ],
+          "agentCanonicalModels": [
             "docs/sample-agent@2026-07-08"
           ],
           "agentPromptVersions": [
@@ -1672,8 +2046,8 @@
         "name": "runPlan",
         "status": "ok",
         "path": "./ruhroh-run-plan.json",
-        "expectedSha256": "9b06eb31195f297851e22b67024aa9d1641f67c577f9fde78be8311def2077e3",
-        "actualSha256": "9b06eb31195f297851e22b67024aa9d1641f67c577f9fde78be8311def2077e3",
+        "expectedSha256": "fee6e09ce1ce3b9c758604f71b6863e57e237f1fa867c623670180461988c629",
+        "actualSha256": "fee6e09ce1ce3b9c758604f71b6863e57e237f1fa867c623670180461988c629",
         "details": "source.runPlanPath hash matches"
       },
       {
@@ -1688,8 +2062,8 @@
         "name": "resultArtifacts[0]",
         "status": "ok",
         "path": "./sample-results/run-one/ruhroh-loop-result.json",
-        "expectedSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
-        "actualSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
+        "expectedSha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568",
+        "actualSha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568",
         "details": "source.resultArtifacts[0].path hash matches"
       },
       {
@@ -1744,16 +2118,16 @@
         "name": "resultArtifacts[0].artifactInventory[6]",
         "status": "ok",
         "path": "./sample-results/run-one/ruhroh-loop-result.json",
-        "expectedSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
-        "actualSha256": "9503ef5a42834c30a11fefac1d086e4435d98c90c6965797c972d8f31cbdcb5f",
+        "expectedSha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568",
+        "actualSha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568",
         "details": "source.resultArtifacts[0].artifactInventory[6].path hash matches"
       },
       {
         "name": "resultArtifacts[0].artifactInventory[7]",
         "status": "ok",
         "path": "./sample-results/run-one/ruhroh-run-manifest.json",
-        "expectedSha256": "fe49f83edd35eef25880ee19f4f25662c4ca2dae1f77d417837e122eff9cb393",
-        "actualSha256": "fe49f83edd35eef25880ee19f4f25662c4ca2dae1f77d417837e122eff9cb393",
+        "expectedSha256": "ddb29446d073b45540bb387b8bd8d751938580e5cdacce6f4c82ca692492eedc",
+        "actualSha256": "ddb29446d073b45540bb387b8bd8d751938580e5cdacce6f4c82ca692492eedc",
         "details": "source.resultArtifacts[0].artifactInventory[7].path hash matches"
       },
       {
@@ -1792,8 +2166,8 @@
         "name": "resultArtifacts[1]",
         "status": "ok",
         "path": "./sample-results/run-two/ruhroh-loop-result.json",
-        "expectedSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
-        "actualSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
+        "expectedSha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0",
+        "actualSha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0",
         "details": "source.resultArtifacts[1].path hash matches"
       },
       {
@@ -1848,16 +2222,16 @@
         "name": "resultArtifacts[1].artifactInventory[6]",
         "status": "ok",
         "path": "./sample-results/run-two/ruhroh-loop-result.json",
-        "expectedSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
-        "actualSha256": "9b6ef89741963eb2c3eafb146a524beafcc1a0407073fda9f95bf3229e2182ba",
+        "expectedSha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0",
+        "actualSha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0",
         "details": "source.resultArtifacts[1].artifactInventory[6].path hash matches"
       },
       {
         "name": "resultArtifacts[1].artifactInventory[7]",
         "status": "ok",
         "path": "./sample-results/run-two/ruhroh-run-manifest.json",
-        "expectedSha256": "6677aa38e65800945a1ef35ca9bb637b3097c9248d2ebcfe040529dff378978e",
-        "actualSha256": "6677aa38e65800945a1ef35ca9bb637b3097c9248d2ebcfe040529dff378978e",
+        "expectedSha256": "42c07b94425dd558bf6ffe6f6f99ade0a59868f72c0df9a502966b5633ce86df",
+        "actualSha256": "42c07b94425dd558bf6ffe6f6f99ade0a59868f72c0df9a502966b5633ce86df",
         "details": "source.resultArtifacts[1].artifactInventory[7].path hash matches"
       },
       {

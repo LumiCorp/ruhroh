@@ -59,6 +59,7 @@
         "valid",
         "publishable",
         "adapters",
+        "benchmarkContext",
         "summary",
         "evidence",
         "sourcePaths",
@@ -85,6 +86,28 @@
           }
         },
         "adapters": { "$ref": "#/$defs/stringArray" },
+        "benchmarkContext": {
+          "type": "object",
+          "additionalProperties": true,
+          "required": [
+            "streams",
+            "targets",
+            "harnesses",
+            "providerPaths",
+            "canonicalModels",
+            "promptVersions",
+            "environmentFingerprints"
+          ],
+          "properties": {
+            "streams": { "$ref": "#/$defs/stringArray" },
+            "targets": { "$ref": "#/$defs/stringArray" },
+            "harnesses": { "$ref": "#/$defs/stringArray" },
+            "providerPaths": { "$ref": "#/$defs/stringArray" },
+            "canonicalModels": { "$ref": "#/$defs/stringArray" },
+            "promptVersions": { "$ref": "#/$defs/stringArray" },
+            "environmentFingerprints": { "$ref": "#/$defs/stringArray" }
+          }
+        },
         "summary": {
           "type": "object",
           "additionalProperties": true,

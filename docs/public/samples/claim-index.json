@@ -33,6 +33,29 @@
       "adapters": [
         "agent-a"
       ],
+      "benchmarkContext": {
+        "streams": [
+          "native-stack"
+        ],
+        "targets": [
+          "docs-fixture-native-stack"
+        ],
+        "harnesses": [
+          "fixture-newsletter@docs-sample-v1"
+        ],
+        "providerPaths": [
+          "docs/fixture-command"
+        ],
+        "canonicalModels": [
+          "docs/sample-agent@2026-07-08"
+        ],
+        "promptVersions": [
+          "docs-v1"
+        ],
+        "environmentFingerprints": [
+          "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+        ]
+      },
       "summary": {
         "scenarioCount": 1,
         "adapterCount": 1,

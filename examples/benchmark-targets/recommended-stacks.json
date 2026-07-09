@@ -1,0 +1,106 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/benchmark-target-config-v1.schema.json",
+  "version": "ruhroh_benchmark_target_config_v1",
+  "stream": "native-stack",
+  "description": "Compare each harness with the model/provider path that benchmark maintainers intend to treat as its native stack.",
+  "targets": [
+    {
+      "targetId": "codex-cli-native-gpt55",
+      "adapterId": "codex-cli",
+      "adapterCommand": "examples/adapters/codex-cli/run.sh",
+      "harness": {
+        "name": "codex-cli",
+        "version": "pin-codex-cli-version"
+      },
+      "requestedModel": {
+        "provider": "openai",
+        "model": "gpt-5.5",
+        "canonicalId": "openai/gpt-5.5",
+        "protocol": "openai-responses",
+        "promptVersion": "codex-cli-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openai",
+        "protocol": "openai-responses"
+      },
+      "recommendedStack": {
+        "recommended": true,
+        "rationale": "Native Codex CLI stack selected by the benchmark maintainer."
+      }
+    },
+    {
+      "targetId": "claude-code-native-sonnet",
+      "adapterId": "claude-code",
+      "adapterCommand": "examples/adapters/claude-code/run.sh",
+      "harness": {
+        "name": "claude-code",
+        "version": "pin-claude-code-version"
+      },
+      "requestedModel": {
+        "provider": "anthropic",
+        "model": "claude-sonnet",
+        "canonicalId": "anthropic/claude-sonnet",
+        "protocol": "anthropic-messages",
+        "promptVersion": "claude-code-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "anthropic",
+        "protocol": "anthropic-messages"
+      },
+      "recommendedStack": {
+        "recommended": true,
+        "rationale": "Native Claude Code stack selected by the benchmark maintainer."
+      }
+    },
+    {
+      "targetId": "gemini-cli-native-pro",
+      "adapterId": "gemini-cli",
+      "adapterCommand": "examples/adapters/gemini-cli/run.sh",
+      "harness": {
+        "name": "gemini-cli",
+        "version": "pin-gemini-cli-version"
+      },
+      "requestedModel": {
+        "provider": "google",
+        "model": "gemini-pro",
+        "canonicalId": "google/gemini-pro",
+        "protocol": "gemini-cli",
+        "promptVersion": "gemini-cli-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "google",
+        "protocol": "gemini-cli"
+      },
+      "recommendedStack": {
+        "recommended": true,
+        "rationale": "Native Gemini CLI stack selected by the benchmark maintainer."
+      }
+    },
+    {
+      "targetId": "aider-openrouter-glm",
+      "adapterId": "aider",
+      "adapterCommand": "examples/adapters/aider/run.sh",
+      "harness": {
+        "name": "aider",
+        "version": "pin-aider-version"
+      },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openrouter/z-ai/glm-5.2",
+        "canonicalId": "z-ai/glm-5.2",
+        "protocol": "openai-chat-completions",
+        "promptVersion": "aider-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "openai-chat-completions",
+        "gateway": "openai-compatible",
+        "baseUrl": "https://openrouter.ai/api/v1"
+      },
+      "recommendedStack": {
+        "recommended": true,
+        "rationale": "Aider stack selected by the benchmark maintainer for the demo/provider path."
+      }
+    }
+  ]
+}

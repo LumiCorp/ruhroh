@@ -25,7 +25,13 @@ export CLAUDE_CODE_BIN=/path/to/claude
 - Claude Code authentication/configuration required by your installation.
 - `RUHROH_RUN_AGENT_COMMAND=examples/adapters/claude-code/run.sh`
 - `RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line`
-- Optional: `CLAUDE_MODEL`, `CLAUDE_PERMISSION_MODE`,
+- Optional: `CLAUDE_MODEL` or `RUHROH_AGENT_MODEL` to pass `--model <model>` to
+  Claude Code.
+- Optional: `RUHROH_AGENT_PROVIDER`, `RUHROH_AGENT_MODEL_CANONICAL_ID`,
+  `RUHROH_AGENT_PROTOCOL`, `RUHROH_AGENT_MODEL_VERSION`, and
+  `RUHROH_AGENT_PROMPT_VERSION` to record the benchmark target metadata
+  reported by the wrapper.
+- Optional: `CLAUDE_PERMISSION_MODE`,
   `CLAUDE_OUTPUT_FORMAT`, `CLAUDE_CODE_EXTRA_ARGS`, and
   `CLAUDE_CODE_ADAPTER_VERSION`.
 

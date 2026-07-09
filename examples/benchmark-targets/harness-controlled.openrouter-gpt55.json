@@ -1,0 +1,86 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/benchmark-target-config-v1.schema.json",
+  "version": "ruhroh_benchmark_target_config_v1",
+  "stream": "harness-controlled",
+  "description": "Compare harness behavior while requesting the same model family through OpenRouter-compatible provider paths.",
+  "targets": [
+    {
+      "targetId": "codex-cli-openrouter-gpt55",
+      "adapterId": "codex-cli",
+      "adapterCommand": "examples/adapters/codex-cli/run.sh",
+      "harness": {
+        "name": "codex-cli",
+        "version": "pin-codex-cli-version"
+      },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openai/gpt-5.5",
+        "canonicalId": "openai/gpt-5.5",
+        "protocol": "openai-responses",
+        "promptVersion": "codex-cli-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "openai-responses",
+        "gateway": "openai-compatible",
+        "baseUrl": "https://openrouter.ai/api/v1"
+      },
+      "recommendedStack": {
+        "recommended": false,
+        "rationale": "Harness-controlled row for isolating harness behavior with a shared requested model."
+      }
+    },
+    {
+      "targetId": "claude-code-openrouter-gpt55",
+      "adapterId": "claude-code",
+      "adapterCommand": "examples/adapters/claude-code/run.sh",
+      "harness": {
+        "name": "claude-code",
+        "version": "pin-claude-code-version"
+      },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openai/gpt-5.5",
+        "canonicalId": "openai/gpt-5.5",
+        "protocol": "anthropic-messages",
+        "promptVersion": "claude-code-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "anthropic-messages",
+        "gateway": "anthropic-compatible",
+        "baseUrl": "https://openrouter.ai/api/v1"
+      },
+      "recommendedStack": {
+        "recommended": false,
+        "rationale": "Harness-controlled row for isolating harness behavior with a shared requested model."
+      }
+    },
+    {
+      "targetId": "aider-openrouter-gpt55",
+      "adapterId": "aider",
+      "adapterCommand": "examples/adapters/aider/run.sh",
+      "harness": {
+        "name": "aider",
+        "version": "pin-aider-version"
+      },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openrouter/openai/gpt-5.5",
+        "canonicalId": "openai/gpt-5.5",
+        "protocol": "openai-chat-completions",
+        "promptVersion": "aider-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "openai-chat-completions",
+        "gateway": "openai-compatible",
+        "baseUrl": "https://openrouter.ai/api/v1"
+      },
+      "recommendedStack": {
+        "recommended": false,
+        "rationale": "Harness-controlled row for isolating harness behavior with a shared requested model."
+      }
+    }
+  ]
+}

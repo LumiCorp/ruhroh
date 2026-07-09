@@ -135,7 +135,50 @@
         "meanScoreCi95": { "$ref": "#/$defs/confidenceInterval" },
         "usage": { "$ref": "#/$defs/usage" },
         "reviewRequired": { "type": "number", "minimum": 0 },
-        "statisticalWarnings": { "$ref": "#/$defs/stringArray" }
+        "statisticalWarnings": { "$ref": "#/$defs/stringArray" },
+        "cohort": { "$ref": "#/$defs/cohort" }
+      }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "sampleIds",
+        "sampleSeeds",
+        "scenarioVersions",
+        "adapterVersions",
+        "benchmarkStreams",
+        "benchmarkTargets",
+        "harnesses",
+        "providerPaths",
+        "agentModels",
+        "agentCanonicalModels",
+        "agentPromptVersions",
+        "evaluatorModels",
+        "evaluatorPromptVersions",
+        "evaluatorInputSignatures",
+        "judgeIdentities",
+        "environmentFingerprints",
+        "comparabilityWarnings"
+      ],
+      "properties": {
+        "sampleIds": { "$ref": "#/$defs/stringArray" },
+        "sampleSeeds": { "$ref": "#/$defs/stringArray" },
+        "scenarioVersions": { "$ref": "#/$defs/stringArray" },
+        "adapterVersions": { "$ref": "#/$defs/stringArray" },
+        "benchmarkStreams": { "$ref": "#/$defs/stringArray" },
+        "benchmarkTargets": { "$ref": "#/$defs/stringArray" },
+        "harnesses": { "$ref": "#/$defs/stringArray" },
+        "providerPaths": { "$ref": "#/$defs/stringArray" },
+        "agentModels": { "$ref": "#/$defs/stringArray" },
+        "agentCanonicalModels": { "$ref": "#/$defs/stringArray" },
+        "agentPromptVersions": { "$ref": "#/$defs/stringArray" },
+        "evaluatorModels": { "$ref": "#/$defs/stringArray" },
+        "evaluatorPromptVersions": { "$ref": "#/$defs/stringArray" },
+        "evaluatorInputSignatures": { "$ref": "#/$defs/stringArray" },
+        "judgeIdentities": { "$ref": "#/$defs/stringArray" },
+        "environmentFingerprints": { "$ref": "#/$defs/stringArray" },
+        "comparabilityWarnings": { "$ref": "#/$defs/stringArray" }
       }
     },
     "usage": {
