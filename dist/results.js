@@ -350,6 +350,7 @@ export function summarizeRuhrohPairwiseAdapterComparisons(groups, options = {}) 
                     contenderPasses: contender.passes,
                     contenderRuns: contender.runs,
                 });
+                const comparisonVariables = pairwiseComparisonVariables(baseline, contender);
                 comparisons.push({
                     scenarioId,
                     baselineAdapter: baseline.adapter,
@@ -364,6 +365,7 @@ export function summarizeRuhrohPairwiseAdapterComparisons(groups, options = {}) 
                     passRateDeltaCi95: interval,
                     significance,
                     conclusion: pairwiseConclusion(interval),
+                    comparisonVariables,
                     warnings: pairwiseWarnings(baseline, contender, interval, significance, minRuns),
                 });
             }
@@ -573,6 +575,7 @@ export function summarizeRuhrohBenchmarkClaim(groups, options) {
             usage: copyAggregateUsage(group.usage),
             reviewRequired: group.reviewRequired,
             statisticalWarnings: group.statisticalWarnings,
+            cohort: copyAggregateCohort(group.cohort),
         })),
         pairwiseComparisons,
         readiness: options.claimReadiness,
@@ -629,6 +632,7 @@ export function summarizeRuhrohBenchmarkSummary(claim) {
             usage: copyAggregateUsage(result.usage),
             reviewRequired: result.reviewRequired,
             statisticalWarnings: [...result.statisticalWarnings],
+            cohort: copyAggregateCohort(result.cohort),
         })),
     };
 }
@@ -656,6 +660,10 @@ export function validateRuhrohBenchmarkClaim(input) {
     }
     if (typeof input.publishable !== "boolean") {
         errors.push("publishable must be boolean");
+    }
+    const source = optionalRecordField(input, "source", errors);
+    if (source !== undefined) {
+        validateClaimSource(source, errors);
     }
     const suite = optionalRecordField(input, "suite", errors);
     if (scope === "suite" && suite === undefined) {
@@ -710,6 +718,16 @@ export function validateRuhrohBenchmarkClaim(input) {
     const pairwiseComparisons = input.pairwiseComparisons;
     if (!Array.isArray(pairwiseComparisons)) {
         errors.push("pairwiseComparisons must be an array");
+    }
+    else {
+        for (const [index, comparison] of pairwiseComparisons.entries()) {
+            if (isRecord(comparison)) {
+                validatePairwiseComparison(comparison, errors, `pairwiseComparisons[${index}]`);
+            }
+            else {
+                errors.push(`pairwiseComparisons[${index}] must be an object`);
+            }
+        }
     }
     const readiness = requireRecordField(input, "readiness", errors);
     if (readiness !== undefined) {
@@ -854,6 +872,7 @@ function validateBenchmarkSummaryRow(row, summary, suite, errors, pathLabel) {
     validateConfidenceInterval(optionalRecordField(row, "meanScoreCi95", errors, `${pathLabel}.meanScoreCi95`), errors, `${pathLabel}.meanScoreCi95`);
     validateAggregateUsage(requireRecordField(row, "usage", errors, `${pathLabel}.usage`), errors, `${pathLabel}.usage`);
     requireStringArrayField(row, "statisticalWarnings", errors, `${pathLabel}.statisticalWarnings`);
+    validateOptionalCohort(row, errors, `${pathLabel}.cohort`);
     if (row.scope !== summary.scope) {
         errors.push(`${pathLabel}.scope must match summary scope`);
     }
@@ -993,6 +1012,35 @@ function validateClaimScenarioResult(scenarioResult, errors, pathLabel) {
     validateConfidenceInterval(optionalRecordField(scenarioResult, "meanScoreCi95", errors, `${pathLabel}.meanScoreCi95`), errors, `${pathLabel}.meanScoreCi95`);
     validateAggregateUsage(requireRecordField(scenarioResult, "usage", errors, `${pathLabel}.usage`), errors, `${pathLabel}.usage`);
     requireStringArrayField(scenarioResult, "statisticalWarnings", errors, `${pathLabel}.statisticalWarnings`);
+    validateOptionalCohort(scenarioResult, errors, `${pathLabel}.cohort`);
+}
+function validateOptionalCohort(record, errors, pathLabel) {
+    const cohort = optionalRecordField(record, "cohort", errors, pathLabel);
+    if (cohort === undefined) {
+        return;
+    }
+    for (const field of [
+        "sampleIds",
+        "sampleSeeds",
+        "scenarioVersions",
+        "adapterVersions",
+        "benchmarkStreams",
+        "harnesses",
+        "providerPaths",
+        "agentModels",
+        "agentCanonicalModels",
+        "agentPromptVersions",
+        "evaluatorModels",
+        "evaluatorPromptVersions",
+        "evaluatorInputSignatures",
+        "judgeIdentities",
+        "environmentFingerprints",
+        "comparabilityWarnings",
+    ]) {
+        requireStringArrayField(cohort, field, errors, `${pathLabel}.${field}`);
+    }
+    validateOptionalStringArrayField(cohort, "benchmarkStreams", errors, `${pathLabel}.benchmarkStreams`);
+    requireStringArrayField(cohort, "benchmarkTargets", errors, `${pathLabel}.benchmarkTargets`);
 }
 function validateAggregateUsage(usage, errors, pathLabel) {
     if (usage === undefined) {
@@ -1009,6 +1057,52 @@ function validateAggregateUsage(usage, errors, pathLabel) {
     }
     if (typeof usage.runsWithTokens === "number" && typeof usage.runsWithUsage === "number" && usage.runsWithTokens > usage.runsWithUsage) {
         errors.push(`${pathLabel}.runsWithTokens must be <= ${pathLabel}.runsWithUsage`);
+    }
+}
+function validateClaimSource(source, errors) {
+    const resultArtifacts = source.resultArtifacts;
+    if (resultArtifacts === undefined) {
+        return;
+    }
+    if (!Array.isArray(resultArtifacts)) {
+        errors.push("source.resultArtifacts must be an array");
+        return;
+    }
+    for (const [index, artifact] of resultArtifacts.entries()) {
+        if (!isRecord(artifact)) {
+            errors.push(`source.resultArtifacts[${index}] must be an object`);
+            continue;
+        }
+        requireNonEmptyString(artifact, "path", errors, `source.resultArtifacts[${index}].path`);
+        requireNonEmptyString(artifact, "sha256", errors, `source.resultArtifacts[${index}].sha256`);
+        requireNonEmptyString(artifact, "scenarioId", errors, `source.resultArtifacts[${index}].scenarioId`);
+        requireNonEmptyString(artifact, "adapter", errors, `source.resultArtifacts[${index}].adapter`);
+        const benchmarkTarget = optionalRecordField(artifact, "benchmarkTarget", errors, `source.resultArtifacts[${index}].benchmarkTarget`);
+        if (benchmarkTarget !== undefined) {
+            validateClaimSourceBenchmarkTarget(benchmarkTarget, errors, `source.resultArtifacts[${index}].benchmarkTarget`);
+        }
+    }
+}
+function validateClaimSourceBenchmarkTarget(target, errors, pathLabel) {
+    requireNonEmptyString(target, "targetId", errors, `${pathLabel}.targetId`);
+    const stream = target.stream;
+    if (stream === undefined) {
+        errors.push(`${pathLabel}.stream is required`);
+    }
+    else if (stream !== "harness-controlled" && stream !== "model-controlled" && stream !== "native-stack" && stream !== "recommended-stack" && stream !== "custom") {
+        errors.push(`${pathLabel}.stream must be harness-controlled, model-controlled, native-stack, recommended-stack, or custom`);
+    }
+    optionalRecordField(target, "harness", errors, `${pathLabel}.harness`);
+    validateClaimSourceBenchmarkTargetModel(requireRecordField(target, "requestedModel", errors, `${pathLabel}.requestedModel`), errors, `${pathLabel}.requestedModel`);
+    validateClaimSourceBenchmarkTargetModel(requireRecordField(target, "actualModel", errors, `${pathLabel}.actualModel`), errors, `${pathLabel}.actualModel`);
+}
+function validateClaimSourceBenchmarkTargetModel(model, errors, pathLabel) {
+    if (model === undefined) {
+        return;
+    }
+    requireNonEmptyString(model, "model", errors, `${pathLabel}.model`);
+    for (const field of ["provider", "canonicalId", "protocol", "version", "promptVersion"]) {
+        requireOptionalNonEmptyString(model, field, errors, `${pathLabel}.${field}`);
     }
 }
 function validateClaimReadiness(readiness, claim, errors) {
@@ -1028,6 +1122,33 @@ function validateClaimReadiness(readiness, claim, errors) {
     requireStringArrayField(readiness, "advisories", errors, "readiness.advisories");
     if (readiness.publishable === true && blockers.length > 0) {
         errors.push("readiness.publishable cannot be true when blockers are present");
+    }
+}
+function validatePairwiseComparison(comparison, errors, pathLabel) {
+    const comparisonVariables = optionalRecordField(comparison, "comparisonVariables", errors, `${pathLabel}.comparisonVariables`);
+    if (comparisonVariables !== undefined) {
+        validatePairwiseComparisonVariables(comparisonVariables, errors, `${pathLabel}.comparisonVariables`);
+    }
+}
+function validatePairwiseComparisonVariables(variables, errors, pathLabel) {
+    for (const field of ["benchmarkStreams", "harnesses", "providerPaths", "agentCanonicalModels", "agentPromptVersions", "environmentFingerprints"]) {
+        validatePairwiseVariableDelta(requireRecordField(variables, field, errors, `${pathLabel}.${field}`), errors, `${pathLabel}.${field}`);
+    }
+    for (const field of ["varied", "controlled", "unknown"]) {
+        requireStringArrayField(variables, field, errors, `${pathLabel}.${field}`);
+    }
+}
+function validatePairwiseVariableDelta(delta, errors, pathLabel) {
+    if (delta === undefined) {
+        return;
+    }
+    requireStringArrayField(delta, "baseline", errors, `${pathLabel}.baseline`);
+    requireStringArrayField(delta, "contender", errors, `${pathLabel}.contender`);
+    if (typeof delta.changed !== "boolean") {
+        errors.push(`${pathLabel}.changed must be boolean`);
+    }
+    if (typeof delta.known !== "boolean") {
+        errors.push(`${pathLabel}.known must be boolean`);
     }
 }
 function validateClaimEvidence(evidence, errors) {
@@ -1122,6 +1243,12 @@ function requireStringArrayField(record, field, errors, pathLabel = field) {
         return [item];
     });
 }
+function validateOptionalStringArrayField(record, field, errors, pathLabel = field) {
+    if (record[field] === undefined) {
+        return;
+    }
+    requireStringArrayField(record, field, errors, pathLabel);
+}
 function validatePositiveNumber(record, field, errors, pathLabel = field) {
     const value = record[field];
     if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
@@ -1165,7 +1292,10 @@ function compactBenchmarkClaimSource(source) {
         ...(source.htmlPath === undefined ? {} : { htmlPath: source.htmlPath }),
         ...(source.benchmarkClaimPath === undefined ? {} : { benchmarkClaimPath: source.benchmarkClaimPath }),
         ...(source.benchmarkSummaryPath === undefined ? {} : { benchmarkSummaryPath: source.benchmarkSummaryPath }),
-        ...(source.resultArtifacts === undefined ? {} : { resultArtifacts: source.resultArtifacts.map((artifact) => ({ ...artifact })) }),
+        ...(source.resultArtifacts === undefined ? {} : { resultArtifacts: source.resultArtifacts.map((artifact) => ({
+                ...artifact,
+                ...(artifact.benchmarkTarget === undefined ? {} : { benchmarkTarget: cloneJsonRecord(artifact.benchmarkTarget) }),
+            })) }),
     };
 }
 function benchmarkClaimAdapterSummaries(groups, suiteAdapterSummaries) {
@@ -1211,6 +1341,27 @@ function copyAggregateUsage(usage) {
         ...(usage.totalTokens === undefined ? {} : { totalTokens: usage.totalTokens }),
         ...(usage.meanTotalTokens === undefined ? {} : { meanTotalTokens: usage.meanTotalTokens }),
         ...(usage.tokensPerPass === undefined ? {} : { tokensPerPass: usage.tokensPerPass }),
+    };
+}
+function copyAggregateCohort(cohort) {
+    return {
+        sampleIds: [...cohort.sampleIds],
+        sampleSeeds: [...cohort.sampleSeeds],
+        scenarioVersions: [...cohort.scenarioVersions],
+        adapterVersions: [...cohort.adapterVersions],
+        benchmarkStreams: [...cohort.benchmarkStreams],
+        benchmarkTargets: [...cohort.benchmarkTargets],
+        harnesses: [...cohort.harnesses],
+        providerPaths: [...cohort.providerPaths],
+        agentModels: [...cohort.agentModels],
+        agentCanonicalModels: [...cohort.agentCanonicalModels],
+        agentPromptVersions: [...cohort.agentPromptVersions],
+        evaluatorModels: [...cohort.evaluatorModels],
+        evaluatorPromptVersions: [...cohort.evaluatorPromptVersions],
+        evaluatorInputSignatures: [...cohort.evaluatorInputSignatures],
+        judgeIdentities: [...cohort.judgeIdentities],
+        environmentFingerprints: [...cohort.environmentFingerprints],
+        comparabilityWarnings: [...cohort.comparabilityWarnings],
     };
 }
 function aggregateGroupUsage(groups, passes) {
@@ -1565,7 +1716,12 @@ function aggregateCohort(summaries) {
         sampleSeeds: uniqueSorted(summaries.map((summary) => summary.sample?.seed ?? "unknown")),
         scenarioVersions: uniqueSorted(summaries.map((summary) => summary.runManifest?.scenario.scenarioVersion ?? "unknown")),
         adapterVersions: uniqueSorted(summaries.map((summary) => summary.runManifest?.runAgent.adapterVersion ?? "unknown")),
+        benchmarkStreams: uniqueSorted(summaries.map((summary) => formatBenchmarkTargetStream(summary.runManifest?.benchmarkTarget))),
+        benchmarkTargets: uniqueSorted(summaries.map((summary) => formatBenchmarkTargetIdentity(summary.runManifest?.benchmarkTarget))),
+        harnesses: uniqueSorted(summaries.map((summary) => formatHarnessIdentity(summary.runManifest?.benchmarkTarget))),
+        providerPaths: uniqueSorted(summaries.map((summary) => formatProviderPathIdentity(summary.runManifest?.benchmarkTarget))),
         agentModels: uniqueSorted(summaries.map((summary) => formatManifestIdentity(summary.runManifest?.runAgent.model))),
+        agentCanonicalModels: uniqueSorted(summaries.map((summary) => formatCanonicalModelIdentity(summary.runManifest?.runAgent.model))),
         agentPromptVersions: uniqueSorted(summaries.map((summary) => readStringField(summary.runManifest?.runAgent.model, "promptVersion") ?? "unknown")),
         evaluatorModels: uniqueSorted(summaries.map((summary) => formatManifestIdentity(summary.runManifest?.evaluator?.model))),
         evaluatorPromptVersions: uniqueSorted(summaries.map((summary) => readStringField(summary.runManifest?.evaluator?.model, "promptVersion") ?? "unknown")),
@@ -1578,10 +1734,17 @@ function aggregateCohort(summaries) {
     return cohort;
 }
 function comparabilityWarnings(cohort) {
+    const targetChecks = [
+        ["benchmarkTargets", "mixed benchmark targets in aggregate group", "missing benchmark target metadata in aggregate group"],
+        ["benchmarkStreams", "mixed benchmark streams in aggregate group", "missing benchmark stream metadata in aggregate group"],
+        ["harnesses", "mixed harness identities in aggregate group", "missing harness metadata in aggregate group"],
+        ["providerPaths", "mixed provider paths in aggregate group", "missing provider path metadata in aggregate group"],
+    ];
     const checks = [
         ["scenarioVersions", "mixed scenario versions in aggregate group", "missing scenario version metadata in aggregate group"],
         ["adapterVersions", "mixed adapter versions in aggregate group", "missing adapter version metadata in aggregate group"],
         ["agentModels", "mixed agent models in aggregate group", "missing agent model metadata in aggregate group"],
+        ["agentCanonicalModels", "mixed canonical agent models in aggregate group", "missing canonical agent model metadata in aggregate group"],
         ["agentPromptVersions", "mixed agent prompt versions in aggregate group", "missing agent prompt version metadata in aggregate group"],
         ["evaluatorModels", "mixed evaluator models in aggregate group", "missing evaluator model metadata in aggregate group"],
         ["evaluatorPromptVersions", "mixed evaluator prompt versions in aggregate group", "missing evaluator prompt version metadata in aggregate group"],
@@ -1589,10 +1752,19 @@ function comparabilityWarnings(cohort) {
         ["judgeIdentities", "mixed eval judge identities in aggregate group", "missing eval judge metadata in aggregate group"],
         ["environmentFingerprints", "mixed environment fingerprints in aggregate group", "missing environment fingerprint metadata in aggregate group"],
     ];
-    return checks.flatMap(([key, mixedWarning, missingWarning]) => [
-        ...(cohort[key].length > 1 ? [mixedWarning] : []),
-        ...(cohort[key].includes("unknown") ? [missingWarning] : []),
-    ]);
+    return [
+        ...targetChecks.flatMap(([key, mixedWarning, missingWarning]) => targetComparabilityWarnings(cohort[key], mixedWarning, missingWarning)),
+        ...checks.flatMap(([key, mixedWarning, missingWarning]) => [
+            ...(cohort[key].length > 1 ? [mixedWarning] : []),
+            ...(cohort[key].includes("unknown") ? [missingWarning] : []),
+        ]),
+    ];
+}
+function targetComparabilityWarnings(values, mixedWarning, missingWarning) {
+    return [
+        ...(values.length > 1 ? [mixedWarning] : []),
+        ...(values.includes("unknown") ? [missingWarning] : []),
+    ];
 }
 function uniqueSorted(values) {
     return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort();
@@ -1609,6 +1781,57 @@ function formatManifestIdentity(model) {
         return version ?? "unknown";
     }
     return version === undefined ? label : `${label}@${version}`;
+}
+function formatCanonicalModelIdentity(model) {
+    if (model === undefined || Object.keys(model).length === 0) {
+        return "unknown";
+    }
+    const canonicalId = readStringField(model, "canonicalId");
+    const version = readStringField(model, "version");
+    if (canonicalId === undefined) {
+        return "unknown";
+    }
+    return version === undefined ? canonicalId : `${canonicalId}@${version}`;
+}
+function formatBenchmarkTargetIdentity(target) {
+    if (target === undefined || Object.keys(target).length === 0) {
+        return "unknown";
+    }
+    return readStringField(target, "targetId") ?? "unknown";
+}
+function formatBenchmarkTargetStream(target) {
+    if (target === undefined || Object.keys(target).length === 0) {
+        return "unknown";
+    }
+    return readStringField(target, "stream") ?? "unknown";
+}
+function formatHarnessIdentity(target) {
+    if (target === undefined || !isRecord(target.harness)) {
+        return "unknown";
+    }
+    const name = readStringField(target.harness, "name");
+    const version = readStringField(target.harness, "version");
+    if (name === undefined) {
+        return "unknown";
+    }
+    return version === undefined ? name : `${name}@${version}`;
+}
+function formatProviderPathIdentity(target) {
+    if (target === undefined || target.providerPath === undefined) {
+        return "unknown";
+    }
+    if (typeof target.providerPath === "string") {
+        return target.providerPath.trim().length === 0 ? "unknown" : target.providerPath;
+    }
+    if (!isRecord(target.providerPath)) {
+        return "unknown";
+    }
+    const provider = readStringField(target.providerPath, "provider");
+    const protocol = readStringField(target.providerPath, "protocol");
+    const gateway = readStringField(target.providerPath, "gateway");
+    const baseUrl = readStringField(target.providerPath, "baseUrl");
+    const label = [provider, protocol, gateway, baseUrl].filter((value) => value !== undefined).join("/");
+    return label.length === 0 ? "unknown" : label;
 }
 function formatJudgeIdentity(judge) {
     if (judge === undefined) {
@@ -1684,6 +1907,9 @@ function readRuhrohRunResultArtifact(resultPath) {
 function benchmarkClaimResultArtifact(artifact) {
     const summary = summarizeRuhrohRun(artifact.run);
     const scenarioVersion = artifact.run.runManifest?.scenario.scenarioVersion;
+    const benchmarkTarget = isRecord(summary.runManifest?.benchmarkTarget)
+        ? cloneJsonRecord(summary.runManifest.benchmarkTarget)
+        : undefined;
     return {
         path: artifact.path,
         sha256: artifact.sha256,
@@ -1692,8 +1918,12 @@ function benchmarkClaimResultArtifact(artifact) {
         ...(summary.runId === undefined ? {} : { runId: summary.runId }),
         ...(summary.sample?.id === undefined ? {} : { sampleId: summary.sample.id }),
         ...(scenarioVersion === undefined ? {} : { scenarioVersion }),
+        ...(benchmarkTarget === undefined ? {} : { benchmarkTarget }),
         ...(summary.artifactInventory.length === 0 ? {} : { artifactInventory: summary.artifactInventory }),
     };
+}
+function cloneJsonRecord(record) {
+    return JSON.parse(JSON.stringify(record));
 }
 function isRuhrohLoopResult(value) {
     return isRecord(value)
@@ -1840,6 +2070,44 @@ function pairwiseSignificance(input) {
         significant: pValue < 0.05,
     };
 }
+function pairwiseComparisonVariables(baseline, contender) {
+    const entries = [
+        ["benchmarkStreams", "benchmark stream", pairwiseVariableDelta(baseline.cohort.benchmarkStreams, contender.cohort.benchmarkStreams)],
+        ["harnesses", "harness", pairwiseVariableDelta(baseline.cohort.harnesses, contender.cohort.harnesses)],
+        ["providerPaths", "provider path", pairwiseVariableDelta(baseline.cohort.providerPaths, contender.cohort.providerPaths)],
+        ["agentCanonicalModels", "canonical agent model", pairwiseVariableDelta(baseline.cohort.agentCanonicalModels, contender.cohort.agentCanonicalModels)],
+        ["agentPromptVersions", "agent prompt version", pairwiseVariableDelta(baseline.cohort.agentPromptVersions, contender.cohort.agentPromptVersions)],
+        ["environmentFingerprints", "environment fingerprint", pairwiseVariableDelta(baseline.cohort.environmentFingerprints, contender.cohort.environmentFingerprints)],
+    ];
+    const variables = Object.fromEntries(entries.map(([key, , value]) => [key, value]));
+    return {
+        ...variables,
+        varied: entries.flatMap(([, label, value]) => value.known && value.changed ? [label] : []),
+        controlled: entries.flatMap(([, label, value]) => value.known && !value.changed ? [label] : []),
+        unknown: entries.flatMap(([, label, value]) => value.known ? [] : [label]),
+    };
+}
+function pairwiseVariableDelta(baselineValues, contenderValues) {
+    const baseline = knownCohortValues(baselineValues);
+    const contender = knownCohortValues(contenderValues);
+    const known = baseline.length > 0 && contender.length > 0;
+    return {
+        baseline,
+        contender,
+        changed: known && !sameStringSet(baseline, contender),
+        known,
+    };
+}
+function knownCohortValues(values) {
+    return values.filter((value) => value !== "unknown");
+}
+function sameStringSet(left, right) {
+    if (left.length !== right.length) {
+        return false;
+    }
+    const rightValues = new Set(right);
+    return left.every((value) => rightValues.has(value));
+}
 function pairwiseWarnings(baseline, contender, interval, significance, minRuns) {
     return uniquePreserveOrder([
         ...(baseline.runs < minRuns ? [`${baseline.adapter} has ${baseline.runs}/${minRuns} runs`] : []),
@@ -1848,7 +2116,56 @@ function pairwiseWarnings(baseline, contender, interval, significance, minRuns) 
         ...(!significance.significant ? ["Fisher exact test is not significant at alpha=0.05"] : []),
         ...baseline.cohort.comparabilityWarnings.map((warning) => `${baseline.adapter}: ${warning}`),
         ...contender.cohort.comparabilityWarnings.map((warning) => `${contender.adapter}: ${warning}`),
+        ...pairwiseCohortControlWarnings(baseline, contender),
     ]);
+}
+function pairwiseCohortControlWarnings(baseline, contender) {
+    const baselineStream = singleKnownCohortValue(baseline.cohort.benchmarkStreams);
+    const contenderStream = singleKnownCohortValue(contender.cohort.benchmarkStreams);
+    const warnings = [];
+    if (baselineStream !== undefined && contenderStream !== undefined && baselineStream !== contenderStream) {
+        warnings.push(pairwiseDifferenceWarning("benchmark stream", baseline, contender, baselineStream, contenderStream));
+        return warnings;
+    }
+    const stream = baselineStream ?? contenderStream;
+    if (stream === undefined) {
+        return warnings;
+    }
+    warnings.push(...pairwiseExpectedSameWarnings("environment fingerprint", baseline, contender, baseline.cohort.environmentFingerprints, contender.cohort.environmentFingerprints));
+    if (stream === "harness-controlled") {
+        warnings.push(...pairwiseExpectedSameWarnings("canonical agent model", baseline, contender, baseline.cohort.agentCanonicalModels, contender.cohort.agentCanonicalModels));
+        warnings.push(...pairwiseExpectedSameWarnings("provider path", baseline, contender, baseline.cohort.providerPaths, contender.cohort.providerPaths));
+    }
+    if (stream === "model-controlled") {
+        warnings.push(...pairwiseExpectedSameWarnings("harness identity", baseline, contender, baseline.cohort.harnesses, contender.cohort.harnesses));
+        warnings.push(...pairwiseExpectedSameWarnings("provider path", baseline, contender, baseline.cohort.providerPaths, contender.cohort.providerPaths));
+        warnings.push(...pairwiseExpectedSameWarnings("agent prompt version", baseline, contender, baseline.cohort.agentPromptVersions, contender.cohort.agentPromptVersions));
+        warnings.push(...pairwiseExpectedDifferentWarnings("canonical agent model", baseline, contender, baseline.cohort.agentCanonicalModels, contender.cohort.agentCanonicalModels));
+    }
+    return warnings;
+}
+function pairwiseExpectedSameWarnings(label, baseline, contender, baselineValues, contenderValues) {
+    const baselineValue = singleKnownCohortValue(baselineValues);
+    const contenderValue = singleKnownCohortValue(contenderValues);
+    if (baselineValue === undefined || contenderValue === undefined || baselineValue === contenderValue) {
+        return [];
+    }
+    return [pairwiseDifferenceWarning(label, baseline, contender, baselineValue, contenderValue)];
+}
+function pairwiseExpectedDifferentWarnings(label, baseline, contender, baselineValues, contenderValues) {
+    const baselineValue = singleKnownCohortValue(baselineValues);
+    const contenderValue = singleKnownCohortValue(contenderValues);
+    if (baselineValue === undefined || contenderValue === undefined || baselineValue !== contenderValue) {
+        return [];
+    }
+    return [`pairwise model-controlled comparison does not vary ${label}: ${baseline.adapter}=${baselineValue} ${contender.adapter}=${contenderValue}`];
+}
+function pairwiseDifferenceWarning(label, baseline, contender, baselineValue, contenderValue) {
+    return `pairwise comparison ${label} differs: ${baseline.adapter}=${baselineValue} ${contender.adapter}=${contenderValue}`;
+}
+function singleKnownCohortValue(values) {
+    const knownValues = values.filter((value) => value !== "unknown");
+    return knownValues.length === 1 ? knownValues[0] : undefined;
 }
 function fisherExactTwoSidedPValue(input) {
     const rowTotal = input.baselinePasses + input.baselineFailures;

@@ -25,7 +25,13 @@ export CODEX_CLI_BIN=/path/to/codex
 - Codex CLI authentication/configuration required by your installation.
 - `RUHROH_RUN_AGENT_COMMAND=examples/adapters/codex-cli/run.sh`
 - `RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line`
-- Optional: `CODEX_MODEL`, `CODEX_PROFILE`, `CODEX_SANDBOX`,
+- Optional: `CODEX_MODEL` or `RUHROH_AGENT_MODEL` to pass `--model <model>` to
+  Codex CLI.
+- Optional: `RUHROH_AGENT_PROVIDER`, `RUHROH_AGENT_MODEL_CANONICAL_ID`,
+  `RUHROH_AGENT_PROTOCOL`, `RUHROH_AGENT_MODEL_VERSION`, and
+  `RUHROH_AGENT_PROMPT_VERSION` to record the benchmark target metadata
+  reported by the wrapper.
+- Optional: `CODEX_PROFILE`, `CODEX_SANDBOX`,
   `CODEX_APPROVAL_POLICY`, `CODEX_CLI_EXTRA_ARGS`, and
   `CODEX_CLI_ADAPTER_VERSION`.
 

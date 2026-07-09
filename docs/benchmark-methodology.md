@@ -24,6 +24,33 @@ configuration. Ruhroh groups reports by scenario id and adapter id. If the model
 prompt, adapter version, scenario version, or evaluator changes, treat the new
 runs as a new comparison set even when the scenario id is unchanged.
 
+For public matrix work, prefer defining benchmark targets. A benchmark target is
+one planned row that separates the Ruhroh adapter from the agent harness and the
+model/provider path. Target ids become the comparison ids used in sample ids and
+aggregate reports, while target metadata records the underlying adapter command,
+harness identity, requested model, provider path, and native-stack status.
+Run manifests copy the target metadata and fill `actualModel` from the adapter
+result when the wrapper reports what actually ran.
+
+Use targets to keep the three public benchmark streams honest:
+
+- harness-controlled: same requested model/provider path, different harnesses;
+- model-controlled: same harness and provider path, different requested models;
+- native-stack: each harness with its recommended or default model path.
+
+`recommended-stack` remains accepted as a legacy stream name for existing
+configs, but new public reports should use `native-stack`.
+
+The npm package includes validating templates for those streams under
+`examples/benchmark-targets/`. Use them as starting points, then replace the
+placeholder harness versions and provider routes with the exact stack being
+measured. If a harness reaches the same model through a different client
+protocol, keep that difference in `providerPath.protocol`; hiding protocol
+translation would make the comparison less trustworthy. When the same model
+needs different harness-specific model strings, set
+`requestedModel.canonicalId` to the shared scientific identity and keep
+`requestedModel.model` as the literal value passed to the harness.
+
 Each run should preserve:
 
 - the generated Harbor task;
@@ -50,6 +77,33 @@ Repeat `--adapter` to collect the same sample plan for multiple agents in one
 matrix. `ruhroh compare` still groups by scenario id and adapter id, so each
 agent's repeated samples remain separate in aggregate reporting.
 
+Use `--target-config <path>` instead of repeated `--adapter` when the row needs
+explicit harness/model/provider metadata. A target config contains a `targets`
+array; each target must include `targetId` and `requestedModel.model`, and may
+include `adapterCommand`, `adapterId`, `harness`, `providerPath`,
+`recommendedStack`, and string `env` overrides. Filter rows with repeated
+`--target <targetId>`. Do not combine `--target-config` with `--adapter`.
+Run `ruhroh validate-targets <path>` before collection to catch malformed,
+duplicated, or underspecified target rows.
+If a target config declares `stream`, validation also checks the stream's
+control variable: harness-controlled streams need one requested model identity,
+model-controlled streams need one harness and provider path, and native-stack
+streams need every target marked as recommended. Prefer a top-level `stream`.
+If only target rows declare `stream`, every target stream must match and that
+effective stream is still validated; mixed stream declarations are rejected.
+When `compare` or `publish-check` receives a run plan with benchmark targets,
+Ruhroh checks each result's run manifest against the planned target. Harness,
+requested model, provider path, native-stack, and actual-model drift are
+reported as run-plan warnings, and run-plan warnings block publishable claims.
+Even without a run plan, aggregate cohorts report missing benchmark target,
+stream, harness, and provider-path metadata as comparability warnings so older
+artifacts remain readable but cannot be mistaken for fully specified public
+claims.
+Pairwise comparisons also inspect the compared cohorts. For example, a
+harness-controlled comparison can intentionally vary harnesses, but Ruhroh will
+still flag a hidden provider-path or canonical-model difference between the two
+cohorts because that changes what the result can honestly claim to isolate.
+
 Use `--shard <index>/<total>` when a repeated suite is too expensive for one
 worker. Shards are selected from the deterministic scenario/adapter/sample
 matrix after the full plan is built. A sample produced by `--runs 20 --shard
@@ -65,7 +119,10 @@ buckets, cohort metadata, eval-quality warnings, optional cost/token summaries,
 and a `claimReadiness` summary. When a scenario has
 multiple adapter groups, compare also reports pairwise pass-rate deltas with an
 approximate normal 95% confidence interval plus a Fisher exact two-sided
-significance check. Treat a pairwise conclusion as directional unless the
+significance check. Pairwise rows also include `comparisonVariables`, a
+structured map of which benchmark variables changed, stayed controlled, or
+were unknown between the baseline and contender. Treat a pairwise conclusion as
+directional unless the
 interval excludes zero, the Fisher test is significant at alpha 0.05, and the
 suite minimum run count is satisfied for both adapters. When fewer than five
 runs are present, Ruhroh prints a low-sample warning. When a scenario/adapter
@@ -188,13 +245,13 @@ the Ruhroh package identity, suite identity and methodology, adapter rollups,
 suite coverage, per-scenario results, pairwise deltas, readiness
 blockers/advisories, run-plan coverage, review-queue counts, and source paths
 for the result directory, suite manifest, run-plan manifest, HTML report, and
-standalone claim artifact when available. It also records artifact-validation
-error/warning counts and SHA-256 digests for
-the suite manifest, run-plan manifest, and every included
-`ruhroh-loop-result.json`, so a published claim can be traced back to the exact
-benchmark definition and run artifacts that were aggregated. Keep the raw
-`groups`, `reviewQueue`, and preserved run artifacts alongside it so claims
-remain auditable.
+included result files. Each referenced result file carries its SHA-256 digest
+and, when available, the run's `benchmarkTarget` snapshot so public claims can
+show the exact executed stack for every artifact they cite. It also records
+artifact-validation error/warning counts, so a published claim can be traced
+back to the exact benchmark definition and run artifacts that were aggregated.
+Keep the raw `groups`, `reviewQueue`, and preserved run artifacts alongside it
+so claims remain auditable.
 Use `--benchmark-summary benchmark-summary.json` when a reporting pipeline wants
 the same claim reduced to stable scenario/adapter rows. The summary keeps
 readiness and evidence fields at the top level, but each row is intentionally

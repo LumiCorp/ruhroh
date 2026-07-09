@@ -276,6 +276,10 @@ Optional fields used by aggregate reports:
   `fingerprint` with `method`, `sha256`, and canonical `components`.
 - `env`: forwarded env key names and secret key names that were present.
 - `usage`: `costUsd`, `inputTokens`, `outputTokens`, and `totalTokens`.
+- `benchmarkTarget`: the planned benchmark target plus runtime execution
+  metadata. `requestedModel` is the intended model path from the target/env
+  configuration. `actualModel`, when present, is taken from the adapter-reported
+  run-agent manifest and overrides any value supplied in the planned target.
 - `artifactPaths`: manifest-level artifact index.
 - `failureDetails`.
 
@@ -336,9 +340,11 @@ entry in `artifactPaths`.
 Each group includes:
 
 - `scenarioId` and `adapter`.
-- `cohort`: sample ids/seeds, scenario versions, adapter versions, agent and
-  evaluator model identities, evaluator input signatures, judge identities,
-  environment fingerprints, and comparability warnings.
+- `cohort`: sample ids/seeds, scenario versions, adapter versions, benchmark
+  streams/targets, harness identities, provider paths, adapter-reported agent
+  model identities, canonical agent model identities, evaluator model
+  identities, evaluator input signatures, judge identities, environment
+  fingerprints, and comparability warnings.
 - `runs`, `passes`, `passRate`, `passRateCi95`, and `passAtK`.
 - `meanScore`, `meanScoreCi95` using deterministic bootstrap percentile
   resampling, `meanSubscores`, `medianDurationMs`, `iterationDistribution`, and
@@ -367,8 +373,18 @@ Each `pairwiseComparisons` item includes:
 - `significance`: Fisher exact two-sided test metadata with `pValue`,
   `alpha: 0.05`, and `significant`.
 - `conclusion`: `contender_higher`, `baseline_higher`, or `inconclusive`.
+- `comparisonVariables`: structured baseline/contender metadata for the
+  benchmark stream, harness, provider path, canonical agent model, agent prompt
+  version, and environment fingerprint. Each variable records baseline values,
+  contender values, whether the variable changed, and whether both sides were
+  known; `varied`, `controlled`, and `unknown` provide compact labels for public
+  report rendering.
 - `warnings`: low-sample, zero-including interval, non-significant Fisher test,
-  and cohort comparability warnings that should block overclaiming.
+  cohort comparability warnings, and stream-aware target-control diagnostics
+  such as hidden provider-path drift in a harness-controlled comparison. These
+  warnings should block overclaiming. Missing benchmark target, stream, harness,
+  or provider-path metadata is also reported as a comparability warning, even
+  when every run in the cohort is missing the same field.
 
 `claimReadiness.publishable` is the machine-readable gate for benchmark claims.
 Use `--require-publishable` in CI to make `compare` exit `2` after writing the
@@ -473,11 +489,17 @@ Required fields:
   `resultArtifacts`
   records each included `ruhroh-loop-result.json`
   with path, SHA-256 digest, scenario id, adapter id, and available
-  run/sample/version metadata. Paths can be absolute, working-directory
-  relative, or bundle-relative when the claim was produced inside a publication
-  bundle. Each result artifact can also include `artifactInventory`, a sorted
-  list of named run artifacts from `artifactPaths` with path, availability,
-  size, and SHA-256 digest when the referenced file is readable.
+  run/sample/version metadata. When the run manifest includes
+  `benchmarkTarget`, the result artifact also includes that target snapshot so
+  readers can inspect the exact harness, requested model, actual model, provider
+  path, and stream for that run without opening the manifest first. When present,
+  the target snapshot must include `targetId`, `stream`, `requestedModel.model`,
+  and `actualModel.model`; weaker snapshots fail claim validation. Paths can be
+  absolute, working-directory relative, or bundle-relative when the claim was
+  produced inside a publication bundle. Each result artifact can also include
+  `artifactInventory`, a sorted list of named run artifacts from `artifactPaths`
+  with path, availability, size, and SHA-256 digest when the referenced file is
+  readable.
 - `scope`: `suite` or `ad_hoc_compare`.
 - `publishable`: mirrors `readiness.publishable`.
 - `methodology`: confidence level, statistical methods, and suite min-run/retry
@@ -489,7 +511,11 @@ Required fields:
 - `adapterSummaries`: adapter-level run/pass rollups, mean scenario pass rate,
   and usage totals/rates. Suite claims also include `minRunsSatisfied`.
 - `scenarioResults`: scenario/adapter run/pass, score, statistical, review, and
-  usage summaries.
+  usage summaries. Each row includes `cohort` metadata with sample ids/seeds,
+  scenario and adapter versions, benchmark target ids, harness identities,
+  provider paths, adapter-reported agent models, canonical agent model
+  identities, agent/evaluator prompt identities, evaluator model identities,
+  judge identities, environment fingerprints, and comparability warnings.
 - `suiteCoverage`: suite-scoped coverage summary when `compare --suite` is
   used. It records expected/covered scenario counts, scenario ids missing from
   at least one adapter, overall minimum-run satisfaction, and per-adapter
@@ -516,7 +542,8 @@ write it as a standalone JSON file. It preserves claim-level `scope`,
 `publishable`, `readiness`, and `evidence`, then flattens each scenario/adapter
 result into `rows` with suite id/version when available, run/pass counts, pass
 rate with Wilson CI, pass@k, mean score with bootstrap CI, usage totals/rates,
-review count, and statistical warnings.
+review count, statistical warnings, and the same cohort stack metadata carried
+by the benchmark claim.
 
 The package ships a structural JSON Schema at
 `node_modules/@kestrel-agents/ruhroh/schemas/benchmark-summary-v1.schema.json`;
@@ -554,6 +581,38 @@ Required fields:
   status, publishability, suite/version, adapters, run summary, evidence counts,
   source paths, blockers, advisories, and validation diagnostics.
 
+## Benchmark Target Config
+
+Target configs define public benchmark matrix rows for `ruhroh plan` and
+`ruhroh run --target-config`. They are the source artifact for separating the
+Ruhroh adapter, agent harness, requested model, provider path, and
+native-stack status before any execution starts. The legacy stream name
+`recommended-stack` is still accepted for older target configs.
+
+The package ships a structural JSON Schema at
+`node_modules/@kestrel-agents/ruhroh/schemas/benchmark-target-config-v1.schema.json`;
+`ruhroh init` also copies it to
+`ruhroh/schemas/benchmark-target-config-v1.schema.json`. Use
+`ruhroh validate-targets benchmark-targets.json --json` before collection to
+catch malformed or duplicated target rows.
+Use one top-level `stream` for a public matrix when possible. If targets carry
+their own `stream` values and the config omits a top-level stream, all target
+streams must agree and the effective stream is validated with the same
+harness/model/provider/native-stack rules.
+
+Required fields:
+
+- `version`: `ruhroh_benchmark_target_config_v1`.
+- `targets`: non-empty array of target rows.
+- `targets[].targetId`: stable comparison id used in sample ids and aggregate
+  rows.
+- `targets[].requestedModel.model`: intended model name for the harness
+  adapter to request.
+
+Recommended fields for public claims are `harness.name`, `harness.version`,
+`requestedModel.provider`, `requestedModel.protocol`,
+`requestedModel.promptVersion`, and `providerPath`.
+
 ## Run Plan
 
 Actual `ruhroh run` executions write `.generated/ruhroh/ruhroh-run-plan.json`
@@ -581,6 +640,10 @@ Required fields:
 Each sample includes `label`, `scenarioId`, `adapter`, `sampleId`,
 `sampleSeed`, `runIndex`, `runCount`, `forwardedEnvKeys`, and a redacted
 `harborCommand`.
+When a sample includes `benchmarkTarget`, that target snapshot must include
+`targetId` and `requestedModel.model` so the preserved plan proves the intended
+model identity before execution starts. `actualModel` is execution metadata and
+belongs in the run manifest/result after the adapter reports what ran.
 
 When `--shard <index>/<total>` is used, `selection.shard` records the executed
 shard. The `samples` array includes only that shard's planned rows, while each

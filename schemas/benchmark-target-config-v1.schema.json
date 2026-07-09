@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/benchmark-target-config-v1.schema.json",
+  "title": "Ruhroh Benchmark Target Config v1",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "targets"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/benchmark-target-config-v1.schema.json" },
+    "version": { "const": "ruhroh_benchmark_target_config_v1" },
+    "stream": {
+      "enum": ["harness-controlled", "model-controlled", "native-stack", "recommended-stack", "custom"]
+    },
+    "description": { "type": "string", "minLength": 1 },
+    "targets": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/benchmarkTarget" }
+    }
+  },
+  "$defs": {
+    "benchmarkTarget": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["targetId", "requestedModel"],
+      "properties": {
+        "targetId": { "$ref": "#/$defs/safeId" },
+        "stream": {
+          "enum": ["harness-controlled", "model-controlled", "native-stack", "recommended-stack", "custom"]
+        },
+        "adapterId": { "type": "string", "minLength": 1 },
+        "adapterCommand": { "type": "string", "minLength": 1 },
+        "harness": { "$ref": "#/$defs/harness" },
+        "harnessConfig": {
+          "type": "object",
+          "additionalProperties": true
+        },
+        "requestedModel": { "$ref": "#/$defs/model" },
+        "actualModel": { "$ref": "#/$defs/model" },
+        "providerPath": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "$ref": "#/$defs/providerPath" }
+          ]
+        },
+        "recommendedStack": {
+          "oneOf": [
+            { "type": "boolean" },
+            { "$ref": "#/$defs/recommendedStack" }
+          ]
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "safeId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "harness": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["model"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "canonicalId": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "protocol": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 }
+      }
+    },
+    "providerPath": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "protocol": { "type": "string", "minLength": 1 },
+        "gateway": { "type": "string", "minLength": 1 },
+        "baseUrl": { "type": "string", "minLength": 1 }
+      }
+    },
+    "recommendedStack": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["recommended"],
+      "properties": {
+        "recommended": { "type": "boolean" },
+        "rationale": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

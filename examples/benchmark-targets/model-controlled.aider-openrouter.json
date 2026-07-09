@@ -1,0 +1,86 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/benchmark-target-config-v1.schema.json",
+  "version": "ruhroh_benchmark_target_config_v1",
+  "stream": "model-controlled",
+  "description": "Compare requested models while holding the Aider harness and OpenRouter provider path constant.",
+  "targets": [
+    {
+      "targetId": "aider-openrouter-gpt55",
+      "adapterId": "aider",
+      "adapterCommand": "examples/adapters/aider/run.sh",
+      "harness": {
+        "name": "aider",
+        "version": "pin-aider-version"
+      },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openrouter/openai/gpt-5.5",
+        "canonicalId": "openai/gpt-5.5",
+        "protocol": "openai-chat-completions",
+        "promptVersion": "aider-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "openai-chat-completions",
+        "gateway": "openai-compatible",
+        "baseUrl": "https://openrouter.ai/api/v1"
+      },
+      "recommendedStack": {
+        "recommended": false,
+        "rationale": "Model-controlled row using Aider as the fixed harness."
+      }
+    },
+    {
+      "targetId": "aider-openrouter-claude-sonnet",
+      "adapterId": "aider",
+      "adapterCommand": "examples/adapters/aider/run.sh",
+      "harness": {
+        "name": "aider",
+        "version": "pin-aider-version"
+      },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openrouter/anthropic/claude-sonnet",
+        "canonicalId": "anthropic/claude-sonnet",
+        "protocol": "openai-chat-completions",
+        "promptVersion": "aider-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "openai-chat-completions",
+        "gateway": "openai-compatible",
+        "baseUrl": "https://openrouter.ai/api/v1"
+      },
+      "recommendedStack": {
+        "recommended": false,
+        "rationale": "Model-controlled row using Aider as the fixed harness."
+      }
+    },
+    {
+      "targetId": "aider-openrouter-gemini-pro",
+      "adapterId": "aider",
+      "adapterCommand": "examples/adapters/aider/run.sh",
+      "harness": {
+        "name": "aider",
+        "version": "pin-aider-version"
+      },
+      "requestedModel": {
+        "provider": "openrouter",
+        "model": "openrouter/google/gemini-pro",
+        "canonicalId": "google/gemini-pro",
+        "protocol": "openai-chat-completions",
+        "promptVersion": "aider-wrapper-v1"
+      },
+      "providerPath": {
+        "provider": "openrouter",
+        "protocol": "openai-chat-completions",
+        "gateway": "openai-compatible",
+        "baseUrl": "https://openrouter.ai/api/v1"
+      },
+      "recommendedStack": {
+        "recommended": false,
+        "rationale": "Model-controlled row using Aider as the fixed harness."
+      }
+    }
+  ]
+}

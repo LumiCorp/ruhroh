@@ -113,7 +113,7 @@
     },
     "pairwiseComparisons": {
       "type": "array",
-      "items": { "type": "object" }
+      "items": { "$ref": "#/$defs/pairwiseComparison" }
     },
     "readiness": {
       "type": "object",
@@ -200,10 +200,51 @@
         "runId": { "type": "string", "minLength": 1 },
         "sampleId": { "type": "string", "minLength": 1 },
         "scenarioVersion": { "type": "string", "minLength": 1 },
+        "benchmarkTarget": { "$ref": "#/$defs/resultBenchmarkTarget" },
         "artifactInventory": {
           "type": "array",
           "items": { "$ref": "#/$defs/referencedArtifact" }
         }
+      }
+    },
+    "resultBenchmarkTarget": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["targetId", "stream", "requestedModel", "actualModel"],
+      "properties": {
+        "targetId": { "type": "string", "minLength": 1 },
+        "stream": {
+          "enum": ["harness-controlled", "model-controlled", "native-stack", "recommended-stack", "custom"]
+        },
+        "adapterId": { "type": "string", "minLength": 1 },
+        "harness": { "type": "object", "additionalProperties": true },
+        "requestedModel": { "$ref": "#/$defs/resultBenchmarkModel" },
+        "actualModel": { "$ref": "#/$defs/resultBenchmarkModel" },
+        "providerPath": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "object", "additionalProperties": true }
+          ]
+        },
+        "recommendedStack": {
+          "oneOf": [
+            { "type": "boolean" },
+            { "type": "object", "additionalProperties": true }
+          ]
+        }
+      }
+    },
+    "resultBenchmarkModel": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["model"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "canonicalId": { "type": "string", "minLength": 1 },
+        "protocol": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 }
       }
     },
     "referencedArtifact": {
@@ -287,7 +328,98 @@
         "meanScoreCi95": { "$ref": "#/$defs/confidenceInterval" },
         "usage": { "$ref": "#/$defs/usage" },
         "reviewRequired": { "type": "number", "minimum": 0 },
-        "statisticalWarnings": { "$ref": "#/$defs/stringArray" }
+        "statisticalWarnings": { "$ref": "#/$defs/stringArray" },
+        "cohort": { "$ref": "#/$defs/cohort" }
+      }
+    },
+    "cohort": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "sampleIds",
+        "sampleSeeds",
+        "scenarioVersions",
+        "adapterVersions",
+        "benchmarkStreams",
+        "benchmarkTargets",
+        "harnesses",
+        "providerPaths",
+        "agentModels",
+        "agentCanonicalModels",
+        "agentPromptVersions",
+        "evaluatorModels",
+        "evaluatorPromptVersions",
+        "evaluatorInputSignatures",
+        "judgeIdentities",
+        "environmentFingerprints",
+        "comparabilityWarnings"
+      ],
+      "properties": {
+        "sampleIds": { "$ref": "#/$defs/stringArray" },
+        "sampleSeeds": { "$ref": "#/$defs/stringArray" },
+        "scenarioVersions": { "$ref": "#/$defs/stringArray" },
+        "adapterVersions": { "$ref": "#/$defs/stringArray" },
+        "benchmarkStreams": { "$ref": "#/$defs/stringArray" },
+        "benchmarkTargets": { "$ref": "#/$defs/stringArray" },
+        "harnesses": { "$ref": "#/$defs/stringArray" },
+        "providerPaths": { "$ref": "#/$defs/stringArray" },
+        "agentModels": { "$ref": "#/$defs/stringArray" },
+        "agentCanonicalModels": { "$ref": "#/$defs/stringArray" },
+        "agentPromptVersions": { "$ref": "#/$defs/stringArray" },
+        "evaluatorModels": { "$ref": "#/$defs/stringArray" },
+        "evaluatorPromptVersions": { "$ref": "#/$defs/stringArray" },
+        "evaluatorInputSignatures": { "$ref": "#/$defs/stringArray" },
+        "judgeIdentities": { "$ref": "#/$defs/stringArray" },
+        "environmentFingerprints": { "$ref": "#/$defs/stringArray" },
+        "comparabilityWarnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "pairwiseComparison": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "baselineAdapter": { "type": "string", "minLength": 1 },
+        "contenderAdapter": { "type": "string", "minLength": 1 },
+        "comparisonVariables": { "$ref": "#/$defs/pairwiseComparisonVariables" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "pairwiseComparisonVariables": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": [
+        "benchmarkStreams",
+        "harnesses",
+        "providerPaths",
+        "agentCanonicalModels",
+        "agentPromptVersions",
+        "environmentFingerprints",
+        "varied",
+        "controlled",
+        "unknown"
+      ],
+      "properties": {
+        "benchmarkStreams": { "$ref": "#/$defs/pairwiseVariableDelta" },
+        "harnesses": { "$ref": "#/$defs/pairwiseVariableDelta" },
+        "providerPaths": { "$ref": "#/$defs/pairwiseVariableDelta" },
+        "agentCanonicalModels": { "$ref": "#/$defs/pairwiseVariableDelta" },
+        "agentPromptVersions": { "$ref": "#/$defs/pairwiseVariableDelta" },
+        "environmentFingerprints": { "$ref": "#/$defs/pairwiseVariableDelta" },
+        "varied": { "$ref": "#/$defs/stringArray" },
+        "controlled": { "$ref": "#/$defs/stringArray" },
+        "unknown": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "pairwiseVariableDelta": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["baseline", "contender", "changed", "known"],
+      "properties": {
+        "baseline": { "$ref": "#/$defs/stringArray" },
+        "contender": { "$ref": "#/$defs/stringArray" },
+        "changed": { "type": "boolean" },
+        "known": { "type": "boolean" }
       }
     },
     "usage": {

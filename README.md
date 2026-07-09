@@ -49,18 +49,25 @@ while keeping the underlying evidence easy to inspect.
 ## Install
 
 ```bash
-pnpm add -D @kestrel-agents/ruhroh
-pnpm exec ruhroh init
+pnpm dlx @kestrel-agents/ruhroh demo
 ```
+
+Target public command after the unscoped npm package name is available:
+`pnpm dlx ruhroh demo`.
 
 ## Quickstart
 
-Start with the built-in no-credentials example before wiring a live coding
-agent. The first milestone is not a published benchmark result; it is proving
-that Ruhroh can create a task, run an agent command, review the finished work,
-save evidence, and write reports on your machine.
+`ruhroh demo` is the live first-run path. It uses OpenRouter, prompts for an API
+key when `OPENROUTER_API_KEY` is not already set, installs pinned Aider tooling
+under `.ruhroh/tools/`, runs a bundled bookmark-manager task, evaluates the
+delivered app, and writes `ruhroh-report.html` plus a complete local evidence
+package under `.ruhroh/runs/`.
+
+Use the built-in no-credentials fixture path when you want to inspect the local
+scaffold or wire Ruhroh into an existing project without a live model call:
 
 ```bash
+pnpm add -D @kestrel-agents/ruhroh
 pnpm exec ruhroh init
 pnpm exec ruhroh first-run
 export RUHROH_RUN_AGENT_COMMAND="$PWD/ruhroh/adapters/fixture-newsletter/run.sh"

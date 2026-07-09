@@ -113,6 +113,10 @@ evidence files from `artifactPaths`. Each entry records the path, availability,
 size, and SHA-256 digest when the referenced file is readable. Missing,
 directory-valued, or unreadable paths stay visible with an explicit error so
 reviewers can distinguish incomplete evidence from a passing score.
+Benchmark claims also include `source.resultArtifacts`; each referenced result
+file records its SHA-256 digest and, when available, a `benchmarkTarget`
+snapshot from the run manifest so the public evidence list shows the exact
+stack that produced that result.
 
 The report JSON includes `reviewQueue`, an array of runs that should be checked
 before making benchmark claims. Queue entries include `priority`, task,
@@ -161,7 +165,10 @@ failure bucket counts, review-required count, reviewer-quality warning counts,
 optional usage totals, and low-sample warnings.
 When multiple connectors have runs for the same task, compare reports
 pairwise agent pass-rate deltas with approximate 95% confidence intervals and
-warnings when the interval includes zero or either side has too few runs.
+structured `comparisonVariables` metadata that shows which harness, model,
+provider path, prompt, stream, and environment values varied or stayed
+controlled. Pairwise rows also preserve warnings when the interval includes
+zero or either side has too few runs.
 Compare JSON and HTML also include `claimReadiness`, which summarizes whether
 the aggregate is publishable and lists blockers or advisories, plus a cross-run
 `reviewQueue` with direct pointers to the saved runs that need human review.

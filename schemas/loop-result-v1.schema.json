@@ -61,9 +61,11 @@
       "type": "object",
       "additionalProperties": true,
       "properties": {
-        "version": { "const": "ruhroh_run_manifest_v1" }
+        "version": { "const": "ruhroh_run_manifest_v1" },
+        "benchmarkTarget": { "$ref": "#/$defs/benchmarkTarget" }
       }
     },
+    "benchmarkTarget": { "$ref": "#/$defs/benchmarkTarget" },
     "evalResult": {
       "type": "object",
       "additionalProperties": true,
@@ -96,6 +98,55 @@
         "model": { "type": "object" },
         "usage": { "type": "object" },
         "command": { "type": "object" }
+      }
+    },
+    "benchmarkTarget": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["targetId", "requestedModel"],
+      "properties": {
+        "targetId": { "type": "string", "minLength": 1 },
+        "stream": {
+          "enum": ["harness-controlled", "model-controlled", "native-stack", "recommended-stack", "custom"]
+        },
+        "adapterId": { "type": "string", "minLength": 1 },
+        "harness": { "$ref": "#/$defs/harness" },
+        "requestedModel": { "$ref": "#/$defs/model" },
+        "actualModel": { "$ref": "#/$defs/model" },
+        "providerPath": {
+          "oneOf": [
+            { "type": "string", "minLength": 1 },
+            { "type": "object", "additionalProperties": true }
+          ]
+        },
+        "recommendedStack": {
+          "oneOf": [
+            { "type": "boolean" },
+            { "type": "object", "additionalProperties": true }
+          ]
+        }
+      }
+    },
+    "harness": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["name"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["model"],
+      "properties": {
+        "provider": { "type": "string", "minLength": 1 },
+        "model": { "type": "string", "minLength": 1 },
+        "canonicalId": { "type": "string", "minLength": 1 },
+        "version": { "type": "string", "minLength": 1 },
+        "protocol": { "type": "string", "minLength": 1 },
+        "promptVersion": { "type": "string", "minLength": 1 }
       }
     }
   }

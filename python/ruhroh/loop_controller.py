@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import threading
 import time
 import uuid
 from datetime import datetime, timezone
@@ -135,6 +136,7 @@ def run_ruhroh_trial(
             "implementationRuns": implementation_runs,
         }
         journey.update(adapter.legacy_journey_fields())
+        journey_path.parent.mkdir(parents=True, exist_ok=True)
         journey_path.write_text(json.dumps(journey, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
         copy_workspace_for_eval(workspace_root, eval_workspace_root)
@@ -187,6 +189,7 @@ def run_ruhroh_trial(
             eval_workspace_root=eval_workspace_root,
             artifact_paths=artifact_paths,
         )
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(json.dumps(run_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         final_result = {
             "$schema": LOOP_RESULT_SCHEMA_URL,
@@ -216,6 +219,7 @@ def run_ruhroh_trial(
             "artifactPaths": artifact_paths,
         }
         final_result.update(adapter.legacy_result_fields(run_agent_manifest))
+        result_path.parent.mkdir(parents=True, exist_ok=True)
         result_path.write_text(json.dumps(final_result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return final_result
     except Exception as error:
@@ -248,6 +252,7 @@ def run_ruhroh_trial(
             artifact_paths=artifact_paths,
             failure_details={"message": str(error), "type": type(error).__name__},
         )
+        manifest_path.parent.mkdir(parents=True, exist_ok=True)
         manifest_path.write_text(json.dumps(run_manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         final_result = {
             "$schema": LOOP_RESULT_SCHEMA_URL,
@@ -277,6 +282,7 @@ def run_ruhroh_trial(
             "artifactPaths": artifact_paths,
         }
         final_result.update(adapter.legacy_result_fields(run_agent_manifest))
+        result_path.parent.mkdir(parents=True, exist_ok=True)
         result_path.write_text(json.dumps(final_result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return final_result
     finally:
@@ -393,16 +399,15 @@ class CommandRunAgentAdapter(RunAgentAdapter):
             "RUHROH_RUN_ROOT": str(self.run_root),
             "RUHROH_ADAPTER_ID": self.id,
         }
-        completed = subprocess.run(
+        completed = run_command_capture(
             command_args(command, shell_env_key=f"{self.command_env_key}_SHELL"),
             cwd=str(self.workspace_root),
             env=env,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
             timeout=read_iteration_timeout_sec(),
             shell=command_shell_enabled(f"{self.command_env_key}_SHELL"),
+            stream_output=command_shell_enabled("RUHROH_STREAM_AGENT_OUTPUT"),
         )
+        transcript_path.parent.mkdir(parents=True, exist_ok=True)
         transcript_path.write_text(completed.stdout, encoding="utf-8")
         parsed_result = read_json_file(result_path)
         if not isinstance(parsed_result, dict):
@@ -623,6 +628,7 @@ def run_eval_agent(
         journey_path=journey_path,
         eval_output_path=eval_output_path,
     )
+    eval_input_path.parent.mkdir(parents=True, exist_ok=True)
     eval_input_path.write_text(json.dumps(eval_input, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     fixture = read_eval_fixture()
     if fixture is not None:
@@ -632,6 +638,7 @@ def run_eval_agent(
             fixture["artifacts"].setdefault("workspacePath", str(eval_workspace_root))
             fixture["artifacts"].setdefault("originalWorkspacePath", str(original_workspace_root))
             fixture["artifacts"].setdefault("journeyPath", str(journey_path))
+        eval_output_path.parent.mkdir(parents=True, exist_ok=True)
         eval_output_path.write_text(json.dumps(fixture, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         return fixture
     materialize_inline_command("RUHROH_EVAL_COMMAND", installed_dir)
@@ -666,6 +673,7 @@ def run_eval_agent(
         parsed = read_json_file(eval_output_path)
         if isinstance(parsed, dict):
             parsed = normalize_eval_result(parsed)
+            eval_output_path.parent.mkdir(parents=True, exist_ok=True)
             eval_output_path.write_text(json.dumps(parsed, indent=2, sort_keys=True) + "\n", encoding="utf-8")
             return parsed
         for line in reversed(completed.stdout.splitlines()):
@@ -675,6 +683,7 @@ def run_eval_agent(
                 continue
             if isinstance(parsed_line, dict):
                 parsed_line = normalize_eval_result(parsed_line)
+                eval_output_path.parent.mkdir(parents=True, exist_ok=True)
                 eval_output_path.write_text(json.dumps(parsed_line, indent=2, sort_keys=True) + "\n", encoding="utf-8")
                 return parsed_line
         return synthetic_eval_infra_failure(
@@ -836,6 +845,7 @@ def synthetic_eval_infra_failure(
         "artifacts": {"workspacePath": str(eval_workspace_root), "evalOutputPath": str(eval_output_path)},
         "finalSummary": f"Eval-agent failed for {scenario_id}.",
     }
+    eval_output_path.parent.mkdir(parents=True, exist_ok=True)
     eval_output_path.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return result
 
@@ -866,6 +876,7 @@ def derive_final_verdict(implementation_runs: list[dict[str, Any]], eval_result:
 
 
 def write_workspace_tarball(workspace_root: Path, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(output_path, "w:gz") as tar:
         if not workspace_root.exists():
             return
@@ -877,6 +888,7 @@ def write_workspace_tarball(workspace_root: Path, output_path: Path) -> None:
 
 def write_workspace_summary(workspace_root: Path, output_path: Path) -> None:
     summary = summarize_workspace(workspace_root)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(json.dumps(summary, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
@@ -976,6 +988,7 @@ def summarize_workspace(workspace_root: Path) -> dict[str, Any]:
 
 
 def write_directory_tarball(directory: Path, output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
     with tarfile.open(output_path, "w:gz") as tar:
         if not directory.exists():
             return
@@ -1070,6 +1083,9 @@ def build_run_manifest(
         "usage": usage_manifest(run_agent_manifest.get("usage") if isinstance(run_agent_manifest.get("usage"), dict) else None),
         "artifactPaths": artifact_paths,
     }
+    benchmark_target = benchmark_target_manifest(run_agent_manifest)
+    if benchmark_target:
+        manifest["benchmarkTarget"] = benchmark_target
     if failure_details is not None:
         manifest["failureDetails"] = failure_details
     return without_none_values(manifest)
@@ -1134,6 +1150,60 @@ def command_shell_enabled(env_key: str) -> bool:
     return str(os.environ.get(env_key, "")).strip().lower() in {"1", "true", "yes", "on"}
 
 
+def run_command_capture(
+    args: str | list[str],
+    *,
+    cwd: str,
+    env: dict[str, str],
+    timeout: int,
+    shell: bool,
+    stream_output: bool = False,
+) -> subprocess.CompletedProcess[str]:
+    if not stream_output:
+        return subprocess.run(
+            args,
+            cwd=cwd,
+            env=env,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            timeout=timeout,
+            shell=shell,
+        )
+
+    process = subprocess.Popen(
+        args,
+        cwd=cwd,
+        env=env,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        shell=shell,
+        bufsize=1,
+    )
+    chunks: list[str] = []
+
+    def read_stdout() -> None:
+        if process.stdout is None:
+            return
+        for chunk in iter(lambda: process.stdout.read(1), ""):
+            chunks.append(chunk)
+            sys.stdout.write(chunk)
+            sys.stdout.flush()
+
+    reader = threading.Thread(target=read_stdout, daemon=True)
+    reader.start()
+    try:
+        return_code = process.wait(timeout=timeout)
+    except subprocess.TimeoutExpired as error:
+        process.kill()
+        reader.join(timeout=1)
+        error.output = "".join(chunks)
+        raise
+    reader.join()
+    return subprocess.CompletedProcess(args, return_code, stdout="".join(chunks), stderr=None)
+
+
 def materialize_inline_command(command_env_key: str, installed_dir: Path) -> None:
     inline_base64 = os.environ.get(f"{command_env_key}_INLINE_BASE64")
     if not inline_base64:
@@ -1171,9 +1241,54 @@ def model_manifest(*, prefix: str) -> dict[str, Any]:
     return without_none_values({
         "provider": provider,
         "model": model,
+        "canonicalId": optional_env(f"{prefix}_MODEL_CANONICAL_ID"),
+        "protocol": optional_env(f"{prefix}_PROTOCOL"),
         "version": optional_env(f"{prefix}_MODEL_VERSION"),
         "promptVersion": optional_env(f"{prefix}_PROMPT_VERSION") or optional_env("RUHROH_PROMPT_VERSION"),
     })
+
+
+def benchmark_target_manifest(run_agent_manifest: dict[str, Any]) -> dict[str, Any]:
+    raw = optional_env("RUHROH_BENCHMARK_TARGET_JSON")
+    target = read_json_string(raw) if raw else {}
+    if not isinstance(target, dict):
+        target = {}
+    target_id = optional_env("RUHROH_BENCHMARK_TARGET_ID")
+    harness = optional_env("RUHROH_AGENT_HARNESS")
+    if target_id and not isinstance(target.get("targetId"), str):
+        target["targetId"] = target_id
+    if harness and not isinstance(target.get("harness"), dict):
+        target["harness"] = {"name": harness}
+    requested_model = model_manifest(prefix="RUHROH_AGENT")
+    existing_requested_model = target.get("requestedModel")
+    if not valid_model_manifest(existing_requested_model) and valid_model_manifest(requested_model):
+        merged_requested_model = dict(existing_requested_model) if isinstance(existing_requested_model, dict) else {}
+        merged_requested_model.update(requested_model)
+        target["requestedModel"] = merged_requested_model
+    actual_model = run_agent_manifest.get("model")
+    if isinstance(actual_model, dict):
+        target["actualModel"] = actual_model
+    target = without_none_values(target)
+    if not non_empty_string(target.get("targetId")) or not valid_model_manifest(target.get("requestedModel")):
+        return {}
+    return target
+
+
+def valid_model_manifest(value: Any) -> bool:
+    return isinstance(value, dict) and non_empty_string(value.get("model"))
+
+
+def non_empty_string(value: Any) -> bool:
+    return isinstance(value, str) and value.strip() != ""
+
+
+def read_json_string(raw: str | None) -> Any:
+    if raw is None or raw.strip() == "":
+        return None
+    try:
+        return json.loads(raw)
+    except json.JSONDecodeError:
+        return None
 
 
 def usage_manifest(adapter_usage: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -1268,6 +1383,7 @@ def without_none_values(value: dict[str, Any]) -> dict[str, Any]:
 
 
 def append_jsonl(path: Path, value: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(value, sort_keys=True) + "\n")
 
