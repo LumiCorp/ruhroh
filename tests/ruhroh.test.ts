@@ -548,6 +548,8 @@ test("published package contract ships benchmark authoring assets", () => {
   assert.equal(packageJson.bin.ruhroh, "./dist/cli.js");
   assert.equal(packageJson.description, "Realistic user-request benchmarks for coding agents");
   assert.equal(existsSync(path.resolve("examples", "adapters", "fixture-newsletter", "run.sh")), true);
+  assert.equal(existsSync(path.resolve("examples", "adapters", "kestrel-cli", "run.sh")), true);
+  assert.equal(existsSync(path.resolve("examples", "adapters", "kestrel-cli", "README.md")), true);
   assert.equal(existsSync(path.resolve("examples", "adapters", "aider", "run.sh")), true);
   assert.equal(existsSync(path.resolve("examples", "adapters", "aider", "README.md")), true);
   assert.equal(existsSync(path.resolve("examples", "benchmark-targets", "README.md")), true);
@@ -2156,6 +2158,8 @@ test("public CLI lists and generates benchmark suites from a clean fixture proje
     assert.equal(targetPlan.runPlan.samples[2].benchmarkTarget.requestedModel.canonicalId, "openai/gpt-5.5");
     assert.equal(targetPlan.runPlan.samples[2].benchmarkTarget.requestedModel.protocol, "anthropic-messages");
     const persistedTargetPlan = JSON.parse(readFileSync(targetPlan.runPlanPath, "utf8"));
+    assert.equal(persistedTargetPlan.samples[0].harborCommand.args.includes("RUHROH_RUN_AGENT_ADAPTER=codex-cli"), true);
+    assert.equal(persistedTargetPlan.samples[2].harborCommand.args.includes("RUHROH_RUN_AGENT_ADAPTER=claude-code"), true);
     assert.equal(persistedTargetPlan.samples[2].forwardedEnvKeys.includes("RUHROH_BENCHMARK_TARGET_JSON"), true);
     assert.equal(persistedTargetPlan.samples[2].forwardedEnvKeys.includes("RUHROH_AGENT_MODEL"), true);
     assert.equal(persistedTargetPlan.samples[2].forwardedEnvKeys.includes("RUHROH_AGENT_MODEL_CANONICAL_ID"), true);
@@ -3189,6 +3193,7 @@ test("public CLI lists bundled examples for adapter discovery", async () => {
   assert.equal(jsonCode, 0);
   assert.equal(catalog.version, "ruhroh_examples_v1");
   assert.equal(catalog.adapters.some((item: { id: string; command: string }) => item.id === "codex-cli" && item.command === "examples/adapters/codex-cli/run.sh"), true);
+  assert.equal(catalog.adapters.some((item: { id: string; command: string }) => item.id === "kestrel-cli" && item.command === "examples/adapters/kestrel-cli/run.sh"), true);
   assert.equal(catalog.adapters.some((item: { id: string; command: string }) => item.id === "aider" && item.command === "examples/adapters/aider/run.sh"), true);
   assert.equal(catalog.adapters.some((item: { id: string; credentialFree: boolean }) => item.id === "fixture-newsletter" && item.credentialFree), true);
   assert.equal(catalog.evaluators.some((item: { id: string; credentialFree: boolean }) => item.id === "fixture-newsletter" && item.credentialFree), true);
@@ -4367,7 +4372,7 @@ test("public CLI new-adapter scaffolds an edit-me command adapter", async () => 
 test("public CLI new-adapter scaffolds maintained CLI wrapper templates", async () => {
   const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-new-adapter-template-"));
   try {
-    for (const template of ["codex-cli", "claude-code", "gemini-cli", "aider", "fixture"] as const) {
+    for (const template of ["kestrel-cli", "codex-cli", "claude-code", "gemini-cli", "aider", "fixture"] as const) {
       const adapterId = `${template}-adapter`;
       const stdout: string[] = [];
       const code = await runRuhrohCli(["new-adapter", adapterId, "--template", template, "--json"], {
@@ -4394,6 +4399,11 @@ test("public CLI new-adapter scaffolds maintained CLI wrapper templates", async 
       assert.match(readme, /adapter-metadata/u);
       assert.match(readme, /ruhroh_run_agent_result_v1/u);
       assert.match(script, /ruhroh_run_agent_result_v1/u);
+      if (template === "kestrel-cli") {
+        assert.match(script, /KESTREL_CLI_BIN/u);
+        assert.match(script, /job_input_v1/u);
+        assert.match(readme, /Kestrel CLI setup/u);
+      }
       if (template === "codex-cli") {
         assert.match(script, /CODEX_CLI_BIN/u);
         assert.match(readme, /Codex CLI setup/u);
@@ -7165,6 +7175,71 @@ test("public CLI dry-run supports adapter override without printing secrets", as
   }
 });
 
+test("public CLI resolves the maintained Kestrel adapter without a sibling checkout", async () => {
+  const stdout: string[] = [];
+  const code = await runRuhrohCli([
+    "--scenario-dir",
+    "scenarios",
+    "--scenario",
+    "simple-newsletter",
+    "--adapter",
+    "kestrel-cli",
+    "--dry-run",
+  ], {
+    spawn: (() => assert.fail("dry-run should not spawn Harbor")) as never,
+    env: {},
+    cwd: process.cwd(),
+    stdout: { write: (chunk: string) => { stdout.push(chunk); return true; } },
+    stderr: { write: () => true },
+  });
+
+  const output = stdout.join("");
+  assert.equal(code, 0);
+  assert.match(output, /selected=simple-newsletter/u);
+  assert.match(output, /RUHROH_RUN_AGENT_ADAPTER=kestrel-cli/u);
+  assert.match(output, /RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64=\$\{RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64\}/u);
+  assert.doesNotMatch(output, /examples\/adapters\/kestrel-cli\/run\.sh/u);
+
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-kestrel-target-"));
+  try {
+    const targetConfigPath = path.join(tmp, "target.json");
+    writeFileSync(targetConfigPath, JSON.stringify({
+      version: "ruhroh_benchmark_target_config_v1",
+      stream: "custom",
+      targets: [{
+        targetId: "kestrel-reference",
+        adapterId: "kestrel-cli",
+        harness: { name: "kestrel", version: "0.6.0" },
+        requestedModel: { provider: "kestrel", model: "configured", protocol: "kestrel-job-v1", promptVersion: "runtime-v1" },
+        providerPath: { provider: "kestrel", protocol: "kestrel-job-v1" },
+      }],
+    }));
+    const targetStdout: string[] = [];
+    const targetCode = await runRuhrohCli([
+      "--scenario-dir",
+      "scenarios",
+      "--scenario",
+      "simple-newsletter",
+      "--target-config",
+      targetConfigPath,
+      "--dry-run",
+    ], {
+      spawn: (() => assert.fail("target dry-run should not spawn Harbor")) as never,
+      env: {},
+      cwd: process.cwd(),
+      stdout: { write: (chunk: string) => { targetStdout.push(chunk); return true; } },
+      stderr: { write: () => true },
+    });
+    const targetOutput = targetStdout.join("");
+    assert.equal(targetCode, 0);
+    assert.match(targetOutput, /RUHROH_RUN_AGENT_ADAPTER=kestrel-cli/u);
+    assert.match(targetOutput, /RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64=\$\{RUHROH_RUN_AGENT_COMMAND_INLINE_BASE64\}/u);
+    assert.doesNotMatch(targetOutput, /examples\/adapters\/kestrel-cli\/run\.sh/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
 test("public CLI spawns Harbor with package Python runtime importable", async () => {
   const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-cli-pythonpath-"));
   try {
@@ -7378,6 +7453,71 @@ test("package Python runtime supports generic external command adapters", () => 
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }
+});
+
+test("package Python runtime gives the Kestrel CLI adapter native session continuity", () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-kestrel-adapter-"));
+  try {
+    const workspace = path.join(tmp, "workspace");
+    const runRoot = path.join(tmp, "run");
+    const installed = path.join(tmp, "installed");
+    const command = path.join(tmp, "fake-kestrel.sh");
+    writeFileSync(command, [
+      "#!/usr/bin/env bash",
+      "set -euo pipefail",
+      "printf '{\"status\":\"continue\",\"runId\":\"run-1\",\"threadId\":\"thread-1\"}\\n' > \"$RUHROH_RESULT_PATH\"",
+      "printf '{\"status\":\"continue\"}\\n'",
+      "",
+    ].join("\n"));
+    chmodExecutable(command);
+    const script = [
+      "from pathlib import Path",
+      "from ruhroh.loop_controller import build_run_agent_adapter",
+      `adapter = build_run_agent_adapter(adapter_id='kestrel-cli', scenario_id='scenario', workspace_root=Path(${JSON.stringify(workspace)}), installed_dir=Path(${JSON.stringify(installed)}), run_root=Path(${JSON.stringify(runRoot)}))`,
+      "turn = adapter.run_turn(iteration=1, message='Build the app')",
+      "completion = adapter.detect_completion(turn)",
+      "manifest = adapter.collect_artifacts()",
+      "print(completion['state'])",
+      "print(manifest['adapterId'])",
+      "print(manifest['continuityLevel'])",
+      "print(manifest['runIds'][0])",
+    ].join("\n");
+
+    mkdirSync(workspace, { recursive: true });
+    const result = spawnSync("python3", ["-c", script], {
+      env: {
+        ...process.env,
+        PYTHONPATH: resolveRuhrohPythonPath(),
+        RUHROH_RUN_AGENT_COMMAND: command,
+      },
+      encoding: "utf8",
+    });
+
+    assert.equal(result.status, 0, result.stderr || result.stdout);
+    assert.deepEqual(result.stdout.trim().split(/\r?\n/u), ["not_done", "kestrel-cli", "native_session", "run-1"]);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
+  }
+});
+
+test("package Python runtime preserves terminal cancellation classification", () => {
+  const script = [
+    "from ruhroh.loop_controller import derive_final_verdict",
+    "result = derive_final_verdict([{'status': 'completed', 'failureKind': 'none', 'completionStatus': {'state': 'terminal_failure', 'reason': 'cancelled'}}], {'status': 'passed'})",
+    "print(result['status'])",
+    "print(result['failure_kind'])",
+    "print(result['score'])",
+  ].join("\n");
+  const result = spawnSync("python3", ["-c", script], {
+    env: {
+      ...process.env,
+      PYTHONPATH: resolveRuhrohPythonPath(),
+    },
+    encoding: "utf8",
+  });
+
+  assert.equal(result.status, 0, result.stderr || result.stdout);
+  assert.deepEqual(result.stdout.trim().split(/\r?\n/u), ["failed", "cancelled", "0"]);
 });
 
 test("package Python runtime supports external eval command", () => {
@@ -7907,6 +8047,7 @@ test("example fixture adapter and evaluator complete a credential-free run", () 
 test("public adapter example scripts pass shell syntax checks", () => {
   const scripts = [
     path.resolve("examples", "adapters", "fixture-newsletter", "run.sh"),
+    path.resolve("examples", "adapters", "kestrel-cli", "run.sh"),
     path.resolve("examples", "adapters", "codex-cli", "run.sh"),
     path.resolve("examples", "adapters", "claude-code", "run.sh"),
     path.resolve("examples", "adapters", "gemini-cli", "run.sh"),
@@ -7917,6 +8058,145 @@ test("public adapter example scripts pass shell syntax checks", () => {
   for (const script of scripts) {
     const result = spawnSync("bash", ["-n", script], { encoding: "utf8" });
     assert.equal(result.status, 0, `${script}\n${result.stderr}`);
+  }
+});
+
+test("maintained Kestrel CLI adapter maps job contracts and preserves replay evidence", () => {
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "ruhroh-kestrel-wrapper-"));
+  try {
+    const fakeKestrel = path.join(tmp, "kestrel");
+    writeFileSync(fakeKestrel, [
+      "#!/usr/bin/env bash",
+      "set -euo pipefail",
+      "json_in=''",
+      "json_out=''",
+      "while [[ $# -gt 0 ]]; do",
+      "  case \"$1\" in",
+      "    --json-in) json_in=\"$2\"; shift 2 ;;",
+      "    --json-out) json_out=\"$2\"; shift 2 ;;",
+      "    *) shift ;;",
+      "  esac",
+      "done",
+      "test -f \"$json_in\"",
+      "cp \"$FAKE_KESTREL_OUTPUT\" \"$json_out\"",
+      "printf '{\"type\":\"run.progress\"}\\n' > \"$KESTREL_JOB_EVENT_LOG_PATH\"",
+      "printf 'fake kestrel completed\\n'",
+      "exit \"${FAKE_KESTREL_EXIT_CODE:-0}\"",
+      "",
+    ].join("\n"), "utf8");
+    chmodExecutable(fakeKestrel);
+
+    const adapter = path.resolve("examples", "adapters", "kestrel-cli", "run.sh");
+    const runCase = (name: string, output: Record<string, unknown>, exitCode = 0) => {
+      const workspace = path.join(tmp, `workspace-${name}`);
+      const outputFixture = path.join(tmp, `${name}-job-output.json`);
+      const resultPath = path.join(tmp, `${name}-result.json`);
+      mkdirSync(workspace, { recursive: true });
+      writeFileSync(outputFixture, `${JSON.stringify(output, null, 2)}\n`, "utf8");
+      const completed = spawnSync("bash", [adapter], {
+        env: {
+          ...process.env,
+          RUHROH_WORKSPACE_PATH: workspace,
+          RUHROH_MESSAGE: `Implement ${name} safely.`,
+          RUHROH_ITERATION: "2",
+          RUHROH_SCENARIO_ID: `kestrel-${name}`,
+          RUHROH_SESSION_HANDLE: "ruhroh-kestrel-session",
+          RUHROH_RESULT_PATH: resultPath,
+          RUHROH_RUN_MODE: "build",
+          RUHROH_SAMPLE_ID: `sample-${name}`,
+          RUHROH_SAMPLE_SEED: "seed-1",
+          RUHROH_AGENT_PROVIDER: "openrouter",
+          RUHROH_AGENT_MODEL: "example/model",
+          RUHROH_AGENT_PROTOCOL: "openai-compatible",
+          KESTREL_CLI_BIN: fakeKestrel,
+          KESTREL_CLI_ADAPTER_VERSION: "0.6.0-test",
+          FAKE_KESTREL_OUTPUT: outputFixture,
+          FAKE_KESTREL_EXIT_CODE: String(exitCode),
+        },
+        encoding: "utf8",
+      });
+      return {
+        completed,
+        result: JSON.parse(readFileSync(resultPath, "utf8")),
+        input: JSON.parse(readFileSync(path.join(workspace, ".ruhroh", "kestrel-cli", "job-input-2.json"), "utf8")),
+      };
+    };
+
+    const completed = runCase("completed", {
+      version: "job_output_v1",
+      terminalEventType: "job.completed",
+      job: {
+        version: "job_run_result_v1",
+        sessionId: "ruhroh-kestrel-session",
+        threadId: "thread-completed",
+        runId: "run-completed",
+        status: "COMPLETED",
+        replay: { version: "job_replay_pointer_v1", commands: { replay: "kestrel runtime replay --run-id run-completed" } },
+        result: { finalizedPayload: { message: "done" } },
+      },
+    });
+    assert.equal(completed.completed.status, 0, completed.completed.stderr || completed.completed.stdout);
+    assert.equal(completed.result.status, "goal_satisfied");
+    assert.equal(completed.result.runId, "run-completed");
+    assert.equal(completed.result.threadId, "thread-completed");
+    assert.deepEqual(completed.result.finalizedPayload, { message: "done" });
+    assert.match(completed.result.replay.commands.replay, /run-completed/u);
+    assert.equal(completed.result.adapterVersion, "0.6.0-test");
+    assert.equal(completed.result.model.model, "example/model");
+    assert.equal(completed.input.turn.sessionId, "ruhroh-kestrel-session");
+    assert.equal(completed.input.turn.interactionMode, "build");
+    assert.equal(completed.input.turn.actSubmode, "full_auto");
+    assert.equal(completed.input.turn.workspace.workspaceRoot, path.join(tmp, "workspace-completed"));
+
+    const waiting = runCase("waiting", {
+      version: "job_output_v1",
+      terminalEventType: "job.completed",
+      job: {
+        version: "job_run_result_v1",
+        sessionId: "ruhroh-kestrel-session",
+        threadId: "thread-waiting",
+        runId: "run-waiting",
+        status: "WAITING",
+        waitFor: { kind: "user", eventType: "user.reply" },
+      },
+    });
+    assert.equal(waiting.completed.status, 0, waiting.completed.stderr || waiting.completed.stdout);
+    assert.equal(waiting.result.status, "continue");
+    assert.equal(waiting.result.waitFor.eventType, "user.reply");
+
+    const cancelled = runCase("cancelled", {
+      version: "job_output_v1",
+      terminalEventType: "job.cancelled",
+      job: {
+        version: "job_run_result_v1",
+        sessionId: "ruhroh-kestrel-session",
+        threadId: "thread-cancelled",
+        runId: "run-cancelled",
+        status: "CANCELLED",
+        replay: { version: "job_replay_pointer_v1", commands: { replay: "kestrel runtime replay --run-id run-cancelled" } },
+      },
+    });
+    assert.equal(cancelled.completed.status, 0, cancelled.completed.stderr || cancelled.completed.stdout);
+    assert.equal(cancelled.result.status, "cancelled");
+    assert.match(cancelled.result.summary, /cancelled/u);
+
+    const failed = runCase("failed", {
+      version: "job_output_v1",
+      terminalEventType: "job.failed",
+      job: {
+        version: "job_run_result_v1",
+        sessionId: "ruhroh-kestrel-session",
+        threadId: "thread-failed",
+        runId: "run-failed",
+        status: "FAILED",
+        error: { code: "MODEL_FAILED", message: "provider failed" },
+      },
+    }, 1);
+    assert.equal(failed.completed.status, 1);
+    assert.equal(failed.result.status, "runtime_failure");
+    assert.match(failed.result.summary, /terminal=job.failed/u);
+  } finally {
+    rmSync(tmp, { recursive: true, force: true });
   }
 });
 

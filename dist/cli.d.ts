@@ -2,7 +2,7 @@
 import { spawnSync } from "node:child_process";
 import type { RuhrohScenarioTier } from "./scenarios.js";
 type RuhrohEvaluatorTemplate = "review" | "deterministic" | "model" | "hybrid";
-type RuhrohAdapterTemplate = "generic" | "codex-cli" | "claude-code" | "gemini-cli" | "aider" | "fixture";
+type RuhrohAdapterTemplate = "generic" | "kestrel-cli" | "codex-cli" | "claude-code" | "gemini-cli" | "aider" | "fixture";
 interface RuntimeDeps {
     spawn: typeof spawnSync;
     env: NodeJS.ProcessEnv;

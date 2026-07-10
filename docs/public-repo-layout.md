@@ -3,7 +3,7 @@ id: ruhroh-public-repo-layout
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-06-22
+last_verified_at: 2026-07-10
 depends_on:
   - package.json
   - docs/.vitepress/config.ts
@@ -103,9 +103,9 @@ Ownership:
 - `scenarios` contains bundled benchmark scenarios.
 - `suites` contains published benchmark-pack manifests.
 - `examples/scenarios` contains small public-friendly scenarios.
-- `examples/adapters/codex-cli`, `examples/adapters/claude-code`,
-  `examples/adapters/gemini-cli`, and `examples/adapters/aider` demonstrate
-  real public-agent wrappers.
+- `examples/adapters/kestrel-cli`, `examples/adapters/codex-cli`,
+  `examples/adapters/claude-code`, `examples/adapters/gemini-cli`, and
+  `examples/adapters/aider` demonstrate real public-agent wrappers.
 - `examples/adapters/fixture-newsletter` and
   `examples/evaluators/fixture-newsletter` provide a credential-free full-loop
   smoke path.

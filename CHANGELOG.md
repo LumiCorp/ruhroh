@@ -8,6 +8,8 @@
 - Added enriched eval-result fields for per-criterion evidence, subscores, and judge metadata while preserving binary Harbor reward compatibility.
 - Added run summary and repeated-run aggregation helpers.
 - Wrote and preserved `ruhroh-loop-eval-input.json` for stable evaluator inputs.
+- Added a maintained native-session `kestrel-cli` adapter with Kestrel job
+  contract, replay-evidence, waiting, cancellation, and failure mapping.
 - Updated docs for the author-run-evaluate-review workflow.
 
 ## 0.5.0-beta.2

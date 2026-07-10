@@ -3,7 +3,7 @@ id: ruhroh-write-an-adapter
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-07-08
+last_verified_at: 2026-07-10
 depends_on:
   - docs/custom-shell.md
   - python/ruhroh/loop_controller.py
@@ -40,7 +40,7 @@ Choose the connector style by integration need:
 | Need | Use | Why |
 | --- | --- | --- |
 | Evaluate a CLI agent or local wrapper | `custom-shell` or `--adapter ./wrapper.sh` | Fastest path; Ruhroh passes environment variables and reads the completion line or result file. |
-| Start from a maintained public-agent example | `new-adapter --template codex-cli`, `claude-code`, `gemini-cli`, or `aider` | Copies a wrapper that already writes prompt, transcript, model, usage, and result metadata where the agent exposes it. |
+| Start from a maintained public-agent example | `new-adapter --template kestrel-cli`, `codex-cli`, `claude-code`, `gemini-cli`, or `aider` | Copies a wrapper that already writes prompt, transcript, model, usage, and result metadata where the agent exposes it. |
 | Prove the loop without credentials | `new-adapter --template fixture` or the `fixture-newsletter` example | Deterministic smoke path for setup and CI. |
 | Build a native integration that cannot be represented as a process wrapper | TypeScript connector protocol | Advanced extension point; use only when a command wrapper cannot preserve session behavior or metadata. |
 
@@ -62,8 +62,9 @@ pnpm exec ruhroh run --scenario-dir ruhroh/scenarios --scenario simple-newslette
 ```
 
 Use `--template generic` for a safe fail-fast skeleton, or start from a
-maintained wrapper with `--template codex-cli`, `--template claude-code`,
-`--template gemini-cli`, `--template aider`, or `--template fixture`. The
+maintained wrapper with `--template kestrel-cli`, `--template codex-cli`,
+`--template claude-code`, `--template gemini-cli`, `--template aider`, or
+`--template fixture`. The
 generic scaffold writes
 prompt/transcript files and a `ruhroh_run_agent_result_v1` result file, but
 exits with `runtime_failure` until you replace the placeholder block with a
@@ -181,6 +182,8 @@ Keep wrappers conservative:
 Reference wrappers live under `examples/adapters/`:
 
 - `fixture-newsletter`: credential-free smoke adapter for local verification.
+- `kestrel-cli`: native-session wrapper for Kestrel `job_input_v1` and
+  `job_output_v1`, including replay and event evidence.
 - `codex-cli`: custom-shell wrapper for `codex exec`.
 - `claude-code`: custom-shell wrapper for `claude --print`.
 - `gemini-cli`: custom-shell wrapper for Gemini CLI.

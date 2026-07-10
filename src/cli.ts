@@ -60,7 +60,7 @@ import {
 import { RUHROH_AGENT_ENV_KEYS } from "./env.js";
 
 type RuhrohEvaluatorTemplate = "review" | "deterministic" | "model" | "hybrid";
-type RuhrohAdapterTemplate = "generic" | "codex-cli" | "claude-code" | "gemini-cli" | "aider" | "fixture";
+type RuhrohAdapterTemplate = "generic" | "kestrel-cli" | "codex-cli" | "claude-code" | "gemini-cli" | "aider" | "fixture";
 
 interface RuntimeDeps {
   spawn: typeof spawnSync;
@@ -138,6 +138,7 @@ interface RuhrohCliCommand {
 
 interface ResolvedAdapterSelection {
   adapterId: string;
+  runAgentAdapterId: string;
   label: string;
   env: NodeJS.ProcessEnv;
   benchmarkTarget?: RuhrohBenchmarkTarget | undefined;
@@ -6716,6 +6717,7 @@ exit 2
 
 function readAdapterTemplateScript(template: Exclude<RuhrohAdapterTemplate, "generic">): string {
   const relativePathByTemplate: Record<Exclude<RuhrohAdapterTemplate, "generic">, string> = {
+    "kestrel-cli": "examples/adapters/kestrel-cli/run.sh",
     "codex-cli": "examples/adapters/codex-cli/run.sh",
     "claude-code": "examples/adapters/claude-code/run.sh",
     "gemini-cli": "examples/adapters/gemini-cli/run.sh",
@@ -7197,6 +7199,17 @@ published claims harder to defend.
 }
 
 function adapterTemplateGuidance(template: RuhrohAdapterTemplate): string {
+  if (template === "kestrel-cli") {
+    return `Kestrel CLI setup:
+
+- Install and configure Kestrel so \`kestrel\` is on \`PATH\`, or set
+  \`KESTREL_CLI_BIN\`.
+- Optional controls: \`KESTREL_PROFILE_ID\`, \`KESTREL_STORE_DRIVER\`,
+  \`KESTREL_APPROVAL_POLICY_PACK_ID\`, \`KESTREL_ACT_SUBMODE\`, and
+  \`KESTREL_CLI_ADAPTER_VERSION\`.
+- The wrapper preserves one Kestrel session across Ruhroh iterations and records
+  job input, job output, event log, transcript, and replay identifiers.`;
+  }
   if (template === "codex-cli") {
     return `Codex CLI setup:
 
@@ -7496,6 +7509,8 @@ function packageAssetsDoctorCheck(packageRoot: string): RuhrohDoctorCheck {
     "schemas/rerun-ledger-v1.schema.json",
     "schemas/workspace-summary-v1.schema.json",
     "examples/adapters/fixture-newsletter/run.sh",
+    "examples/adapters/kestrel-cli/run.sh",
+    "examples/adapters/kestrel-cli/README.md",
     "examples/adapters/aider/run.sh",
     "examples/adapters/aider/README.md",
     "examples/evaluators/fixture-newsletter/run.sh",
@@ -7611,7 +7626,7 @@ function buildCommands(
         }, cwd);
         const command = buildRuhrohHarborCommand({
           scenario,
-          adapter: adapter.adapterId,
+          adapter: adapter.runAgentAdapterId,
           datasetPath,
           iterations: options.iterations,
           env,
@@ -7892,9 +7907,19 @@ function resolveBenchmarkTargetSelection(
   env: NodeJS.ProcessEnv,
 ): ResolvedAdapterSelection {
   const adapterCommand = target.adapterCommand?.trim();
-  const command = adapterCommand === undefined || adapterCommand.length === 0
+  const maintainedCommand = target.adapterId === "kestrel-cli"
+    && target.env?.RUHROH_RUN_AGENT_COMMAND === undefined
+    && env.RUHROH_RUN_AGENT_COMMAND === undefined
+    ? maintainedAdapterCommand("kestrel-cli")
+    : undefined;
+  const selectedCommand = adapterCommand === undefined || adapterCommand.length === 0
+    ? maintainedCommand
+    : adapterCommand;
+  const command = selectedCommand === undefined
     ? undefined
-    : adapterCommand.includes(" ") ? adapterCommand : path.resolve(cwd, adapterCommand);
+    : selectedCommand.includes(" ") || path.isAbsolute(selectedCommand)
+      ? selectedCommand
+      : path.resolve(cwd, selectedCommand);
   const targetEnv: NodeJS.ProcessEnv = {
     ...env,
     ...target.env,
@@ -7911,6 +7936,7 @@ function resolveBenchmarkTargetSelection(
   };
   return {
     adapterId: target.targetId,
+    runAgentAdapterId: target.adapterId ?? target.targetId,
     label: target.targetId,
     env: targetEnv,
     benchmarkTarget: target,
@@ -8346,6 +8372,7 @@ function resolveAdapterSelection(
     const adapterId = adapterIdFromCommand(command);
     return {
       adapterId,
+      runAgentAdapterId: adapterId,
       label: adapterId,
       env: {
         ...env,
@@ -8353,7 +8380,29 @@ function resolveAdapterSelection(
       },
     };
   }
-  return { adapterId: adapter, label: adapter, env };
+  if (adapter === "kestrel-cli") {
+    const configuredCommand = env.RUHROH_RUN_AGENT_COMMAND?.trim();
+    const command = configuredCommand === undefined || configuredCommand.length === 0
+      ? maintainedAdapterCommand(adapter)
+      : configuredCommand;
+    return {
+      adapterId: adapter,
+      runAgentAdapterId: adapter,
+      label: adapter,
+      env: {
+        ...env,
+        RUHROH_RUN_AGENT_COMMAND: command,
+      },
+    };
+  }
+  return { adapterId: adapter, runAgentAdapterId: adapter, label: adapter, env };
+}
+
+function maintainedAdapterCommand(adapterId: string): string | undefined {
+  if (adapterId === "kestrel-cli") {
+    return path.join(resolveRuhrohPackageRoot(), "examples", "adapters", "kestrel-cli", "run.sh");
+  }
+  return undefined;
 }
 
 function looksLikeAdapterCommand(adapter: string): boolean {
@@ -8400,7 +8449,7 @@ function parseEvaluatorTemplate(value: string): RuhrohEvaluatorTemplate {
 }
 
 function parseAdapterTemplate(value: string): RuhrohAdapterTemplate {
-  if (value === "generic" || value === "codex-cli" || value === "claude-code" || value === "gemini-cli" || value === "aider" || value === "fixture") {
+  if (value === "generic" || value === "kestrel-cli" || value === "codex-cli" || value === "claude-code" || value === "gemini-cli" || value === "aider" || value === "fixture") {
     return value;
   }
   throw new Error(`Unknown Ruhroh adapter template: ${value}`);
@@ -9084,6 +9133,7 @@ function buildExampleCatalog(packageRoot: string): RuhrohExampleCatalog {
     ],
     adapters: [
       item("adapter", "fixture-newsletter", path.join("adapters", "fixture-newsletter"), "Credential-free adapter that writes a small newsletter page for local smoke tests.", true, "examples/adapters/fixture-newsletter/run.sh"),
+      item("adapter", "kestrel-cli", path.join("adapters", "kestrel-cli"), "Maintained native-session adapter for Kestrel job contracts.", false, "examples/adapters/kestrel-cli/run.sh"),
       item("adapter", "codex-cli", path.join("adapters", "codex-cli"), "Command-backed wrapper for Codex CLI via custom-shell.", false, "examples/adapters/codex-cli/run.sh"),
       item("adapter", "claude-code", path.join("adapters", "claude-code"), "Command-backed wrapper for Claude Code print mode via custom-shell.", false, "examples/adapters/claude-code/run.sh"),
       item("adapter", "gemini-cli", path.join("adapters", "gemini-cli"), "Command-backed wrapper for Gemini CLI via custom-shell.", false, "examples/adapters/gemini-cli/run.sh"),

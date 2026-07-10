@@ -3,8 +3,9 @@ id: ruhroh-adapter-examples
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-07-08
+last_verified_at: 2026-07-10
 depends_on:
+  - examples/adapters/kestrel-cli/README.md
   - examples/adapters/codex-cli/README.md
   - examples/adapters/claude-code/README.md
   - examples/adapters/gemini-cli/README.md
@@ -39,6 +40,7 @@ Credential-free examples:
 
 Live-agent connector examples:
 
+- `examples/adapters/kestrel-cli/run.sh`
 - `examples/adapters/codex-cli/run.sh`
 - `examples/adapters/claude-code/run.sh`
 - `examples/adapters/gemini-cli/run.sh`
@@ -64,7 +66,7 @@ pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter ./ruhroh/adapt
 ```
 
 Use `--template generic` for a safe fail-fast skeleton, or choose `codex-cli`,
-`claude-code`, `gemini-cli`, `aider`, or `fixture` to copy one of the
+`kestrel-cli`, `claude-code`, `gemini-cli`, `aider`, or `fixture` to copy one of the
 maintained example wrappers into your project. The generic scaffold is
 intentionally not a passing benchmark connector. It writes the expected result
 shape and fails fast until the placeholder command is replaced with a real
