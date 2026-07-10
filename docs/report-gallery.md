@@ -41,15 +41,15 @@ visible, so the next improvement can be based on evidence from the last run.
 
 | What you need to know | Open this report | What it shows |
 | --- | --- | --- |
-| Did one run deliver the outcome? | [Single-run report](/samples/ruhroh-report) | Verdict, reviewer result, implementation timeline, commands, criteria, and saved evidence. |
-| Did the reviewer support the score? | [Evaluation evidence report](/samples/ruhroh-eval-quality) | Missing evidence, criteria coverage, commands, confidence, and judge details. |
-| What needs a person to inspect? | [Review queue](/samples/ruhroh-review) | Required and recommended review items with reasons and evidence links. |
-| What changes across repeated runs? | [Compare report](/samples/ruhroh-compare) | Pass rates, uncertainty, failure modes, usage, cohort warnings, review state, and source runs. |
-| Can the conclusion be cited? | [Claim index](/samples/ruhroh-claims) | Publishability, blockers, suite identity, run counts, evidence coverage, and packet links. |
+| Did one run deliver the outcome? | [Single-run report](/samples/ruhroh-report.html) | Verdict, reviewer result, implementation timeline, commands, criteria, and saved evidence. |
+| Did the reviewer support the score? | [Evaluation evidence report](/samples/ruhroh-eval-quality.html) | Missing evidence, criteria coverage, commands, confidence, and judge details. |
+| What needs a person to inspect? | [Review queue](/samples/ruhroh-review.html) | Required and recommended review items with reasons and evidence links. |
+| What changes across repeated runs? | [Compare report](/samples/ruhroh-compare.html) | Pass rates, uncertainty, failure modes, usage, cohort warnings, review state, and source runs. |
+| Can the conclusion be cited? | [Claim index](/samples/ruhroh-claims.html) | Publishability, blockers, suite identity, run counts, evidence coverage, and packet links. |
 
 ## Understand The Whole Loop
 
-The [workflow guide](/samples/ruhroh-workflow) shows how a project moves from
+The [workflow guide](/samples/ruhroh-workflow.html) shows how a project moves from
 the credential-free fixture through task authoring, reviewer calibration, run
 planning, comparison, and publication readiness. Each stage stays open until
 the evidence required for that stage exists.
@@ -65,9 +65,9 @@ original working directory.
 
 | Packet view | Purpose |
 | --- | --- |
-| [Comparison](/samples/ruhroh-publication/ruhroh-compare) | Review the aggregate result, cohorts, warnings, and source-run links. |
-| [Evaluation evidence](/samples/ruhroh-publication/ruhroh-eval-quality) | Check whether reviewer judgments contain enough support. |
-| [Review queue](/samples/ruhroh-publication/ruhroh-review) | Resolve the human-review items that remain in the packet. |
+| [Comparison](/samples/ruhroh-publication/ruhroh-compare.html) | Review the aggregate result, cohorts, warnings, and source-run links. |
+| [Evaluation evidence](/samples/ruhroh-publication/ruhroh-eval-quality.html) | Check whether reviewer judgments contain enough support. |
+| [Review queue](/samples/ruhroh-publication/ruhroh-review.html) | Resolve the human-review items that remain in the packet. |
 | [Manifest](/samples/ruhroh-publication/manifest.json) | Verify the packet inventory and versioned contract. |
 
 The packet remains blocked for the same reasons as the source comparison. A
