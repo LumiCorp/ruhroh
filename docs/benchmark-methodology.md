@@ -3,7 +3,7 @@ id: ruhroh-benchmark-methodology
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-07-07
+last_verified_at: 2026-07-09
 depends_on:
   - src/results.ts
   - src/scenarios.ts
@@ -12,307 +12,318 @@ depends_on:
 
 # Benchmark Methodology
 
-Ruhroh benchmarks measure whether a coding agent delivered the requested user
-outcome in a final workspace. They are not code-completion tests and they should
-not pass or fail on static filename checks unless the user task made that file
-contract explicit.
+Ruhroh measures whether a coding agent delivered the requested user outcome in
+a final workspace. A benchmark should reproduce a meaningful engineering loop,
+not reward a filename or source string unless the user request explicitly made
+that detail part of the outcome.
+
+## Methodology At A Glance
+
+| Decision | Rule | Ruhroh evidence |
+| --- | --- | --- |
+| What is compared? | One scenario, adapter, and run-agent configuration per cohort. | Suite, run plan, and run manifest metadata. |
+| How often is it run? | Use the suite's `methodology.minRuns`; fewer than five runs remain directional. | Sample ids, seeds, run indexes, coverage, and low-sample warnings. |
+| What counts as failure? | Ordinary implementation and goal failures remain in the sample. | Final result, failure bucket, journey, and reviewer evidence. |
+| When is a retry allowed? | Only for infrastructure failure outside the measured agent behavior. | Preserved failed evidence and a versioned rerun ledger. |
+| What makes a claim publishable? | Complete suite coverage, comparable cohorts, intact evidence, adequate reviewer quality, and no required review. | `claimReadiness`, review queue, validation results, and source hashes. |
 
 ## Run Units
 
-The standard comparison unit is one scenario, one adapter, and one run-agent
-configuration. Ruhroh groups reports by scenario id and adapter id. If the model,
-prompt, adapter version, scenario version, or evaluator changes, treat the new
-runs as a new comparison set even when the scenario id is unchanged.
+**Rule:** Group results by scenario id and adapter id, then keep the model,
+prompt, adapter version, scenario version, evaluator, judge identity, and
+environment consistent within the cohort.
 
-For public matrix work, prefer defining benchmark targets. A benchmark target is
-one planned row that separates the Ruhroh adapter from the agent harness and the
-model/provider path. Target ids become the comparison ids used in sample ids and
-aggregate reports, while target metadata records the underlying adapter command,
-harness identity, requested model, provider path, and native-stack status.
-Run manifests copy the target metadata and fill `actualModel` from the adapter
-result when the wrapper reports what actually ran.
+**Why it matters:** A changed prompt or reviewer can alter the result even when
+the scenario id stays the same. Mixing those runs hides what actually improved.
 
-Use targets to keep the three public benchmark streams honest:
-
-- harness-controlled: same requested model/provider path, different harnesses;
-- model-controlled: same harness and provider path, different requested models;
-- native-stack: each harness with its recommended or default model path.
-
-`recommended-stack` remains accepted as a legacy stream name for existing
-configs, but new public reports should use `native-stack`.
-
-The npm package includes validating templates for those streams under
-`examples/benchmark-targets/`. Use them as starting points, then replace the
-placeholder harness versions and provider routes with the exact stack being
-measured. If a harness reaches the same model through a different client
-protocol, keep that difference in `providerPath.protocol`; hiding protocol
-translation would make the comparison less trustworthy. When the same model
-needs different harness-specific model strings, set
-`requestedModel.canonicalId` to the shared scientific identity and keep
-`requestedModel.model` as the literal value passed to the harness.
-
-Each run should preserve:
+**Evidence to preserve:**
 
 - the generated Harbor task;
-- `ruhroh-loop-result.json`;
-- `ruhroh-run-manifest.json`;
-- implementation iterations, journey, transcripts, and event logs;
-- eval input and eval output;
+- `ruhroh-loop-result.json` and `ruhroh-run-manifest.json`;
+- implementation turns, journey, transcripts, and event logs;
+- evaluator input and output;
 - final workspace summary and archive.
+
+Compare reports surface cohort differences rather than silently combining
+them. Runtime manifests compute `environment.fingerprint` from stable OS,
+Python, and container components. Sample indexes and local workspace paths stay
+available as metadata but do not affect that fingerprint.
+
+### Benchmark Targets
+
+For public comparison matrices, define benchmark targets instead of treating an
+adapter id as the whole experimental condition. Each target records the adapter
+command, harness identity, requested model, provider path, and native-stack
+status. Its target id becomes the comparison id in sample ids and aggregate
+reports, and the run manifest adds the actual model when the wrapper reports it.
+
+Use targets to distinguish three comparison streams:
+
+- `harness-controlled`: one requested model and provider path across harnesses;
+- `model-controlled`: one harness and provider path across requested models;
+- `native-stack`: each harness with its intended or recommended model path.
+
+The package includes validated templates under `examples/benchmark-targets/`.
+Record protocol differences in `providerPath.protocol`. When harnesses require
+different model strings for the same underlying model, use
+`requestedModel.canonicalId` for the shared identity and keep the literal
+argument in `requestedModel.model`.
 
 ## Sample Size
 
-Single runs are useful for debugging, not for claims. Published comparisons
-should use the suite's `methodology.minRuns`, with at least five runs for smoke
-checks and ten or more runs for broader benchmark conclusions.
+**Rule:** Use single runs to debug the loop. Use repeated runs to support a
+comparison or claim.
 
-Use `ruhroh --suite <id> --adapter <adapter> --runs <n>` to collect repeated
-samples with a consistent scenario and adapter selection. Ruhroh forwards
-`RUHROH_SAMPLE_ID`, `RUHROH_SAMPLE_SEED`, `RUHROH_RUN_INDEX`, and
-`RUHROH_RUN_COUNT` to each sample and stores those values in the run manifest so
-archived artifacts can be traced back to the sampling plan. `RUHROH_RUN_SEED`
-is also set to the sample seed by default for adapter compatibility.
+| Use | Minimum guidance |
+| --- | --- |
+| Debugging one task, agent, or reviewer | One run can reveal a failure path, but should not support a ranking. |
+| Smoke comparison | At least five runs per scenario-adapter group. |
+| Broader benchmark conclusion | Use the suite requirement, commonly ten or more runs. |
 
-Repeat `--adapter` to collect the same sample plan for multiple agents in one
-matrix. `ruhroh compare` still groups by scenario id and adapter id, so each
-agent's repeated samples remain separate in aggregate reporting.
+Collect repeated samples with a stable scenario and adapter selection:
 
-Use `--target-config <path>` instead of repeated `--adapter` when the row needs
-explicit harness/model/provider metadata. A target config contains a `targets`
-array; each target must include `targetId` and `requestedModel.model`, and may
-include `adapterCommand`, `adapterId`, `harness`, `providerPath`,
-`recommendedStack`, and string `env` overrides. Filter rows with repeated
-`--target <targetId>`. Do not combine `--target-config` with `--adapter`.
-Run `ruhroh validate-targets <path>` before collection to catch malformed,
-duplicated, or underspecified target rows.
-If a target config declares `stream`, validation also checks the stream's
-control variable: harness-controlled streams need one requested model identity,
-model-controlled streams need one harness and provider path, and native-stack
-streams need every target marked as recommended. Prefer a top-level `stream`.
-If only target rows declare `stream`, every target stream must match and that
-effective stream is still validated; mixed stream declarations are rejected.
-When `compare` or `publish-check` receives a run plan with benchmark targets,
-Ruhroh checks each result's run manifest against the planned target. Harness,
-requested model, provider path, native-stack, and actual-model drift are
-reported as run-plan warnings, and run-plan warnings block publishable claims.
-Even without a run plan, aggregate cohorts report missing benchmark target,
-stream, harness, and provider-path metadata as comparability warnings so older
-artifacts remain readable but cannot be mistaken for fully specified public
-claims.
-Pairwise comparisons also inspect the compared cohorts. For example, a
-harness-controlled comparison can intentionally vary harnesses, but Ruhroh will
-still flag a hidden provider-path or canonical-model difference between the two
-cohorts because that changes what the result can honestly claim to isolate.
+```bash
+pnpm exec ruhroh run --suite <id> --adapter <adapter> --runs <n>
+```
 
-Use `--shard <index>/<total>` when a repeated suite is too expensive for one
-worker. Shards are selected from the deterministic scenario/adapter/sample
-matrix after the full plan is built. A sample produced by `--runs 20 --shard
-3/4` still carries a `RUHROH_SAMPLE_ID` ending in `-of-20` and a
-`RUHROH_RUN_COUNT` of `20`; the shard only decides which samples this worker
-executes. Keep the same scenario, suite, adapter, and `--runs` flags for every
-worker, preserve all result artifacts, and compare the merged result root
-against the intended run plan with `compare --run-plan`.
+Each sample receives `RUHROH_SAMPLE_ID`, `RUHROH_SAMPLE_SEED`,
+`RUHROH_RUN_INDEX`, and `RUHROH_RUN_COUNT`. Ruhroh preserves those values in
+the run manifest. `RUHROH_RUN_SEED` also defaults to the sample seed for adapter
+compatibility.
 
-`ruhroh compare` reports pass rate, Wilson 95% confidence intervals, pass@k,
-mean score with a deterministic bootstrap percentile 95% interval, failure
-buckets, cohort metadata, eval-quality warnings, optional cost/token summaries,
-and a `claimReadiness` summary. When a scenario has
-multiple adapter groups, compare also reports pairwise pass-rate deltas with an
-approximate normal 95% confidence interval plus a Fisher exact two-sided
-significance check. Pairwise rows also include `comparisonVariables`, a
-structured map of which benchmark variables changed, stayed controlled, or
-were unknown between the baseline and contender. Treat a pairwise conclusion as
-directional unless the
-interval excludes zero, the Fisher test is significant at alpha 0.05, and the
-suite minimum run count is satisfied for both adapters. When fewer than five
-runs are present, Ruhroh prints a low-sample warning. When a scenario/adapter
-group is missing or mixing
-scenario versions, adapter versions, agent models, prompt versions, evaluator
-models, evaluator input signatures, judge identities, or environment
-fingerprints, Ruhroh prints comparability warnings; treat those groups as
-debugging evidence, not publishable benchmark claims.
-Runtime manifests compute environment fingerprints from stable OS, Python, and
-container components. Sample indexes and local workspace paths remain useful
-metadata, but they are not part of the digest used for cohort comparability.
+Repeat `--adapter` to collect the same plan for multiple agents. Each adapter
+remains a separate aggregate group.
 
-## Retry Policy
+For explicit harness, model, and provider metadata, use a target config:
 
-Do not retry ordinary agent failures inside a sample. A failed implementation,
-goal mismatch, low-quality answer, or abandoned run is part of the measured
-agent behavior.
+```bash
+pnpm exec ruhroh validate-targets <target-config.json> --json
+pnpm exec ruhroh run --suite <id> \
+  --target-config <target-config.json> \
+  --runs <n>
+```
 
-Retry only when saved evidence shows an infrastructure failure outside the agent's
-control, such as a Harbor crash, missing package runner, broken reviewer
-command, or unavailable external dependency that the benchmark suite allowed. Preserve the
-failed evidence set and record the exclusion reason outside the result directory
-when publishing numbers.
+Each target requires `targetId` and `requestedModel.model`; it may also define
+`adapterCommand`, `adapterId`, `harness`, `providerPath`, `recommendedStack`,
+and string environment overrides. Repeat `--target <id>` to filter rows. Do not
+combine `--target-config` with `--adapter`.
+
+Stream validation checks the intended control variable. Run-plan validation
+then compares each result manifest with its planned target. Harness, model,
+provider-path, native-stack, or actual-model drift becomes a warning that blocks
+publication. Pairwise comparisons also expose hidden differences in variables
+that the selected stream was supposed to control.
+
+### Distributed Collection
+
+Use `--shard <index>/<total>` to split a deterministic
+scenario-adapter-sample matrix across workers. A run created with `--runs 20
+--shard 3/4` still has a sample id ending in `-of-20` and a run count of `20`.
+The shard chooses which samples the worker executes; it does not redefine the
+cohort.
+
+Every worker must use the same scenario, suite, adapter, and `--runs` flags.
+Preserve each result root and compare the merged artifacts with the original
+run plan.
+
+### What Compare Reports
+
+`ruhroh compare` reports:
+
+- pass rate and Wilson 95% confidence interval;
+- pass@k and a deterministic bootstrap percentile interval for mean score;
+- failure buckets, subscores, duration, and iteration distribution;
+- cohort metadata and comparability warnings;
+- evaluator-quality and human-review signals;
+- cost and token summaries when connectors provide usage;
+- `claimReadiness` blockers and advisories.
+
+For multiple adapter groups on the same scenario, Ruhroh also reports pairwise
+pass-rate deltas, an approximate normal 95% interval, and a two-sided Fisher
+exact check. Treat the conclusion as directional unless the interval excludes
+zero, Fisher's test is significant at alpha `0.05`, and both groups satisfy the
+suite minimum.
+
+Fewer than five runs produces a low-sample warning. Mixed scenario versions,
+adapter versions, agent models, prompt versions, evaluator models, evaluator
+input signatures, judge identities, or environment fingerprints produce
+comparability warnings. Those groups are debugging evidence, not publishable
+benchmark claims.
+
+## Retry And Exclusion Policy
+
+**Do not retry:** failed implementations, goal mismatches, low-quality answers,
+or runs the agent abandoned. These are measured outcomes.
+
+**Retry only:** infrastructure failures outside the agent's control, such as a
+Harbor crash, missing package runner, broken reviewer command, or unavailable
+external dependency that the suite allowed.
+
+Preserve the failed evidence. For a published cohort, record an allowed
+exclusion in a `ruhroh_rerun_ledger_v1` file and pass it with the original run
+plan:
+
+```bash
+pnpm exec ruhroh compare <results> \
+  --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+  --rerun-ledger ruhroh-rerun-ledger.json
+```
+
+Only sample-level `decision: "exclude"` entries with
+`reasonKind: "infrastructure"` explain a missing planned sample. Operator
+errors, invalid artifacts, unknown sample ids, and other exclusions remain
+warnings and block publication. Claims preserve the ledger path and SHA-256 so
+`validate-claim --verify-sources` can recheck it. The schema ships at
+`schemas/rerun-ledger-v1.schema.json`.
 
 ## Task Governance
 
-Published tasks should include `metadata.scenarioVersion`, creation/update
-dates, difficulty, tags, visibility, expected runtime, maintainers, changelog,
-provenance, lifecycle status, and contamination notes. Ruhroh validation
-enforces those fields for `public` and `held_out` tasks; network-enabled
-public or held-out tasks must also explain the network rationale. Use
-`visibility: "held_out"` for tasks or packs that should not be treated as
-public training/debug material. Held-out tasks must either declare
-`evaluation.privateAssets` or provide `metadata.privateEvalRationale` so the
-private reviewer path is explicit in the manifest. Bump
-`scenarioVersion` when prompts, assets, rubrics, calibration cases, or expected
-outcomes change in a way that could affect results. Mark tasks
-`deprecated` or `retired` instead of silently removing or replacing them.
-`inspect-pack` reports `riskReview` warnings when scenario contamination notes
-or suite contamination/reward-hacking reviews are missing or left as
-placeholders, so public packs can catch leakage-review gaps before run
-collection starts.
+**Rule:** Version any task change that could alter the result, and make the
+review risks visible before collection.
 
-Benchmark suites freeze task membership under a `suiteVersion`. Bump `suiteVersion`
-when membership, locked task versions, acceptance criteria, or methodology
-changes. A suite manifest should include `scenarioVersions` for every member so
-validation can catch accidental prompt, asset, or rubric drift before comparing
-new runs against older numbers. Published suite manifests must also document a
-contamination review, reward-hacking review, review checklist, and deprecation
-policy, making adversarial review and scenario lifecycle handling explicit parts
-of the benchmark contract.
+Public and held-out tasks must include the governance metadata enforced by
+`ruhroh validate`:
+
+| Area | Required information |
+| --- | --- |
+| Identity | `metadata.scenarioVersion`, creation and update dates, maintainers, and changelog. |
+| Evaluation context | Difficulty, tags, expected runtime, provenance, and lifecycle status. |
+| Exposure | Visibility and contamination notes; network-enabled tasks also need a network rationale. |
+| Held-out review | `evaluation.privateAssets` or `metadata.privateEvalRationale`. |
+
+Bump `scenarioVersion` when prompts, assets, rubrics, calibration cases, or
+expected outcomes change materially. Deprecate or retire tasks instead of
+silently replacing them.
+
+Suites freeze membership and task versions under `suiteVersion`. Bump it when
+membership, locked versions, acceptance criteria, or methodology changes. A
+published suite must document contamination review, reward-hacking review, a
+review checklist, and its deprecation policy.
+
+`inspect-pack` reports risk-review warnings for missing or placeholder task and
+suite reviews. Resolve those gaps before collecting public runs.
 
 ## Reviewer Governance
 
-The reviewer should judge the final delivered state, using transcripts and
-events as supporting evidence. A strong rubric has multiple concrete criteria,
-explicit context, and clear instructions for evidence collection.
+**Rule:** Judge the final delivered state. Use the journey and transcript as
+supporting evidence, not as a substitute for inspecting the outcome.
 
-Published scenarios should include `evaluation.calibrationCases`: short
-pass/fail/review anchors with a rationale for the expected judgment. Calibration
-cases do not score the live run directly; they give model-backed and
-human-assisted reviewers task-specific examples before judging the actual
-workspace. `ruhroh validate` reports a `calibration` summary for each scenario,
-including expected-status counts and missing pass/fail/review anchors, so pack
-maintainers can see whether the reviewer has enough judgment coverage before
-collecting runs.
+A strong rubric has concrete criteria, explicit task context, and clear
+evidence instructions. Use `review` when the evaluator cannot confidently
+decide from the available evidence.
 
-Use `evaluation.privateAssets` for held-out expected outputs, reviewer-only
-fixtures, or reviewer checklists that should not be included in the public
-prompt. Ruhroh copies those files under `private-eval-assets/` in generated
-tasks and lists the reviewer-only paths in `ruhroh-loop-eval-input.json`.
-Run manifests record reviewer input counts and hashes of private asset paths,
-not private asset contents, so result reviewers can detect reviewer setup drift
-without exposing held-out materials.
+### Calibration
 
-`ruhroh validate` warns when scenario rubrics look too generic or underspecified.
-JSON validation output includes structured reviewer lint `warningDetails` with
-stable codes, categories, and field paths, plus the per-scenario `calibration`
-summary. Use those diagnostics as benchmark pack governance inputs instead of
-scraping warning prose. Run `ruhroh calibrate-evaluator` and preserve a passing
-calibration report before repeated run planning; `ruhroh workflow` treats that
-report as a required reviewer-quality gate. `ruhroh report` and
-`ruhroh compare` warn when reviewer output lacks evidence, criteria results,
+Published scenarios should include `evaluation.calibrationCases` with known
+pass, fail, and review examples plus rationales. These examples test evaluator
+behavior; they do not score the live run.
+
+`ruhroh validate` reports expected-status coverage and missing anchors. Run
+`ruhroh calibrate-evaluator` and preserve a passing report before repeated
+collection. `ruhroh workflow` treats that report as a required quality gate.
+
+### Private Reviewer Evidence
+
+Use `evaluation.privateAssets` for held-out expected outputs, fixtures, or
+checklists that should not enter the public prompt. Ruhroh copies them under
+`private-eval-assets/` and lists their paths in
+`ruhroh-loop-eval-input.json`.
+
+Run manifests preserve reviewer-input counts and hashes of private asset paths,
+not private contents. Reviewers can detect setup drift without exposing the
+held-out material.
+
+### Quality And Disagreement
+
+Validation JSON includes stable evaluator-lint codes, categories, fields, and
+severity. Reports warn when reviewer output lacks evidence, criteria results,
 judge metadata, or enough summary detail. These warnings do not change the
-binary Harbor score, but they should block public benchmark claims until
-reviewed. Both commands expose a
-`reviewQueue` in JSON and HTML so maintainers
-can inspect non-passing runs, explicit `review` judgments, reviewer
-infrastructure failures, and weak reviewer evidence with transcript and
-event-log pointers. Use `ruhroh review ./results --json` or `--html` to extract
-that queue as a standalone human-review packet. Reviewers should record the
-decision, reviewer identity, rationale, and accepted limitations before rerunning
-`ruhroh publish-check`.
+binary Harbor score, but they block public claims until resolved.
 
-Model-backed reviewers should record provider, model, model version, and prompt
-version in the run manifest. For higher-stakes benchmark packs, include
-`judgeVotes` from multiple model, command, or human-assisted judges so Ruhroh can
-record `judgeAgreement` and flag disagreement before publication. Use `review`
-when the reviewer cannot confidently decide from available evidence.
+Use `ruhroh review <results> --json` or `--html` to inspect non-passing runs,
+explicit review judgments, reviewer infrastructure failures, and weak evidence.
+Record the human decision, reviewer identity, rationale, and accepted
+limitations before rerunning `publish-check`.
+
+Model-backed reviewers should preserve provider, model, model version, and
+prompt version. Higher-stakes evaluations can include `judgeVotes` from
+multiple model, command, or human-assisted judges. Ruhroh calculates
+`judgeAgreement` and flags disagreement for review.
 
 ## Reporting Claims
 
-Before publishing a comparison, inspect `ruhroh compare --json` and require
-`claimReadiness.publishable === true`. In CI, run
-`ruhroh compare --suite <id> --run-plan .generated/ruhroh/ruhroh-run-plan.json --require-publishable --json`
-so the command still writes the report but exits 2 when the comparison is not
-ready to publish. Blockers include missing suite coverage, ad hoc compares
-without a suite, unsatisfied suite minimum runs, statistical/comparability
-warnings, pairwise adapter comparison warnings, suite coverage warnings,
-run-plan coverage warnings, artifact validation failures, eval-quality warnings,
-and required human review. Advisories preserve the specific eval-quality
-diagnostics, artifact validation warnings, and recommended review queue items for
-audit.
+**Rule:** Publish only when `claimReadiness.publishable === true`.
 
-Archive the `benchmarkClaim` object with any public result. Use
-`ruhroh compare <results-dir> --benchmark-claim benchmark-claim.json` to write
-it as a standalone artifact, or read the same object from `compare --json`. It
-is the compact export record for downstream reports or leaderboards: it includes
-the Ruhroh package identity, suite identity and methodology, adapter rollups,
-suite coverage, per-scenario results, pairwise deltas, readiness
-blockers/advisories, run-plan coverage, review-queue counts, and source paths
-for the result directory, suite manifest, run-plan manifest, HTML report, and
-included result files. Each referenced result file carries its SHA-256 digest
-and, when available, the run's `benchmarkTarget` snapshot so public claims can
-show the exact executed stack for every artifact they cite. It also records
-artifact-validation error/warning counts, so a published claim can be traced
-back to the exact benchmark definition and run artifacts that were aggregated.
-Keep the raw `groups`, `reviewQueue`, and preserved run artifacts alongside it
-so claims remain auditable.
-Use `--benchmark-summary benchmark-summary.json` when a reporting pipeline wants
-the same claim reduced to stable scenario/adapter rows. The summary keeps
-readiness and evidence fields at the top level, but each row is intentionally
-small enough for public benchmark tables.
-Run `ruhroh validate-summary benchmark-summary.json --json` before ingesting
-those rows into a report or leaderboard; it checks the summary contract and
-verifies that row totals, suite metadata, and readiness fields match the
-top-level artifact.
-Run `ruhroh validate-claim benchmark-claim.json --json` before publication to
-check the versioned claim contract and internal consistency. In publication
-pipelines, run
-`ruhroh validate-claim benchmark-claim.json --require-publishable --verify-sources --json`
-so an archived claim with remaining readiness blockers exits `2` even when its
-JSON shape is valid, and a claim whose referenced source evidence has drifted
-exits `1` with source-verification errors.
-Comparisons also count artifact-completeness warnings when result JSON omits
-core path entries for the run manifest, implementation turn log, journey,
-eval input/output, workspace tarball, event tarball, or transcript tarball.
-Treat those warnings as blockers for public claims because the score can no
-longer be audited back through the full implementation journey.
+Run the publication gate against a version-locked suite and the original plan:
 
-Use `ruhroh compare --run-plan .generated/ruhroh/ruhroh-run-plan.json` when the
-original execution plan is available. The run plan lets Ruhroh prove that every
-planned scenario/adapter/sample produced a result and that no extra sample was
-accidentally included in the comparison. It also checks that result sample
-metadata still matches the planned scenario id, adapter id, seed, run index, and
-run count, which catches adapter-selection or artifact-labeling mistakes before
-they become benchmark claims. Generated run plans also include scenario
-source-file hashes and, for suite-selected runs, the suite manifest version and
-hash. Suite comparisons warn when the run plan was generated from a different
-suite manifest than the one being used for publication, so reviewers can catch
-benchmark-pack drift before reading individual run artifacts.
+```bash
+pnpm exec ruhroh compare <results> \
+  --suite <id> \
+  --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+  --require-publishable \
+  --json
+```
 
-If infrastructure prevents a planned sample from producing artifacts, record it
-in a `ruhroh_rerun_ledger_v1` file and pass `--rerun-ledger <path>` with the
-same `--run-plan`. Ruhroh accepts only sample-level `decision: "exclude"`
-entries with `reasonKind: "infrastructure"` as explanations for missing planned
-samples. Operator errors, invalid artifacts, unknown sample ids, and other
-exclusions remain warnings and block publishability. Benchmark claims include
-the ledger path and SHA-256 so the exclusion record can be re-verified with
-`validate-claim --verify-sources`. The ledger contract is shipped as
-`schemas/rerun-ledger-v1.schema.json`.
+The report is still written when the gate returns exit code `2`.
 
-A credible Ruhroh result should name:
+| Blocker category | Examples |
+| --- | --- |
+| Scope | Ad hoc comparison, missing suite scenarios, or unsatisfied minimum runs. |
+| Comparability | Mixed cohorts, pairwise uncertainty, or suite-version drift. |
+| Plan coverage | Missing planned samples, unplanned results, or mismatched sample metadata. |
+| Evidence | Artifact validation errors, incomplete artifact paths, or source drift. |
+| Review quality | Evaluator warnings, required human review, or unresolved disagreement. |
 
-- package version and suite id/version;
-- scenario ids and scenario versions;
-- adapter ids and adapter versions;
-- model/provider metadata when available;
+Advisories preserve evaluator diagnostics, artifact-validation warnings, and
+recommended review items without hiding the underlying runs.
+
+### Claim Artifacts
+
+| Artifact | Purpose |
+| --- | --- |
+| `benchmarkClaim` | Versioned archive record containing tool and suite identity, adapter rollups, coverage, per-scenario results, pairwise deltas, readiness, review counts, source paths, and hashes. |
+| `benchmark-summary.json` | Stable scenario-adapter rows for reports or leaderboards, with readiness and evidence fields retained at the top level. |
+| Raw compare JSON | Detailed groups, review queue, run-plan checks, and diagnostics behind the compact claim. |
+| Preserved run artifacts | The implementation journey, reviewer input and output, manifest, transcripts, workspace summary, and workspace archive behind each score. |
+
+Each result referenced by a benchmark claim carries a SHA-256 digest and, when
+available, its `benchmarkTarget` snapshot. Keep the raw groups, review queue,
+and source artifacts beside the compact exports so the executed stack and the
+full implementation journey remain auditable.
+
+Write and validate standalone exports with:
+
+```bash
+pnpm exec ruhroh compare <results> --benchmark-claim benchmark-claim.json
+pnpm exec ruhroh compare <results> --benchmark-summary benchmark-summary.json
+pnpm exec ruhroh validate-claim benchmark-claim.json --json
+pnpm exec ruhroh validate-summary benchmark-summary.json --json
+```
+
+Publication pipelines should add `--require-publishable --verify-sources` to
+claim validation. Exit code `2` means the claim is structurally valid but still
+blocked. Exit code `1` means the claim is invalid or referenced evidence has
+changed.
+
+When `--run-plan` is present, Ruhroh verifies that every planned
+scenario-adapter-sample produced one matching result and that no extra sample
+entered the aggregate. The plan also preserves scenario source hashes and the
+suite manifest version and hash, allowing publication review to catch
+benchmark-pack drift.
+
+### What A Credible Result Names
+
+- Ruhroh package version and suite id/version;
+- scenario ids and versions;
+- adapter ids and versions;
+- model and provider metadata when available;
 - evaluator identity and judge metadata;
-- run count, pass rate, Wilson CI, pass@k, and pairwise adapter deltas when
-  comparing multiple adapters;
-- retry/exclusion policy;
-- cost/token coverage if usage metadata is present. Claim and summary exports
-  preserve `runsWithUsage`, `runsWithCost`, `runsWithTokens`, total cost/token
-  counts, means, and cost/token per pass so downstream reports can compare
-  efficiency without treating missing usage as zero.
+- run count, pass rate, Wilson interval, pass@k, and pairwise deltas when used;
+- retry and exclusion policy;
+- cost and token coverage when available.
 
-For suite-level summaries, report both the adapter rollup and the per-scenario
-groups. The rollup includes run-weighted pass rate and mean scenario pass rate;
-the latter keeps scenarios closer to equal weight when run counts differ.
-
-Avoid ranking agents from tiny samples or mixed scenario versions. Treat missing
-usage metadata as missing data, not zero cost.
+Claim and summary exports preserve usage coverage, totals, means, and
+cost/tokens per pass. Missing usage remains missing data; it is never treated as
+zero. Suite-level reporting should include both adapter rollups and
+per-scenario groups. Avoid ranking agents from tiny samples or mixed task
+versions.

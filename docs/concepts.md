@@ -3,7 +3,7 @@ id: ruhroh-concepts
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-07-08
+last_verified_at: 2026-07-09
 depends_on:
   - README.md
   - docs/architecture.md
@@ -12,86 +12,70 @@ depends_on:
 
 # Core Concepts
 
-Ruhroh asks one benchmark question: did the agent deliver the intended software
-outcome, and can that judgment be inspected later?
+Ruhroh helps teams engineer better coding-agent loops. It turns realistic
+software work into repeated, inspectable runs so improvements can be based on
+delivered outcomes instead of anecdotes. Ruhroh calls this practice **loop
+engineering**.
 
-If you are new to agent evaluation, read the terms below as Ruhroh labels for
-ordinary workflow pieces: a task, a set of repeated tasks, a way to call an
-agent, a reviewer, saved evidence, and a final publish-or-block decision.
+## The Engineering Loop
 
-## Lifecycle
+<ol class="rr-loop rr-loop-compact" aria-label="The Ruhroh engineering loop">
+  <li><span class="rr-step-number">1</span><div><strong>Run</strong><p>Give an agent a realistic task with explicit success rules.</p></div></li>
+  <li><span class="rr-step-number">2</span><div><strong>Inspect</strong><p>Review its journey, final workspace, and evaluator evidence.</p></div></li>
+  <li><span class="rr-step-number">3</span><div><strong>Compare</strong><p>Aggregate repeated runs while checking that the cohorts match.</p></div></li>
+  <li><span class="rr-step-number">4</span><div><strong>Improve</strong><p>Change one part of the loop and collect the next comparable cohort.</p></div></li>
+</ol>
 
-```mermaid
-flowchart LR
-  scenario["Task<br/>the request + success rules"] --> suite["Benchmark suite<br/>repeatable evaluation"]
-  suite --> adapter["Agent connector<br/>how Ruhroh calls the agent"]
-  adapter --> artifacts["Evidence files<br/>what happened + reviewed result"]
-  artifacts --> compare["Compare<br/>side-by-side results"]
-  compare --> publish["Publish check<br/>ready to cite or blocked"]
-```
+The thing being improved might be the coding agent, system prompt, connector,
+model, task, reviewer, or execution environment. Ruhroh preserves enough
+context to make those differences visible instead of collapsing every run into
+one unexplained score.
 
-1. A task, stored as a `scenario`, is one realistic user request plus the rules
-   for judging it.
-2. A benchmark suite, stored as a `suite`, is a named group of tasks you want to run
-   repeatedly.
-3. An agent connector, configured with `--adapter`, is the small command or integration that lets Ruhroh call the
-   coding agent you want to test.
-4. A run saves the agent's attempts, the finished project, the reviewer input
-   and output, transcripts, and metadata needed to reproduce the result.
-5. `compare` rolls repeated runs into side-by-side results.
-6. `publish-check` decides whether the result is ready to cite publicly or
-   should stay blocked.
+## The Pieces
 
-## Glossary
-
-| Term | Plain meaning | First command |
+| Ruhroh term | Plain meaning | First command |
 | --- | --- | --- |
-| `scenario` | Ruhroh's file name for one realistic task, the files it needs, and the rules for deciding success. | `ruhroh new-scenario` |
-| `suite` | Ruhroh's file name for a repeatable benchmark suite. | `ruhroh new-suite` |
-| `adapter` | Ruhroh's option name for the connector that calls a coding agent. | `ruhroh new-adapter` |
-| `evaluator` | Ruhroh's file name for the reviewer command that inspects the finished project and returns pass, fail, or review. | `ruhroh new-evaluator` |
-| `calibration` | Known pass/fail/review examples used to test whether the reviewer behaves sensibly. | `ruhroh calibrate-evaluator` |
-| `run plan` | The checklist of tasks, agents, samples, and seeds you intended to run. | `ruhroh plan` |
-| `artifacts` | Saved evidence: result JSON, transcripts, reviewer input/output, timeline, project summary, and archives. | `ruhroh report` |
-| `compare` | Side-by-side results across repeated runs. | `ruhroh compare` |
-| `claim` | A benchmark result plus the evidence needed for another person to verify it. | `ruhroh publish-check` |
+| `scenario` | One realistic user request, its files, and the rules for deciding whether the outcome was delivered. | `ruhroh new-scenario` |
+| `suite` | A version-locked group of tasks and the methodology for repeating them. | `ruhroh new-suite` |
+| `adapter` | The connector that lets Ruhroh call the coding agent under evaluation. | `ruhroh new-adapter` |
+| `evaluator` | The reviewer command that inspects the finished project and returns pass, fail, or review. | `ruhroh new-evaluator` |
+| `calibration` | Known pass, fail, and review examples used to test whether the reviewer behaves sensibly. | `ruhroh calibrate-evaluator` |
+| `run plan` | The intended matrix of tasks, agents, samples, and seeds. | `ruhroh plan` |
+| `artifacts` | The saved result, journey, transcripts, reviewer evidence, metadata, and workspace snapshot. | `ruhroh report` |
+| `claim` | An aggregate result plus the evidence another person needs to inspect it. | `ruhroh publish-check` |
 
-## Task
+## Delivery
 
-Each task lives under `ruhroh/scenarios/<id>/` with a `scenario.json`,
-`instruction.md`, and optional files. The prompt should read like a real user
-request. The review rules should name the behavior that matters and the
-evidence the reviewer must inspect.
+A task prompt should read like a real user request. Its review rules should name
+the behavior that matters and the evidence the evaluator must inspect. Passing
+because a filename or source string exists is appropriate only when the user
+request made that contract explicit.
 
-## Benchmark Suite
+The evaluator runs after the coding agent stops. It inspects a copy of the
+finished project, reads the task rules and journey, and returns `passed`,
+`failed`, or `review`. Only `passed` maps to score `1`.
 
-Each benchmark suite lives under `ruhroh/suites/<id>/suite.json`. It locks which tasks
-belong in the benchmark, which versions are allowed, and how many runs are
-needed so later results are compared against the same benchmark suite.
+## Inspectability
 
-## Agent Connector
+Every run should make the final judgment traceable. Ruhroh can preserve the run
+manifest, implementation turns, journey, reviewer input and output, workspace
+summary and archive, event logs, and transcripts.
 
-An agent connector is how Ruhroh calls a coding agent. Most users should start
-with a command wrapper created by `ruhroh new-adapter` or provided through
-`RUHROH_RUN_AGENT_COMMAND`. Advanced users can build deeper TypeScript
-integrations later.
+Use `report` to understand one run, `eval-quality` to check the reviewer,
+`review` to find human-review items, and `compare` to understand a repeated
+cohort. See [Evidence Files](./artifacts.md) for the review path.
 
-## Reviewer Command
+## Comparability
 
-The reviewer command runs after the coding agent stops. It inspects a copy of
-the finished project, reads the task rules and transcript, and returns
-`passed`, `failed`, or `review`. Only `passed` maps to score 1.
-
-## Evidence Files
-
-Evidence files are what Ruhroh saves for later inspection. A publishable Ruhroh
-result should point back to the result JSON, run metadata, run plan, reviewer
-input/output, timeline, transcripts, project summary, and project archive where
-available.
+Repeated runs become useful only when they describe the same evaluation
+conditions. Suites lock task versions. Run plans record intended samples and
+seeds. Run manifests preserve agent, model, prompt, reviewer, and environment
+metadata. Compare reports surface missing samples, mixed cohorts, low sample
+counts, and statistical uncertainty.
 
 ## Publication Readiness
 
-Publication readiness is Ruhroh's final gate. A result is not ready just
-because some runs passed. It must cover the expected benchmark suite, include enough
-runs, keep the evidence files intact, match the run plan, pass reviewer-quality
-checks, and compare like with like.
+A result is not ready simply because some runs passed. `publish-check` requires
+the expected suite coverage, enough runs, intact evidence, run-plan agreement,
+reviewer-quality checks, and comparable cohorts. It returns a publishable claim
+or a concrete list of blockers without hiding the underlying runs.
