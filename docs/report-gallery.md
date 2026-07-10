@@ -91,6 +91,10 @@ See [Evidence Files](./artifacts.md) for the underlying artifacts and
 <details>
 <summary>Maintainer: regenerate the gallery</summary>
 
+Read [Report Sample Routing](./development/report-sample-routing.md) before
+changing links to generated HTML reports. The `.html` extension, deployment
+base, and native-navigation behavior are all part of the link contract.
+
 After a report contract changes:
 
 ```bash
