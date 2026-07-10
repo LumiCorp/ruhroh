@@ -3,7 +3,7 @@ id: ruhroh-cli-reference
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-07-08
+last_verified_at: 2026-07-09
 depends_on:
   - src/cli.ts
 ---
@@ -157,18 +157,20 @@ pnpm exec ruhroh first-run --allow-dry-run --json
 `first-run` is read-only. It checks the local fixture scaffold, validates the
 selected scenario and suite, verifies the fixture adapter/evaluator commands,
 checks the required environment variables, probes Harbor, and prints the exact
-next command to run. Its `nextCommands` list is staged: before `init` it only
-shows scaffold setup and a re-check; after scaffold setup it shows the missing
-exports; once the fixture is ready it shows `doctor`, `validate`, dry-run, and
-the full fixture run. JSON output is versioned as
-`ruhroh_first_run_check_v1` and includes a top-level `nextAction` object for
-setup scripts. It also reports `dryRunReady` separately from `fullRunReady`:
-when the local fixture files and env are valid but Harbor is missing, Ruhroh can
-still point you at the credential-free dry-run while making the full-run blocker
-explicit. Add `--allow-dry-run` when a setup script should exit `0` after
-proving the local fixture scaffold, adapter command, and evaluator command are
-ready for dry-run preview; the report still returns `ready: false` until the
-full Harbor-backed fixture run is available.
+next command to run.
+
+Its `nextCommands` list is staged. Before `init`, it shows scaffold setup and a
+re-check. After scaffolding, it shows missing exports. Once the fixture is
+ready, it shows `doctor`, `validate`, dry-run, and full-run commands.
+
+JSON output is `ruhroh_first_run_check_v1` and includes a top-level
+`nextAction`. It reports `dryRunReady` separately from `fullRunReady`, so a
+missing Harbor installation does not hide that the files and commands are ready
+for preview.
+
+Add `--allow-dry-run` when setup automation should exit `0` after proving the
+scaffold, adapter, and evaluator are ready for dry-run preview. The report still
+returns `ready: false` until the full Harbor-backed run is available.
 
 ## `ruhroh workflow [results]`
 
@@ -297,30 +299,29 @@ Validation also warns when `metadata.changelog` does not mention the current
 `metadata.scenarioVersion`, which helps keep suite locks and published claims
 auditable across scenario changes.
 
+### `inspect-pack`
+
 `inspect-pack` is the authoring and registry preflight for a local benchmark
-pack. It returns `ruhroh_benchmark_pack_inspection_v1` JSON with scenario and
-suite catalogs, validation blockers, advisory warnings, evaluator lint details,
-calibration coverage, difficulty distribution, contamination/reward-hacking
-risk-review status, expected runtime totals/ranges, suite collection estimates
-based on `minRuns`, and deterministic content fingerprints for scenario
-manifests, prompt files, declared public assets, and private evaluator assets.
-The text output summarizes calibration warnings, risk-review warnings,
-difficulty mix, expected runtime, and how many scenario manifests, prompts,
-public asset entries, and private asset entries were fingerprinted; `--json` includes the
-per-scenario hash details, and `--html <path>` writes a static reviewer report
-with readiness metrics, scenario and suite rows, calibration state, difficulty
-mix, expected runtime, risk-review status, and content fingerprint links.
-Exit code `0` means the pack has no validation blockers. Exit code `1` means at
-least one scenario or suite blocker must be fixed before using the pack for
-registry ingestion or later publication.
-Warnings do not fail the command by default, but calibration and risk-review
-warnings should be resolved before collecting publishable runs. Add
-`--require-calibrated` in CI or registry preflight when every scenario must have
-calibration coverage with no missing expected-status anchors. Add
-`--require-risk-reviewed` when missing or placeholder contamination and
-reward-hacking review text should fail the pack gate. Those warnings then become
-readiness blockers and exit code `1`. The bundled scenarios are expected to pass
-both strict gates.
+pack. Its `ruhroh_benchmark_pack_inspection_v1` output covers:
+
+| Area | Included checks |
+| --- | --- |
+| Readiness | Scenario and suite blockers, warnings, evaluator lint, and calibration coverage. |
+| Composition | Difficulty distribution, expected runtime, and suite collection estimates from `minRuns`. |
+| Risk review | Contamination and reward-hacking review status. |
+| Fingerprints | Scenario manifests, prompts, public assets, and private evaluator assets. |
+
+Text output summarizes the pack. `--json` includes per-scenario fingerprints.
+`--html <path>` writes a static reviewer report with scenario and suite rows,
+calibration, runtime, risk-review, and content links.
+
+Exit code `0` means no validation blocker exists. Exit code `1` means the pack
+must be fixed before registry ingestion or publication. Warnings do not fail by
+default.
+
+Add `--require-calibrated` when every task must cover the expected calibration
+statuses. Add `--require-risk-reviewed` when missing or placeholder risk-review
+text should fail the gate. The bundled scenarios pass both strict checks.
 
 ## Doctor
 
@@ -329,23 +330,28 @@ pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --adapter custom-shell
 pnpm exec ruhroh doctor --scenario-dir ruhroh/scenarios --suite-dir ruhroh/suites --suite local-smoke --adapter ./adapters/my-agent.sh --json
 ```
 
-`doctor` checks package layout, required installed package assets, Python
-runtime importability, scenario validation, suite manifest/version-lock
-validation when a suite tree is provided, Harbor executable availability,
-adapter command wiring, evaluator configuration, and command-backed adapter/eval
-safety. The `adapter-metadata` check inspects readable command wrappers for the
-`RUHROH_RESULT_PATH` result-file contract and warns when only final-line
-completion metadata is likely to be captured. Passing adapters should write
-`ruhroh_run_agent_result_v1` with adapter version, model identity, usage when
-available, and transcript or prompt artifacts so comparison reports can explain
-what actually ran. The `command-safety` check warns when shell execution is explicitly
-enabled or when a no-shell command string contains shell operators that will be
-passed literally. The package-asset check verifies the CLI, Python runtime,
-schemas, bundled scenarios, benchmark suites, fixture adapter/evaluator, and
-core docs are present in the installed package.
-When you point `doctor` at local scenarios without a local `--suite-dir`, it
-warns that local suite validation was skipped instead of validating bundled
-suite manifests against your local scenario tree.
+`doctor` checks:
+
+- package layout, installed assets, and Python runtime importability;
+- scenario validation and optional suite version locks;
+- Harbor availability;
+- adapter and evaluator command wiring;
+- command-backed adapter and evaluator safety.
+
+The `adapter-metadata` check inspects readable wrappers for the
+`RUHROH_RESULT_PATH` contract. It warns when only final-line completion
+metadata is likely to be captured. Passing adapters should write
+`ruhroh_run_agent_result_v1` with adapter version, model identity, optional
+usage, and prompt or transcript artifacts.
+
+The `command-safety` check warns when shell execution is enabled or a no-shell
+command contains operators that will be passed literally. The package check
+verifies the CLI, Python runtime, schemas, bundled scenarios and suites,
+fixture adapter and evaluator, and core docs.
+
+When local scenarios are provided without `--suite-dir`, `doctor` warns that
+local suite validation was skipped. It does not compare a project-local task
+tree with bundled suite manifests.
 
 ## Generate And Run
 
@@ -390,148 +396,186 @@ For distributed collection, run `ruhroh plan ... --shard <index>/<total>` or
 suite, adapter, and `--runs` flags. Preserve each worker's result artifacts,
 then compare the merged result root with the original run plan.
 
-## Report And Compare
+## Inspect And Publish Results
+
+| Question | Command |
+| --- | --- |
+| What happened in one run? | `report` |
+| Are the saved files complete and consistent? | `validate-artifacts` |
+| Did the evaluator support its judgment? | `eval-quality` |
+| Which runs need a person? | `review` |
+| What changes across repeated runs? | `compare` |
+| Is the aggregate ready to share? | `publish-check` |
+
+### `ruhroh report`
 
 ```bash
-pnpm exec ruhroh report ./path/to/ruhroh-loop-result.json
+pnpm exec ruhroh report ./path/to/run-artifacts
 pnpm exec ruhroh report ./path/to/run-artifacts --json
 pnpm exec ruhroh report ./path/to/run-artifacts --html ruhroh-report.html
-pnpm exec ruhroh validate-artifacts ./path/to/run-artifacts --json
-pnpm exec ruhroh eval-quality ./path/to/results --html ruhroh-eval-quality.html --json
-pnpm exec ruhroh review ./path/to/results --json
-pnpm exec ruhroh review ./path/to/results --html ruhroh-review.html
-pnpm exec ruhroh compare ./path/to/results
-pnpm exec ruhroh compare ./path/to/results --json
-pnpm exec ruhroh compare ./path/to/results --run-plan .generated/ruhroh/ruhroh-run-plan.json --json
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-productivity --json
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-productivity --require-publishable --json
-pnpm exec ruhroh publish-check ./path/to/results --suite ruhroh-productivity --run-plan .generated/ruhroh/ruhroh-run-plan.json --rerun-ledger ruhroh-rerun-ledger.json --verify-sources
-pnpm exec ruhroh publish-check ./path/to/results --suite ruhroh-productivity --run-plan .generated/ruhroh/ruhroh-run-plan.json --bundle ruhroh-publication --summary-md "$GITHUB_STEP_SUMMARY"
-pnpm exec ruhroh validate-bundle ruhroh-publication --json
-pnpm exec ruhroh claim-index ruhroh-publication --html ruhroh-claims.html --json > claim-index.json
-pnpm exec ruhroh explain run_plan_mismatch
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-productivity --benchmark-claim benchmark-claim.json
-pnpm exec ruhroh compare ./path/to/results --suite ruhroh-productivity --benchmark-summary benchmark-summary.json
-pnpm exec ruhroh validate-summary benchmark-summary.json --json
-pnpm exec ruhroh compare ./path/to/results --html ruhroh-compare.html
 ```
 
-`publish-check` is the one-command publication workflow. It runs the compare
-pipeline, writes any requested `--html`, `--benchmark-claim`, and
-`--benchmark-summary` outputs, writes a Markdown CI/status report with
-`--summary-md <path>`, writes a self-contained publication packet with
-`--bundle <dir>`, applies the publishability gate, and optionally re-hashes
-referenced source files with `--verify-sources`. Bundles include a `sources/`
-payload with the hashed suite, run-plan, rerun-ledger, result, and run-artifact
-evidence referenced by the bundled claim; bundled source paths are relative to
-the bundle so the packet can be copied or archived. It exits `0` when a claim is
-publishable, `1` when inputs are invalid, and `2` when the result is valid but
-blocked from publication. Use `ruhroh explain <code>` on any
-`remediation[].code` to get the stable action, category, docs anchor, and an
-example blocker.
+`report` summarizes one result file or run directory. HTML output is a static
+evidence viewer containing run metadata, timeline, judge agreement, criteria,
+commands, evidence paths, and review signals.
 
-`validate-bundle <dir>` checks a `publish-check --bundle` packet as a unit. It
-verifies the manifest, required files, JSON contract versions, claim and summary
-validation, and cross-references between the embedded publish-check report and
-the standalone claim/summary files. It also re-hashes the bundle-local
-`sources/` evidence referenced by `benchmark-claim.json`. It exits `0` when the
-packet is valid and publishable, `1` when the packet is malformed, and `2` when
-the packet is structurally valid but blocked by the embedded publishability
-verdict.
+### `ruhroh validate-artifacts`
 
-`claim-index <path>` scans one benchmark claim, one publication packet, or a
-directory of exported `benchmark-claim.json` files and emits a local claim
-catalog. JSON output is versioned as `ruhroh_claim_index_v1`, includes a root
-`$schema` URL, and can be validated with
-`schemas/claim-index-v1.schema.json`; `--html` writes a static table with claim
-status, suite/version, adapters, run counts, pass rate, evidence coverage,
-bundle links, and blockers. Use this as the last local step before handing
-claims to a report, dashboard, or external registry. Add `--require-publishable`
-to use the index as a registry-readiness gate: exit code `0` means every
-discovered claim is valid and publishable, `1` means malformed input or invalid
-claims, and `2` means structurally valid claims are still blocked from
-publication.
+```bash
+pnpm exec ruhroh validate-artifacts ./path/to/run-artifacts --json
+```
 
-`report` summarizes one run. `validate-artifacts` checks a run artifact
-directory, `ruhroh-loop-result.json`, or recursive result root for core JSON
-artifacts, expected version fields, matching `$schema` URLs, required
-implementation/evaluator files, and basic cross-artifact consistency such as
-run id agreement. It exits non-zero when any required artifact is missing or
-malformed, and reports warnings for older otherwise-readable artifacts that do
-not yet include `$schema`.
-`--html` writes a self-contained static evidence viewer with run metadata,
-implementation timeline, reviewer judge agreement, criteria, evidence,
-commands, evidence paths, and a `reviewQueue` for runs that need audit.
-`eval-quality` checks reviewer evidence across one result file,
-one run directory, or a recursive result root and emits
-`ruhroh_eval_quality_v1` JSON. `--html` writes a static reviewer-quality
-report with warning counts, next actions, per-run evidence counts, judge
-metadata, and result links. It exits `0` when reviewer judgments are
-audit-ready, `1` for invalid input, and `2` when valid runs have reviewer
-warnings or human-review requirements. `review` extracts the human-review queue
-from one result file, one run directory, or a recursive result root and emits
-`ruhroh_review_queue_v1` JSON or a static HTML review packet. Use it when
-the immediate task is to inspect required and recommended human-review items
-before publishing. `compare` groups
-repeated runs by scenario and adapter, then puts a scenario-by-adapter matrix in
-text and HTML reports before the detailed metrics. The matrix cells show pass
-rate, run count, confidence interval, review count, and warning count for quick
-agent comparison. Detailed compare output reports pass rate, Wilson 95%
-confidence intervals, pass@k, failure buckets, cohort metadata, comparability
-warnings, eval-quality warnings, optional cost/token summaries, and a cross-run
-`reviewQueue`. When a scenario has results for multiple adapters, compare
-output includes `pairwiseComparisons` with adapter pass-rate deltas,
-approximate 95% confidence intervals for those deltas, conclusions, and
-warnings when the interval still includes zero. JSON compare output includes a
-versioned `benchmarkClaim` object that packages the suite, methodology,
-adapter summaries, scenario results, pairwise comparisons, readiness state, and
-run-plan/review evidence into a compact archive/export record. Add
-`--benchmark-claim <path>` to write that same object as a standalone JSON
-artifact for publication pipelines. Add `--benchmark-summary <path>` to write a
-row-oriented `ruhroh_benchmark_summary_v1` artifact derived from the same claim
-for downstream reports or lightweight leaderboards. Validate the export shapes
-with `schemas/benchmark-claim-v1.schema.json` and
-`schemas/benchmark-summary-v1.schema.json`, and run
-`ruhroh validate-claim benchmark-claim.json --json` for Ruhroh's structural and
-consistency checks. Run `ruhroh validate-summary benchmark-summary.json --json`
-to check standalone summary rows against top-level counts and readiness fields.
-Add `--verify-sources` to `validate-claim` when checking archived claims; it
-re-hashes referenced suite manifests, run plans, result JSON files, and
-available run-artifact inventory files. Claims produced by `publish-check`
-also hash the preserved evaluator calibration report when
-`.generated/ruhroh/evaluator-calibration/ruhroh-evaluator-calibration-report.json`
-exists. Add `--require-publishable` to make
-validation of an archived claim return exit code 2 when readiness blockers
-remain; compare output also includes
-`claimReadiness`, a
-publishability summary with `scope`, `publishable`, `blockers`, and
-`advisories`; use it before turning aggregate numbers into benchmark claims.
-Reviewer-quality warnings, such as missing evidence, missing criteria results,
-or missing judge metadata, are blockers for publishable claims until reviewed
-or fixed.
-Add `--require-publishable` to make `compare` return exit code 2 after writing
-the report when `claimReadiness.publishable` is false.
-`compare --run-plan <path>` checks the result set against the intended sample
-matrix and reports `runPlanWarnings` for missing planned samples, results
-without sample ids, or sample ids that were not in the plan. Those warnings are
-publication blockers.
-Add `--rerun-ledger <path>` with `--run-plan` to account for planned samples
-excluded because of infrastructure failures. The ledger must be versioned
-`ruhroh_rerun_ledger_v1`; entries with `decision: "exclude"` and
-`reasonKind: "infrastructure"` suppress the missing-sample warning for that
-planned sample and are preserved in compare JSON as `rerunLedger`. Ledger
-entries for operator errors, invalid artifacts, or unknown sample ids remain
-warnings so exclusions cannot silently alter the benchmark cohort. The npm
-package ships `schemas/rerun-ledger-v1.schema.json` for CI-side validation.
-`compare --suite <id>` filters to suite scenarios, includes suite metadata in
-JSON output, applies the suite `methodology.minRuns`, and warns when suite
-scenarios are missing from the result set. Suite compares also include
-`suiteAdapterSummaries`, which roll scenario groups up by adapter with covered
-scenario count, missing scenarios, total runs, pass rate with Wilson CI, mean
-scenario pass rate, and min-run satisfaction. `compare --html` writes a static
-aggregate report with the same statistical, readiness, and review fields.
+The command accepts one run or a recursive result root. It checks expected JSON
+versions and `$schema` URLs, required implementation and evaluator files, and
+cross-artifact consistency such as run id agreement. Missing or malformed
+evidence exits nonzero. Older readable evidence without `$schema` produces a
+warning.
 
-For machine-readable consumers, use the
-[result JSON reference](./result-json-reference.md) as the field-level contract
-for `report --json`, `compare --json`, `ruhroh-loop-result.json`, run
-manifests, evaluator results, and run plans.
+### `ruhroh eval-quality`
+
+```bash
+pnpm exec ruhroh eval-quality ./path/to/results \
+  --html ruhroh-eval-quality.html \
+  --json
+```
+
+The `ruhroh_eval_quality_v1` report checks reviewer evidence, criteria,
+commands, summary detail, and judge metadata. Exit `0` is audit-ready, `1` is
+invalid input, and `2` means valid runs still have reviewer warnings or human
+review requirements.
+
+### `ruhroh review`
+
+```bash
+pnpm exec ruhroh review ./path/to/results --json
+pnpm exec ruhroh review ./path/to/results --html ruhroh-review.html
+```
+
+`review` extracts required and recommended human-review items as
+`ruhroh_review_queue_v1` JSON or a static HTML packet.
+
+### `ruhroh compare`
+
+```bash
+pnpm exec ruhroh compare ./path/to/results --json
+pnpm exec ruhroh compare ./path/to/results --html ruhroh-compare.html
+pnpm exec ruhroh compare ./path/to/results \
+  --suite ruhroh-productivity \
+  --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+  --require-publishable \
+  --json
+```
+
+Compare groups repeated runs by scenario and adapter. Text and HTML lead with a
+scenario-adapter matrix containing pass rate, run count, confidence interval,
+review count, and warning count.
+
+Detailed output includes Wilson intervals, pass@k, failure buckets, cohort
+metadata, comparability warnings, evaluator warnings, optional cost/token
+summaries, and a cross-run review queue. Multiple adapters add pairwise
+pass-rate deltas with approximate 95% intervals and warnings when the interval
+includes zero.
+
+`compare --suite <id>` applies suite membership and `methodology.minRuns`.
+`suiteAdapterSummaries` report coverage, missing scenarios, total runs, Wilson
+intervals, mean scenario pass rate, and minimum-run satisfaction.
+
+`compare --run-plan <path>` checks the aggregate against the intended sample
+matrix. Missing samples, results without sample ids, and results outside the
+plan become `runPlanWarnings` and block publication.
+
+Add `--rerun-ledger <path>` for allowed infrastructure exclusions. The
+`ruhroh_rerun_ledger_v1` contract accepts only known planned samples with
+`decision: "exclude"` and `reasonKind: "infrastructure"`; other exclusions
+remain warnings.
+
+#### Claim Exports
+
+```bash
+pnpm exec ruhroh compare ./path/to/results \
+  --suite ruhroh-productivity \
+  --benchmark-claim benchmark-claim.json \
+  --benchmark-summary benchmark-summary.json
+pnpm exec ruhroh validate-claim benchmark-claim.json --json
+pnpm exec ruhroh validate-summary benchmark-summary.json --json
+```
+
+Compare JSON includes a versioned `benchmarkClaim` containing suite identity,
+methodology, adapter summaries, scenario results, pairwise comparisons,
+readiness, and run-plan/review evidence. `--benchmark-claim` writes it as a
+standalone archive record. `--benchmark-summary` writes the row-oriented
+`ruhroh_benchmark_summary_v1` form for downstream tables.
+
+`validate-claim --verify-sources` re-hashes suite manifests, run plans, result
+JSON, available run-artifact inventory, and the preserved evaluator calibration
+report when present. `--require-publishable` returns exit `2` when the shape is
+valid but `claimReadiness` still has blockers. Source drift or invalid input
+returns exit `1`.
+
+### `ruhroh publish-check`
+
+```bash
+pnpm exec ruhroh publish-check ./path/to/results \
+  --suite ruhroh-productivity \
+  --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+  --rerun-ledger ruhroh-rerun-ledger.json \
+  --verify-sources
+pnpm exec ruhroh publish-check ./path/to/results \
+  --suite ruhroh-productivity \
+  --run-plan .generated/ruhroh/ruhroh-run-plan.json \
+  --bundle ruhroh-publication \
+  --summary-md "$GITHUB_STEP_SUMMARY"
+```
+
+This is the one-command publication workflow. It runs comparison, applies the
+publishability gate, re-hashes sources when requested, and can write:
+
+| Option | Output |
+| --- | --- |
+| `--html <path>` | Static compare report. |
+| `--benchmark-claim <path>` | Standalone versioned claim. |
+| `--benchmark-summary <path>` | Row-oriented benchmark summary. |
+| `--summary-md <path>` | Markdown CI or status report. |
+| `--bundle <dir>` | Portable packet with reports, manifest, claim, summary, and `sources/` evidence. |
+
+Bundled source paths are relative so the packet can be copied or archived.
+Exit `0` means publishable, `1` means invalid input, and `2` means valid but
+blocked. Use `ruhroh explain <code>` for a stable remediation action.
+
+### `ruhroh validate-bundle`
+
+```bash
+pnpm exec ruhroh validate-bundle ruhroh-publication --json
+```
+
+This validates the packet inventory, required files, contract versions, claim
+and summary consistency, embedded report cross-references, and hashes under
+`sources/`. Exit `0` is valid and publishable, `1` is malformed, and `2` is
+valid but blocked by its embedded verdict.
+
+### `ruhroh claim-index`
+
+```bash
+pnpm exec ruhroh claim-index ruhroh-publication \
+  --html ruhroh-claims.html \
+  --json > claim-index.json
+```
+
+`claim-index` scans one claim, one packet, or a directory of claims and emits
+`ruhroh_claim_index_v1`. HTML output shows status, suite, adapters, run counts,
+pass rate, evidence coverage, packet links, and blockers. Add
+`--require-publishable` to make it a registry gate with the same `0`, `1`, and
+`2` exit meanings.
+
+### `ruhroh explain`
+
+```bash
+pnpm exec ruhroh explain run_plan_mismatch
+```
+
+The command prints the category, severity, action, docs anchor, and example for
+a stable `remediation[].code`.
+
+For machine-readable fields, use the
+[Result JSON Reference](./result-json-reference.md). For the evidence review
+path, use [Evidence Files](./artifacts.md).

@@ -14,8 +14,8 @@ const cleanSampleReports = new Set([
 
 const siteUrl = "https://lumicorp.github.io/ruhroh/";
 const siteTitle = "Ruhroh";
-const siteDescription = "Evidence-backed benchmarks for coding agents.";
-const socialDescription = "Run coding agents on realistic software work, save the evidence, and compare benchmark results reviewers can inspect.";
+const siteDescription = "See what coding agents actually deliver.";
+const socialDescription = "Run realistic software tasks, inspect the finished work and agent journey, compare repeated outcomes, and improve what happens next.";
 const socialTitle = `${siteTitle}: ${siteDescription}`;
 const socialImage = "https://lumicorp.github.io/ruhroh/ruhroh-social-card-v2.png";
 
@@ -76,12 +76,12 @@ export default defineConfig({
     ["meta", { property: "og:image:type", content: "image/png" }],
     ["meta", { property: "og:image:width", content: "1200" }],
     ["meta", { property: "og:image:height", content: "630" }],
-    ["meta", { property: "og:image:alt", content: "Ruhroh: evidence-backed benchmarks for coding agents" }],
+    ["meta", { property: "og:image:alt", content: "Ruhroh: see what coding agents actually deliver" }],
     ["meta", { name: "twitter:card", content: "summary_large_image" }],
     ["meta", { name: "twitter:title", content: socialTitle }],
     ["meta", { name: "twitter:description", content: socialDescription }],
     ["meta", { name: "twitter:image", content: socialImage }],
-    ["meta", { name: "twitter:image:alt", content: "Ruhroh: evidence-backed benchmarks for coding agents" }],
+    ["meta", { name: "twitter:image:alt", content: "Ruhroh: see what coding agents actually deliver" }],
   ],
   themeConfig: {
     logo: {
@@ -91,32 +91,33 @@ export default defineConfig({
     },
     nav: [
       { text: "Guide", link: "/getting-started" },
-      { text: "Reference", link: "/architecture" },
+      { text: "Reports", link: "/report-gallery" },
+      { text: "Reference", link: "/cli-reference" },
       { text: "GitHub", link: "https://github.com/LumiCorp/ruhroh" },
       { text: "npm", link: "https://www.npmjs.com/package/@kestrel-agents/ruhroh" },
     ],
     sidebar: [
       {
-        text: "Getting Started",
+        text: "Start Here",
         items: [
           { text: "Overview", link: "/" },
           { text: "Getting Started", link: "/getting-started" },
           { text: "Core Concepts", link: "/concepts" },
+          { text: "Report Gallery", link: "/report-gallery" },
           { text: "Add to Existing Project", link: "/add-to-existing-project" },
           { text: "Local Fixture Run", link: "/local-fixture-run" },
-          { text: "Publish a Benchmark Result", link: "/benchmark-pack-tutorial" },
           { text: "Troubleshooting", link: "/troubleshooting" },
           { text: "FAQ", link: "/faq" },
         ],
       },
       {
-        text: "Authoring",
+        text: "Build Evaluations",
         items: [
+          { text: "Publish a Benchmark Result", link: "/benchmark-pack-tutorial" },
           { text: "Write a Task", link: "/write-a-scenario" },
           { text: "Task File Format", link: "/scenario-format" },
           { text: "Task Versioning", link: "/scenario-evolution" },
           { text: "Benchmark Suites", link: "/benchmark-suites" },
-          { text: "Benchmark Methodology", link: "/benchmark-methodology" },
           { text: "Benchmark Suite Review", link: "/benchmark-pack-registry" },
           { text: "Connect an Agent", link: "/write-an-adapter" },
           { text: "Agent Connector Examples", link: "/adapter-examples" },
@@ -126,21 +127,20 @@ export default defineConfig({
         ],
       },
       {
-        text: "Evidence",
+        text: "Understand Results",
         items: [
-          { text: "Architecture", link: "/architecture" },
-          { text: "Harbor", link: "/harbor" },
+          { text: "Evidence Files", link: "/artifacts" },
           { text: "Reviewer Command", link: "/eval-agent" },
           { text: "Human Review", link: "/adjudication" },
-          { text: "Evidence Files", link: "/artifacts" },
-          { text: "Report Gallery", link: "/report-gallery" },
+          { text: "Benchmark Methodology", link: "/benchmark-methodology" },
           { text: "Publish Claims", link: "/publish-claims" },
           { text: "Claim Registry", link: "/claim-registry" },
         ],
       },
       {
-        text: "Operations",
+        text: "Operate",
         items: [
+          { text: "Harbor", link: "/harbor" },
           { text: "CI", link: "/ci" },
           { text: "Distributed Runs", link: "/distributed-runs" },
           { text: "Security", link: "/security" },
@@ -150,6 +150,7 @@ export default defineConfig({
       {
         text: "Reference",
         items: [
+          { text: "Architecture", link: "/architecture" },
           { text: "CLI Reference", link: "/cli-reference" },
           { text: "Programmatic API", link: "/programmatic-api" },
           { text: "Agent Command Protocol", link: "/adapter-protocol" },
