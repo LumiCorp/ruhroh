@@ -194,6 +194,7 @@
       "model": {
         "provider": "docs",
         "model": "sample-agent",
+        "canonicalId": "docs/sample-agent",
         "version": "2026-07-08",
         "promptVersion": "docs-v1"
       }
@@ -225,6 +226,39 @@
     "usage": {
       "costUsd": 0.02,
       "totalTokens": 700
+    },
+    "benchmarkTarget": {
+      "targetId": "docs-fixture-native-stack",
+      "stream": "native-stack",
+      "adapterId": "agent-a",
+      "harness": {
+        "name": "fixture-newsletter",
+        "version": "docs-sample-v1"
+      },
+      "requestedModel": {
+        "provider": "docs",
+        "model": "sample-agent",
+        "canonicalId": "docs/sample-agent",
+        "version": "2026-07-08",
+        "protocol": "fixture-command",
+        "promptVersion": "docs-v1"
+      },
+      "actualModel": {
+        "provider": "docs",
+        "model": "sample-agent",
+        "canonicalId": "docs/sample-agent",
+        "version": "2026-07-08",
+        "protocol": "fixture-command",
+        "promptVersion": "docs-v1"
+      },
+      "providerPath": {
+        "provider": "docs",
+        "protocol": "fixture-command"
+      },
+      "recommendedStack": {
+        "recommended": true,
+        "rationale": "Docs sample uses the maintained fixture adapter with its native fixture model."
+      }
     }
   },
   "artifactPaths": {

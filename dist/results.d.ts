@@ -108,6 +108,7 @@ export interface RuhrohRunManifest {
     environment?: RuhrohRunEnvironment | undefined;
     env?: Record<string, unknown> | undefined;
     usage?: Record<string, unknown> | undefined;
+    benchmarkTarget?: Record<string, unknown> | undefined;
     artifactPaths?: Record<string, string> | undefined;
     failureDetails?: Record<string, unknown> | undefined;
 }
@@ -274,6 +275,7 @@ export interface RuhrohBenchmarkClaimScenarioResult {
     usage: RuhrohAggregateUsage;
     reviewRequired: number;
     statisticalWarnings: string[];
+    cohort: RuhrohAggregateCohort;
 }
 export interface RuhrohBenchmarkClaimToolSummary {
     name: string;
@@ -300,6 +302,7 @@ export interface RuhrohBenchmarkClaimResultArtifact {
     runId?: string | undefined;
     sampleId?: string | undefined;
     scenarioVersion?: string | undefined;
+    benchmarkTarget?: Record<string, unknown> | undefined;
     artifactInventory?: RuhrohBenchmarkClaimReferencedArtifact[] | undefined;
 }
 export interface RuhrohBenchmarkClaimReferencedArtifact {
@@ -384,6 +387,7 @@ export interface RuhrohBenchmarkSummaryRow {
     usage: RuhrohAggregateUsage;
     reviewRequired: number;
     statisticalWarnings: string[];
+    cohort: RuhrohAggregateCohort;
 }
 export interface RuhrohBenchmarkClaimValidationResult {
     version: "ruhroh_benchmark_claim_validation_v1";
@@ -498,6 +502,23 @@ export interface RuhrohAggregateRunGroup {
     usage: RuhrohAggregateUsage;
     statisticalWarnings: string[];
 }
+export interface RuhrohPairwiseVariableDelta {
+    baseline: string[];
+    contender: string[];
+    changed: boolean;
+    known: boolean;
+}
+export interface RuhrohPairwiseComparisonVariables {
+    benchmarkStreams: RuhrohPairwiseVariableDelta;
+    harnesses: RuhrohPairwiseVariableDelta;
+    providerPaths: RuhrohPairwiseVariableDelta;
+    agentCanonicalModels: RuhrohPairwiseVariableDelta;
+    agentPromptVersions: RuhrohPairwiseVariableDelta;
+    environmentFingerprints: RuhrohPairwiseVariableDelta;
+    varied: string[];
+    controlled: string[];
+    unknown: string[];
+}
 export interface RuhrohPairwiseAdapterComparison {
     scenarioId: string;
     baselineAdapter: string;
@@ -512,6 +533,7 @@ export interface RuhrohPairwiseAdapterComparison {
     passRateDeltaCi95: RuhrohConfidenceInterval;
     significance: RuhrohPairwiseSignificance;
     conclusion: "baseline_higher" | "contender_higher" | "inconclusive";
+    comparisonVariables: RuhrohPairwiseComparisonVariables;
     warnings: string[];
 }
 export interface AggregateRuhrohRunsOptions {
@@ -541,7 +563,12 @@ export interface RuhrohAggregateCohort {
     sampleSeeds: string[];
     scenarioVersions: string[];
     adapterVersions: string[];
+    benchmarkStreams: string[];
+    benchmarkTargets: string[];
+    harnesses: string[];
+    providerPaths: string[];
     agentModels: string[];
+    agentCanonicalModels: string[];
     agentPromptVersions: string[];
     evaluatorModels: string[];
     evaluatorPromptVersions: string[];

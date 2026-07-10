@@ -49,6 +49,26 @@ them. Runtime manifests compute `environment.fingerprint` from stable OS,
 Python, and container components. Sample indexes and local workspace paths stay
 available as metadata but do not affect that fingerprint.
 
+### Benchmark Targets
+
+For public comparison matrices, define benchmark targets instead of treating an
+adapter id as the whole experimental condition. Each target records the adapter
+command, harness identity, requested model, provider path, and native-stack
+status. Its target id becomes the comparison id in sample ids and aggregate
+reports, and the run manifest adds the actual model when the wrapper reports it.
+
+Use targets to distinguish three comparison streams:
+
+- `harness-controlled`: one requested model and provider path across harnesses;
+- `model-controlled`: one harness and provider path across requested models;
+- `native-stack`: each harness with its intended or recommended model path.
+
+The package includes validated templates under `examples/benchmark-targets/`.
+Record protocol differences in `providerPath.protocol`. When harnesses require
+different model strings for the same underlying model, use
+`requestedModel.canonicalId` for the shared identity and keep the literal
+argument in `requestedModel.model`.
+
 ## Sample Size
 
 **Rule:** Use single runs to debug the loop. Use repeated runs to support a
@@ -73,6 +93,26 @@ compatibility.
 
 Repeat `--adapter` to collect the same plan for multiple agents. Each adapter
 remains a separate aggregate group.
+
+For explicit harness, model, and provider metadata, use a target config:
+
+```bash
+pnpm exec ruhroh validate-targets <target-config.json> --json
+pnpm exec ruhroh run --suite <id> \
+  --target-config <target-config.json> \
+  --runs <n>
+```
+
+Each target requires `targetId` and `requestedModel.model`; it may also define
+`adapterCommand`, `adapterId`, `harness`, `providerPath`, `recommendedStack`,
+and string environment overrides. Repeat `--target <id>` to filter rows. Do not
+combine `--target-config` with `--adapter`.
+
+Stream validation checks the intended control variable. Run-plan validation
+then compares each result manifest with its planned target. Harness, model,
+provider-path, native-stack, or actual-model drift becomes a warning that blocks
+publication. Pairwise comparisons also expose hidden differences in variables
+that the selected stream was supposed to control.
 
 ### Distributed Collection
 
@@ -245,6 +285,11 @@ recommended review items without hiding the underlying runs.
 | `benchmark-summary.json` | Stable scenario-adapter rows for reports or leaderboards, with readiness and evidence fields retained at the top level. |
 | Raw compare JSON | Detailed groups, review queue, run-plan checks, and diagnostics behind the compact claim. |
 | Preserved run artifacts | The implementation journey, reviewer input and output, manifest, transcripts, workspace summary, and workspace archive behind each score. |
+
+Each result referenced by a benchmark claim carries a SHA-256 digest and, when
+available, its `benchmarkTarget` snapshot. Keep the raw groups, review queue,
+and source artifacts beside the compact exports so the executed stack and the
+full implementation journey remain auditable.
 
 Write and validate standalone exports with:
 

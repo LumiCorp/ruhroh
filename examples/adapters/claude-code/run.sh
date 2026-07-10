@@ -45,8 +45,8 @@ claude_args=(
   --add-dir "$workspace"
 )
 
-if [[ -n "${CLAUDE_MODEL:-}" ]]; then
-  claude_args+=(--model "$CLAUDE_MODEL")
+if [[ -n "${CLAUDE_MODEL:-${RUHROH_AGENT_MODEL:-}}" ]]; then
+  claude_args+=(--model "$claude_model")
 fi
 
 if [[ -n "${CLAUDE_CODE_EXTRA_ARGS:-}" ]]; then
@@ -62,8 +62,12 @@ fi
 
 RESULT_PATH="$result_path" \
 ADAPTER_VERSION="$claude_adapter_version" \
-MODEL_PROVIDER="anthropic" \
+MODEL_PROVIDER="${RUHROH_AGENT_PROVIDER:-anthropic}" \
 MODEL_NAME="$claude_model" \
+MODEL_CANONICAL_ID="${RUHROH_AGENT_MODEL_CANONICAL_ID:-}" \
+MODEL_PROTOCOL="${RUHROH_AGENT_PROTOCOL:-}" \
+MODEL_VERSION="${RUHROH_AGENT_MODEL_VERSION:-}" \
+MODEL_PROMPT_VERSION="${RUHROH_AGENT_PROMPT_VERSION:-}" \
 SUMMARY="Claude Code completed the Ruhroh turn." \
 PROMPT_PATH="$prompt_path" \
 TRANSCRIPT_PATH="$transcript_path" \
@@ -87,6 +91,10 @@ if (resultPath !== undefined && resultPath.length > 0) {
     model: {
       provider: process.env.MODEL_PROVIDER,
       model: process.env.MODEL_NAME,
+      canonicalId: process.env.MODEL_CANONICAL_ID || undefined,
+      protocol: process.env.MODEL_PROTOCOL || undefined,
+      version: process.env.MODEL_VERSION || undefined,
+      promptVersion: process.env.MODEL_PROMPT_VERSION || undefined,
     },
     summary,
     artifacts,

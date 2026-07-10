@@ -7,6 +7,7 @@ last_verified_at: 2026-07-09
 depends_on:
   - README.md
   - package.json
+  - src/cli.ts
 ---
 
 <script setup lang="ts">
@@ -44,6 +45,22 @@ to see the result, evidence, and blockers as a reader would.
 ## 1. Install And Scaffold
 
 Install Ruhroh in the project where you want to evaluate coding-agent work:
+
+```bash
+pnpm dlx @kestrel-agents/ruhroh demo
+```
+
+`demo` is the live first-run experience. It uses OpenRouter, prompts for an API
+key when `OPENROUTER_API_KEY` is not already set, installs pinned Aider tooling
+under `.ruhroh/tools/`, runs the bundled bookmark-manager task, evaluates the
+delivered app, and writes `ruhroh-report.html` plus local run evidence under
+`.ruhroh/runs/`.
+
+The intended unscoped command is `pnpm dlx ruhroh demo`. Until that npm package
+name is available for this project, use the scoped package command above.
+
+Use `init` when you are ready to add Ruhroh to a project or want the
+no-credentials fixture path:
 
 ```bash
 pnpm add -D @kestrel-agents/ruhroh

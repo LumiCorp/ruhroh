@@ -57,12 +57,27 @@ structurally valid and fully inspectable, but the claim stays blocked.
 
 ## Try The Loop
 
-Start with the built-in, no-credentials example:
+Start with the live demo:
+
+```bash
+pnpm dlx @kestrel-agents/ruhroh demo
+```
+
+Target public command after the unscoped npm package name is available:
+`pnpm dlx ruhroh demo`.
+
+`ruhroh demo` is the live first-run path. It uses OpenRouter, prompts for an API
+key when `OPENROUTER_API_KEY` is not already set, installs pinned Aider tooling
+under `.ruhroh/tools/`, runs a bundled bookmark-manager task, evaluates the
+delivered app, and writes `ruhroh-report.html` plus a complete local evidence
+package under `.ruhroh/runs/`.
+
+Use the built-in no-credentials fixture path when you want to inspect the local
+scaffold or wire Ruhroh into an existing project without a live model call:
 
 ```bash
 pnpm add -D @kestrel-agents/ruhroh
 pnpm exec ruhroh init
-
 export RUHROH_RUN_AGENT_COMMAND="$PWD/ruhroh/adapters/fixture-newsletter/run.sh"
 export RUHROH_EVAL_COMMAND="$PWD/ruhroh/evaluators/fixture-newsletter/run.sh"
 

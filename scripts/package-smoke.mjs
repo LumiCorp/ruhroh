@@ -26,6 +26,15 @@ try {
   const ruhrohBin = path.join(projectDir, "node_modules", ".bin", process.platform === "win32" ? "ruhroh.cmd" : "ruhroh");
   run(ruhrohBin, ["--help"], { cwd: projectDir, expectStdout: "validate-summary" });
   run(ruhrohBin, ["--list-suites", "--json"], { cwd: projectDir, expectStdout: "\"ruhroh-smoke\"" });
+  run(ruhrohBin, ["validate", "--scenario", "bookmark-manager-demo", "--json"], {
+    cwd: projectDir,
+    expectStdout: "\"id\": \"bookmark-manager-demo\"",
+  });
+  run(ruhrohBin, ["demo", "--json"], {
+    cwd: projectDir,
+    expectStatus: 1,
+    expectStderr: "OPENROUTER_API_KEY is required",
+  });
 
   run(process.execPath, [
     "--input-type=module",
@@ -40,7 +49,7 @@ try {
   ], { cwd: projectDir });
   run(process.execPath, [
     "-e",
-    "require.resolve('@kestrel-agents/ruhroh/schemas/benchmark-summary-v1.schema.json'); require.resolve('@kestrel-agents/ruhroh/schemas/run-manifest-v1.schema.json');",
+    "require.resolve('@kestrel-agents/ruhroh/schemas/benchmark-summary-v1.schema.json'); require.resolve('@kestrel-agents/ruhroh/schemas/benchmark-target-config-v1.schema.json'); require.resolve('@kestrel-agents/ruhroh/schemas/run-manifest-v1.schema.json');",
   ], { cwd: projectDir });
 
   const installedPackageRoot = path.join(projectDir, "node_modules", "@kestrel-agents", "ruhroh");
@@ -80,18 +89,37 @@ try {
     "docs/security.md",
     "examples/adapters/aider/run.sh",
     "examples/adapters/aider/README.md",
+    "examples/benchmark-targets/README.md",
+    "examples/benchmark-targets/harness-controlled.openrouter-gpt55.json",
+    "examples/benchmark-targets/model-controlled.aider-openrouter.json",
+    "examples/benchmark-targets/recommended-stacks.json",
+    "examples/evaluators/bookmark-manager-demo/run.sh",
     "examples/ci/ruhroh-pack-registry.yml",
     "examples/ci/ruhroh-claim-publication.yml",
     "examples/ci/ruhroh-sharded-collection.yml",
+    "schemas/benchmark-target-config-v1.schema.json",
     "schemas/claim-index-v1.schema.json",
     "schemas/eval-calibration-report-v1.schema.json",
     "schemas/publish-bundle-v1.schema.json",
     "schemas/publish-check-v1.schema.json",
     "schemas/rerun-ledger-v1.schema.json",
+    "scenarios/bookmark-manager-demo/scenario.json",
+    "scenarios/bookmark-manager-demo/instruction.md",
+    "scenarios/bookmark-manager-demo/assets/starter/package.json",
   ]) {
     if (!existsSync(path.join(installedPackageRoot, relativePath))) {
       throw new Error(`[package-smoke] installed package missing ${relativePath}`);
     }
+  }
+  for (const relativePath of [
+    "examples/benchmark-targets/harness-controlled.openrouter-gpt55.json",
+    "examples/benchmark-targets/model-controlled.aider-openrouter.json",
+    "examples/benchmark-targets/recommended-stacks.json",
+  ]) {
+    run(ruhrohBin, ["validate-targets", path.join(installedPackageRoot, relativePath), "--json"], {
+      cwd: projectDir,
+      expectStdout: "\"errors\": []",
+    });
   }
 
   run(ruhrohBin, ["init", "starter", "--json"], { cwd: projectDir, expectStdout: "ruhroh_init_v1" });
@@ -147,11 +175,15 @@ function run(command, args, options = {}) {
     stdio: ["ignore", "pipe", "pipe"],
   });
 
-  if (result.status !== 0 || result.error !== undefined) {
+  const expectedStatus = options.expectStatus ?? 0;
+  if (result.status !== expectedStatus || result.error !== undefined) {
     fail(command, args, result, options.cwd);
   }
   if (options.expectStdout !== undefined && !result.stdout.includes(options.expectStdout)) {
     fail(command, args, result, options.cwd, `stdout did not include ${JSON.stringify(options.expectStdout)}`);
+  }
+  if (options.expectStderr !== undefined && !result.stderr.includes(options.expectStderr)) {
+    fail(command, args, result, options.cwd, `stderr did not include ${JSON.stringify(options.expectStderr)}`);
   }
 }
 

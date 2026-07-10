@@ -24,8 +24,13 @@ export AIDER_BIN=/path/to/aider
 - Aider model/provider authentication required by your installation.
 - `RUHROH_RUN_AGENT_COMMAND=examples/adapters/aider/run.sh`
 - `RUHROH_RUN_AGENT_COMPLETION_PROTOCOL=json-final-line`
-- Optional: `AIDER_MODEL`, `AIDER_BIN`, `AIDER_EXTRA_ARGS`, and
-  `AIDER_ADAPTER_VERSION`.
+- Optional: `AIDER_MODEL` or `RUHROH_AGENT_MODEL` to pass `--model <model>` to
+  Aider.
+- Optional: `RUHROH_AGENT_PROVIDER`, `RUHROH_AGENT_MODEL_CANONICAL_ID`,
+  `RUHROH_AGENT_PROTOCOL`, `RUHROH_AGENT_MODEL_VERSION`, and
+  `RUHROH_AGENT_PROMPT_VERSION` to record the benchmark target metadata
+  reported by the wrapper.
+- Optional: `AIDER_BIN`, `AIDER_EXTRA_ARGS`, and `AIDER_ADAPTER_VERSION`.
 
 By default the wrapper runs:
 

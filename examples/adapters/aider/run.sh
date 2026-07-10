@@ -23,6 +23,11 @@ fi
 mkdir -p "$workspace/.ruhroh"
 prompt_path="$workspace/.ruhroh/aider-prompt-${iteration}.md"
 transcript_path="$workspace/.ruhroh/aider-transcript-${iteration}.log"
+chat_history_path="$workspace/.ruhroh/aider-chat-history.md"
+input_history_path="$workspace/.ruhroh/aider-input-history"
+llm_history_path="$workspace/.ruhroh/aider-llm-history.md"
+env_file_path="$workspace/.ruhroh/aider.env"
+touch "$env_file_path"
 
 cat > "$prompt_path" <<PROMPT
 You are running inside a Ruhroh benchmark workspace.
@@ -40,13 +45,38 @@ PROMPT
 
 aider_args=(
   --yes-always
+  --no-check-update
+  --analytics-disable
+  --map-tokens
+  0
+  --no-stream
+  --timeout
+  "${AIDER_TIMEOUT:-120}"
   --no-auto-commits
   --no-git
+  --no-gitignore
+  --chat-history-file
+  "$chat_history_path"
+  --input-history-file
+  "$input_history_path"
+  --llm-history-file
+  "$llm_history_path"
+  --env-file
+  "$env_file_path"
   --message-file "$prompt_path"
 )
 
-if [[ -n "${AIDER_MODEL:-}" ]]; then
-  aider_args+=(--model "$AIDER_MODEL")
+if [[ -n "${AIDER_FILES:-}" ]]; then
+  IFS=":" read -r -a aider_files <<< "$AIDER_FILES"
+  for aider_file in "${aider_files[@]}"; do
+    if [[ -n "$aider_file" ]]; then
+      aider_args+=(--file "$aider_file")
+    fi
+  done
+fi
+
+if [[ -n "${AIDER_MODEL:-${RUHROH_AGENT_MODEL:-}}" ]]; then
+  aider_args+=(--model "$aider_model")
 fi
 
 if [[ -n "${AIDER_EXTRA_ARGS:-}" ]]; then
@@ -55,15 +85,26 @@ if [[ -n "${AIDER_EXTRA_ARGS:-}" ]]; then
   aider_args+=("${extra_args[@]}")
 fi
 
-(
-  cd "$workspace"
-  "$aider_bin" "${aider_args[@]}"
-) >"$transcript_path" 2>&1
+if [[ "${RUHROH_STREAM_AGENT_OUTPUT:-}" =~ ^(1|true|yes|on)$ ]]; then
+  (
+    cd "$workspace"
+    "$aider_bin" "${aider_args[@]}"
+  ) 2>&1 | tee "$transcript_path"
+else
+  (
+    cd "$workspace"
+    "$aider_bin" "${aider_args[@]}"
+  ) >"$transcript_path" 2>&1
+fi
 
 RESULT_PATH="$result_path" \
 ADAPTER_VERSION="$aider_adapter_version" \
-MODEL_PROVIDER="aider" \
+MODEL_PROVIDER="${RUHROH_AGENT_PROVIDER:-aider}" \
 MODEL_NAME="$aider_model" \
+MODEL_CANONICAL_ID="${RUHROH_AGENT_MODEL_CANONICAL_ID:-}" \
+MODEL_PROTOCOL="${RUHROH_AGENT_PROTOCOL:-}" \
+MODEL_VERSION="${RUHROH_AGENT_MODEL_VERSION:-}" \
+MODEL_PROMPT_VERSION="${RUHROH_AGENT_PROMPT_VERSION:-}" \
 SUMMARY="Aider completed the Ruhroh turn." \
 PROMPT_PATH="$prompt_path" \
 TRANSCRIPT_PATH="$transcript_path" \
@@ -87,6 +128,10 @@ if (resultPath !== undefined && resultPath.length > 0) {
     model: {
       provider: process.env.MODEL_PROVIDER,
       model: process.env.MODEL_NAME,
+      canonicalId: process.env.MODEL_CANONICAL_ID || undefined,
+      protocol: process.env.MODEL_PROTOCOL || undefined,
+      version: process.env.MODEL_VERSION || undefined,
+      promptVersion: process.env.MODEL_PROMPT_VERSION || undefined,
     },
     summary,
     artifacts,

@@ -39,15 +39,33 @@ ${workspace}
 Implement the requested app or continue the existing implementation. Preserve useful files and commands in the workspace. When the user goal is satisfied, finish normally; the wrapper will emit the Ruhroh completion signal.
 PROMPT
 
+gemini_args=(
+  -p "$(cat "$prompt_path")"
+)
+
+if [[ -n "${GEMINI_MODEL:-${RUHROH_AGENT_MODEL:-}}" ]]; then
+  gemini_args+=(-m "$gemini_model")
+fi
+
+if [[ -n "${GEMINI_CLI_EXTRA_ARGS:-}" ]]; then
+  # shellcheck disable=SC2206
+  extra_args=($GEMINI_CLI_EXTRA_ARGS)
+  gemini_args+=("${extra_args[@]}")
+fi
+
 (
   cd "$workspace"
-  "$gemini_bin" -p "$(cat "$prompt_path")"
+  "$gemini_bin" "${gemini_args[@]}"
 ) >"$transcript_path" 2>&1
 
 RESULT_PATH="$result_path" \
 ADAPTER_VERSION="$gemini_adapter_version" \
-MODEL_PROVIDER="google" \
+MODEL_PROVIDER="${RUHROH_AGENT_PROVIDER:-google}" \
 MODEL_NAME="$gemini_model" \
+MODEL_CANONICAL_ID="${RUHROH_AGENT_MODEL_CANONICAL_ID:-}" \
+MODEL_PROTOCOL="${RUHROH_AGENT_PROTOCOL:-}" \
+MODEL_VERSION="${RUHROH_AGENT_MODEL_VERSION:-}" \
+MODEL_PROMPT_VERSION="${RUHROH_AGENT_PROMPT_VERSION:-}" \
 SUMMARY="Gemini CLI completed the Ruhroh turn." \
 PROMPT_PATH="$prompt_path" \
 TRANSCRIPT_PATH="$transcript_path" \
@@ -71,6 +89,10 @@ if (resultPath !== undefined && resultPath.length > 0) {
     model: {
       provider: process.env.MODEL_PROVIDER,
       model: process.env.MODEL_NAME,
+      canonicalId: process.env.MODEL_CANONICAL_ID || undefined,
+      protocol: process.env.MODEL_PROTOCOL || undefined,
+      version: process.env.MODEL_VERSION || undefined,
+      promptVersion: process.env.MODEL_PROMPT_VERSION || undefined,
     },
     summary,
     artifacts,

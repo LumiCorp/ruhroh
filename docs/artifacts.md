@@ -99,6 +99,11 @@ cells link to evidence relative to the report. JSON output includes
 and SHA-256 when readable. Missing, directory-valued, and unreadable paths stay
 visible with explicit errors.
 
+Benchmark claims also include `source.resultArtifacts`; each referenced result
+file records its SHA-256 digest and, when available, a `benchmarkTarget`
+snapshot from the run manifest so the public evidence list shows the exact
+stack that produced that result.
+
 ### `validate-artifacts`
 
 This CI-friendly check accepts one result file, one run directory, or a

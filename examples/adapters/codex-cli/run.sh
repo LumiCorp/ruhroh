@@ -47,8 +47,8 @@ codex_args=(
   --output-last-message "$last_message_path"
 )
 
-if [[ -n "${CODEX_MODEL:-}" ]]; then
-  codex_args+=(--model "$CODEX_MODEL")
+if [[ -n "${CODEX_MODEL:-${RUHROH_AGENT_MODEL:-}}" ]]; then
+  codex_args+=(--model "$codex_model")
 fi
 
 if [[ -n "${CODEX_PROFILE:-}" ]]; then
@@ -70,8 +70,12 @@ codex_args+=(-)
 
 RESULT_PATH="$result_path" \
 ADAPTER_VERSION="$codex_adapter_version" \
-MODEL_PROVIDER="openai" \
+MODEL_PROVIDER="${RUHROH_AGENT_PROVIDER:-openai}" \
 MODEL_NAME="$codex_model" \
+MODEL_CANONICAL_ID="${RUHROH_AGENT_MODEL_CANONICAL_ID:-}" \
+MODEL_PROTOCOL="${RUHROH_AGENT_PROTOCOL:-}" \
+MODEL_VERSION="${RUHROH_AGENT_MODEL_VERSION:-}" \
+MODEL_PROMPT_VERSION="${RUHROH_AGENT_PROMPT_VERSION:-}" \
 SUMMARY="Codex CLI completed the Ruhroh turn." \
 PROMPT_PATH="$prompt_path" \
 TRANSCRIPT_PATH="$transcript_path" \
@@ -97,6 +101,10 @@ if (resultPath !== undefined && resultPath.length > 0) {
     model: {
       provider: process.env.MODEL_PROVIDER,
       model: process.env.MODEL_NAME,
+      canonicalId: process.env.MODEL_CANONICAL_ID || undefined,
+      protocol: process.env.MODEL_PROTOCOL || undefined,
+      version: process.env.MODEL_VERSION || undefined,
+      promptVersion: process.env.MODEL_PROMPT_VERSION || undefined,
     },
     summary,
     artifacts,
