@@ -56,6 +56,7 @@ export default defineConfig({
       { text: "Guide", link: "/getting-started" },
       { text: "Reports", link: "/report-gallery" },
       { text: "Reference", link: "/cli-reference" },
+      { text: "Lumi", link: "https://www.lumicorp.ai" },
       { text: "GitHub", link: "https://github.com/LumiCorp/ruhroh" },
       { text: "npm", link: "https://www.npmjs.com/package/@kestrel-agents/ruhroh" },
     ],
