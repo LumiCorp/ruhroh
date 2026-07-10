@@ -26,7 +26,7 @@ DEFAULT_MAX_ITERATIONS = 3
 SKIP_WORKSPACE_TAR_NAMES = {"node_modules", ".next", "dist", "build", ".git"}
 WORKSPACE_SUMMARY_MAX_FILES = 200
 WORKSPACE_SUMMARY_HASH_MAX_BYTES = 1024 * 1024
-COMPLETION_TERMINAL_FAILURE_REASONS = {"cannot_satisfy", "policy_blocked", "out_of_scope", "runtime_failure", "infra_failure"}
+COMPLETION_TERMINAL_FAILURE_REASONS = {"cannot_satisfy", "policy_blocked", "out_of_scope", "runtime_failure", "infra_failure", "cancelled"}
 SCHEMA_BASE_URL = "https://lumicorp.github.io/ruhroh/schemas"
 EVAL_RESULT_SCHEMA_URL = f"{SCHEMA_BASE_URL}/eval-result-v1.schema.json"
 LOOP_RESULT_SCHEMA_URL = f"{SCHEMA_BASE_URL}/loop-result-v1.schema.json"
@@ -505,6 +505,21 @@ class CustomShellRunAgentAdapter(CommandRunAgentAdapter):
         return CommandRunAgentAdapter.completion_instruction(self)
 
 
+class KestrelCliRunAgentAdapter(CommandRunAgentAdapter):
+    continuity_level = "native_session"
+
+    def __init__(self, scenario_id: str, workspace_root: Path, installed_dir: Path, run_root: Path) -> None:
+        super().__init__(
+            scenario_id,
+            workspace_root,
+            installed_dir,
+            run_root,
+            adapter_id="kestrel-cli",
+            command_env_key="RUHROH_RUN_AGENT_COMMAND",
+            completion_protocol_env_key="RUHROH_RUN_AGENT_COMPLETION_PROTOCOL",
+        )
+
+
 def build_run_agent_adapter(
     *,
     adapter_id: str,
@@ -515,6 +530,8 @@ def build_run_agent_adapter(
 ) -> RunAgentAdapter:
     if adapter_id == "custom-shell":
         return CustomShellRunAgentAdapter(scenario_id, workspace_root, installed_dir, run_root)
+    if adapter_id == "kestrel-cli":
+        return KestrelCliRunAgentAdapter(scenario_id, workspace_root, installed_dir, run_root)
     return CommandRunAgentAdapter(scenario_id, workspace_root, installed_dir, run_root, adapter_id=adapter_id)
 
 
@@ -856,13 +873,19 @@ def derive_final_verdict(implementation_runs: list[dict[str, Any]], eval_result:
             run
             for run in implementation_runs
             if run.get("status") != "completed"
+            or (
+                isinstance(run.get("completionStatus"), dict)
+                and run["completionStatus"].get("state") == "terminal_failure"
+            )
         ),
         None,
     )
     if runtime_failure is not None:
+        completion_status = runtime_failure.get("completionStatus")
+        completion_reason = completion_status.get("reason") if isinstance(completion_status, dict) else None
         return {
             "status": "failed",
-            "failure_kind": runtime_failure.get("failureKind") or "runtime_failure",
+            "failure_kind": completion_reason or runtime_failure.get("failureKind") or "runtime_failure",
             "score": 0,
         }
     eval_status = eval_result.get("status")

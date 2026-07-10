@@ -3,7 +3,7 @@ id: ruhroh-cli-reference
 domain: benchmarks
 status: active
 owner: ruhroh-maintainers
-last_verified_at: 2026-07-09
+last_verified_at: 2026-07-10
 depends_on:
   - src/cli.ts
 ---
@@ -48,9 +48,10 @@ The starter includes:
 - `ruhroh/evaluators/fixture-newsletter/run.sh`;
 - a local README with smoke commands.
 
-Add `--adapter codex-cli`, `--adapter claude-code`, `--adapter gemini-cli`,
-`--adapter aider`, or `--template <name>` to copy a maintained live-agent
-wrapper into the starter alongside the credential-free fixture path.
+Add `--adapter kestrel-cli`, `--adapter codex-cli`, `--adapter claude-code`,
+`--adapter gemini-cli`, `--adapter aider`, or `--template <name>` to copy a
+maintained live-agent wrapper into the starter alongside the credential-free
+fixture path.
 `--template generic` creates a fail-fast `local-agent` wrapper for a custom
 command.
 
@@ -148,9 +149,9 @@ workspace, writes a `ruhroh_run_agent_result_v1` result file, and exits with
 invocation. This keeps fresh generic scaffolds from producing fake passing
 benchmark runs. The generated README shows the matching `doctor` and
 `--dry-run` checks.
-Templates are `generic`, `codex-cli`, `claude-code`, `gemini-cli`, `aider`, and
-`fixture`. The named live-agent templates copy the maintained example wrappers
-and document the CLI-specific env vars they expect.
+Templates are `generic`, `kestrel-cli`, `codex-cli`, `claude-code`,
+`gemini-cli`, `aider`, and `fixture`. The named live-agent templates copy the
+maintained example wrappers and document the CLI-specific env vars they expect.
 JSON output is versioned as `ruhroh_new_adapter_v1` and includes `nextCommands`
 with the edit step, `doctor`, `doctor --json` adapter-metadata check, and
 dry-run preview command for the generated wrapper.
