@@ -75,6 +75,10 @@ pnpm exec ruhroh claim-index ruhroh-publication --require-publishable --json
 `docs:samples:check` rebuilds the checked-in report gallery under
 `docs/public/samples`. If it fails, regenerate the samples with
 `pnpm build && pnpm run docs:samples` and include the resulting sample changes.
+Before adding or changing links to generated report HTML, read
+[Report Sample Routing](docs/development/report-sample-routing.md). Those links
+must preserve the deployment base and bypass VitePress client-side routing;
+file-existence checks alone do not catch the click-time 404 regression.
 
 Live model or public-agent runs should remain optional and credentialed. Default
 CI should stay credential-free and should rely on the fixture adapter/evaluator
