@@ -1,17 +1,5 @@
 import { defineConfig } from "vitepress";
 
-const cleanSampleReports = new Set([
-  "/ruhroh/samples/ruhroh-workflow",
-  "/ruhroh/samples/ruhroh-report",
-  "/ruhroh/samples/ruhroh-review",
-  "/ruhroh/samples/ruhroh-eval-quality",
-  "/ruhroh/samples/ruhroh-compare",
-  "/ruhroh/samples/ruhroh-claims",
-  "/ruhroh/samples/ruhroh-publication/ruhroh-compare",
-  "/ruhroh/samples/ruhroh-publication/ruhroh-eval-quality",
-  "/ruhroh/samples/ruhroh-publication/ruhroh-review",
-]);
-
 const siteUrl = "https://lumicorp.github.io/ruhroh/";
 const siteTitle = "Ruhroh";
 const siteDescription = "See what coding agents actually deliver.";
@@ -24,31 +12,6 @@ export default defineConfig({
   description: siteDescription,
   base: "/ruhroh/",
   cleanUrls: true,
-  vite: {
-    plugins: [{
-      name: "ruhroh-clean-sample-report-urls",
-      configureServer(server) {
-        server.middlewares.use((request, _response, next) => {
-          const originalUrl = request.url ?? "";
-          const [pathname, query] = originalUrl.split("?");
-          if (pathname !== undefined && cleanSampleReports.has(pathname)) {
-            request.url = `${pathname}.html${query === undefined ? "" : `?${query}`}`;
-          }
-          next();
-        });
-      },
-      configurePreviewServer(server) {
-        server.middlewares.use((request, _response, next) => {
-          const originalUrl = request.url ?? "";
-          const [pathname, query] = originalUrl.split("?");
-          if (pathname !== undefined && cleanSampleReports.has(pathname)) {
-            request.url = `${pathname}.html${query === undefined ? "" : `?${query}`}`;
-          }
-          next();
-        });
-      },
-    }],
-  },
   head: [
     ["link", { rel: "canonical", href: siteUrl }],
     ["link", { rel: "image_src", href: socialImage }],

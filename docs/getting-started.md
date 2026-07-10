@@ -38,8 +38,8 @@ story and fails with `goal_mismatch`.
 
 The resulting 50% pass rate is visible, but it is not publishable: the suite
 requires five runs, an evaluator-quality warning remains, and one run is
-recommended for review. Open the [compare report](/samples/ruhroh-compare),
-[review queue](/samples/ruhroh-review), or [claim index](/samples/ruhroh-claims)
+recommended for review. Open the [compare report](/samples/ruhroh-compare.html),
+[review queue](/samples/ruhroh-review.html), or [claim index](/samples/ruhroh-claims.html)
 to see the result, evidence, and blockers as a reader would.
 
 ## 1. Install And Scaffold

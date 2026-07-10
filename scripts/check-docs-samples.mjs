@@ -19,6 +19,7 @@ if (!existsSync(cliPath)) {
 
 run(process.execPath, ["scripts/generate-docs-samples.mjs"]);
 validateSampleLinks();
+validateNoSampleRouteShadowingPublicHtml();
 validateGeneratedSampleHtmlLinks();
 
 const diff = run("git", ["diff", "--exit-code", "--", samplePath], { allowFailure: true });
@@ -60,17 +61,17 @@ function validateSampleLinks() {
     for (const match of findSampleLinks(text)) {
       const targetPath = path.join(repoRoot, "docs", "public", "samples", match.href.slice(samplePublicPrefix.length));
       const cleanTargetPath = `${targetPath}.html`;
-      const routePath = path.join(repoRoot, "docs", `${match.href.slice(1)}.md`);
       const hasExtension = path.extname(match.href).length > 0;
+      if (!hasExtension && existsSync(cleanTargetPath)) {
+        const relativePath = path.relative(repoRoot, markdownPath);
+        errors.push(`${relativePath}:${lineNumberForIndex(text, match.index)} sample HTML link omits .html: ${match.href}`);
+        continue;
+      }
       const targetExists = existsSync(targetPath) || (!hasExtension && existsSync(cleanTargetPath));
       if (!targetExists) {
         const relativePath = path.relative(repoRoot, markdownPath);
         errors.push(`${relativePath}:${lineNumberForIndex(text, match.index)} sample link target is missing: ${match.href}`);
         continue;
-      }
-      if (!path.extname(match.href) && !existsSync(routePath)) {
-        const relativePath = path.relative(repoRoot, markdownPath);
-        errors.push(`${relativePath}:${lineNumberForIndex(text, match.index)} clean sample route is missing: ${path.relative(repoRoot, routePath)}`);
       }
       if (existsSync(targetPath) && statSync(targetPath).isDirectory() && !existsSync(path.join(targetPath, "index.html"))) {
         const relativePath = path.relative(repoRoot, markdownPath);
@@ -81,6 +82,37 @@ function validateSampleLinks() {
   if (errors.length > 0) {
     console.error([
       "[docs-samples] docs reference missing generated sample artifacts.",
+      ...errors,
+    ].join("\n"));
+    process.exit(1);
+  }
+}
+
+function validateNoSampleRouteShadowingPublicHtml() {
+  const errors = [];
+  const docsSampleRoot = path.join(repoRoot, "docs", "samples");
+  if (!existsSync(docsSampleRoot)) {
+    return;
+  }
+  for (const markdownPath of listMarkdownFiles(docsSampleRoot)) {
+    const relativeSamplePath = path.relative(docsSampleRoot, markdownPath);
+    const publicHtmlPath = path.join(
+      repoRoot,
+      "docs",
+      "public",
+      "samples",
+      relativeSamplePath.replace(/\.md$/u, ".html"),
+    );
+    if (existsSync(publicHtmlPath)) {
+      errors.push([
+        `${path.relative(repoRoot, markdownPath)} shadows ${path.relative(repoRoot, publicHtmlPath)} during VitePress build.`,
+        "Link directly to the public `.html` sample instead of creating a docs route wrapper.",
+      ].join("\n"));
+    }
+  }
+  if (errors.length > 0) {
+    console.error([
+      "[docs-samples] sample routes shadow generated public HTML reports.",
       ...errors,
     ].join("\n"));
     process.exit(1);
