@@ -73,17 +73,17 @@ import { withBase } from "vitepress";
       <p>Only 2 of 5 required runs exist, an evaluator warning remains, and one run needs review.</p>
     </div>
   </div>
-  <p class="rr-proof-links"><a :href="withBase('/samples/ruhroh-compare.html')">Open the comparison</a><a :href="withBase('/samples/ruhroh-review.html')">Inspect the review queue</a><a :href="withBase('/samples/ruhroh-claims.html')">See the blockers</a></p>
+  <p class="rr-proof-links"><a :href="withBase('/samples/ruhroh-compare.html')" target="_self">Open the comparison</a><a :href="withBase('/samples/ruhroh-review.html')" target="_self">Inspect the review queue</a><a :href="withBase('/samples/ruhroh-claims.html')" target="_self">See the blockers</a></p>
 </section>
 
 ## Questions Ruhroh Helps You Answer
 
 <div class="rr-problem-grid">
-  <article><h3>Did the agent deliver?</h3><p>Judge the finished software outcome against user-facing success criteria.</p><a :href="withBase('/samples/ruhroh-report.html')">Inspect one run</a></article>
+  <article><h3>Did the agent deliver?</h3><p>Judge the finished software outcome against user-facing success criteria.</p><a :href="withBase('/samples/ruhroh-report.html')" target="_self">Inspect one run</a></article>
   <article><h3>Why did it fail?</h3><p>Follow the implementation journey, commands, transcripts, reviewer evidence, and final workspace.</p><a :href="withBase('/artifacts')">Follow the evidence</a></article>
   <article><h3>Is the comparison fair?</h3><p>Lock task versions, plan samples, preserve cohort metadata, and surface mismatches.</p><a :href="withBase('/benchmark-methodology')">Review the methodology</a></article>
   <article><h3>Can the reviewer be trusted?</h3><p>Calibrate known outcomes and flag missing evidence, weak judgment, or disagreement.</p><a :href="withBase('/write-an-evaluator')">Build a reviewer</a></article>
-  <article><h3>What should improve next?</h3><p>Compare failure modes, duration, iterations, cost, and tokens across repeated runs.</p><a :href="withBase('/samples/ruhroh-compare.html')">Explore the compare report</a></article>
+  <article><h3>What should improve next?</h3><p>Compare failure modes, duration, iterations, cost, and tokens across repeated runs.</p><a :href="withBase('/samples/ruhroh-compare.html')" target="_self">Explore the compare report</a></article>
   <article><h3>Can others verify the result?</h3><p>Package the claim, reports, hashes, review queue, and source evidence together.</p><a :href="withBase('/publish-claims')">Publish or block a claim</a></article>
 </div>
 

@@ -67,6 +67,14 @@ function validateSampleLinks() {
         errors.push(`${relativePath}:${lineNumberForIndex(text, match.index)} sample HTML link omits .html: ${match.href}`);
         continue;
       }
+      if (path.extname(match.href) === ".html" && !match.bypassesRouter) {
+        const relativePath = path.relative(repoRoot, markdownPath);
+        errors.push([
+          `${relativePath}:${lineNumberForIndex(text, match.index)} sample HTML link is intercepted by the VitePress router: ${match.href}`,
+          "Render it as an anchor with `target=\"_self\"` so the static report loads directly.",
+        ].join("\n"));
+        continue;
+      }
       const targetExists = existsSync(targetPath) || (!hasExtension && existsSync(cleanTargetPath));
       if (!targetExists) {
         const relativePath = path.relative(repoRoot, markdownPath);
@@ -155,16 +163,26 @@ function htmlBasePath(htmlPath, text) {
 
 function findSampleLinks(text) {
   const links = [];
-  const pattern = /\]\((\/samples\/[^)\s]+)\)|href="(\/samples\/[^"]+)"/gu;
-  for (const match of text.matchAll(pattern)) {
-    const rawHref = match[1] ?? match[2];
+  const markdownPattern = /\]\((\/samples\/[^)\s]+)\)/gu;
+  for (const match of text.matchAll(markdownPattern)) {
+    const rawHref = match[1];
     if (rawHref === undefined) {
       continue;
     }
     const href = rawHref.split("#")[0].split("?")[0];
-    links.push({ href: decodeURIComponent(href), index: match.index ?? 0 });
+    links.push({ href: decodeURIComponent(href), index: match.index ?? 0, bypassesRouter: false });
   }
-  return links;
+  const anchorPattern = /<a\b[^>]*?(?::href="withBase\('([^']+)'\)"|\bhref="([^"]+)")[^>]*>/giu;
+  for (const match of text.matchAll(anchorPattern)) {
+    const rawHref = match[1] ?? match[2];
+    if (rawHref === undefined || !rawHref.startsWith(samplePublicPrefix)) {
+      continue;
+    }
+    const href = rawHref.split("#")[0].split("?")[0];
+    const bypassesRouter = /\btarget=(['"])_self\1/iu.test(match[0]);
+    links.push({ href: decodeURIComponent(href), index: match.index ?? 0, bypassesRouter });
+  }
+  return links.sort((left, right) => left.index - right.index);
 }
 
 function findDeployedSampleLinks(text) {

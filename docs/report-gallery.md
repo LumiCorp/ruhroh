@@ -34,22 +34,22 @@ visible, so the next improvement can be based on evidence from the last run.
     <div><span class="rr-status rr-status-fail">Goal mismatch</span><strong>Run 2</strong><p>The page exists, but required content is missing.</p></div>
     <div><span class="rr-status rr-status-blocked">Blocked</span><strong>50% pass rate</strong><p>Only 2 of 5 runs exist, a reviewer warning remains, and one run merits review.</p></div>
   </div>
-  <p class="rr-proof-links"><a :href="withBase('/samples/ruhroh-compare.html')">Open the comparison</a><a :href="withBase('/samples/ruhroh-review.html')">Inspect the review queue</a><a :href="withBase('/samples/ruhroh-claims.html')">See the claim status</a></p>
+  <p class="rr-proof-links"><a :href="withBase('/samples/ruhroh-compare.html')" target="_self">Open the comparison</a><a :href="withBase('/samples/ruhroh-review.html')" target="_self">Inspect the review queue</a><a :href="withBase('/samples/ruhroh-claims.html')" target="_self">See the claim status</a></p>
 </section>
 
 ## Follow A Question
 
 | What you need to know | Open this report | What it shows |
 | --- | --- | --- |
-| Did one run deliver the outcome? | [Single-run report](/samples/ruhroh-report.html) | Verdict, reviewer result, implementation timeline, commands, criteria, and saved evidence. |
-| Did the reviewer support the score? | [Evaluation evidence report](/samples/ruhroh-eval-quality.html) | Missing evidence, criteria coverage, commands, confidence, and judge details. |
-| What needs a person to inspect? | [Review queue](/samples/ruhroh-review.html) | Required and recommended review items with reasons and evidence links. |
-| What changes across repeated runs? | [Compare report](/samples/ruhroh-compare.html) | Pass rates, uncertainty, failure modes, usage, cohort warnings, review state, and source runs. |
-| Can the conclusion be cited? | [Claim index](/samples/ruhroh-claims.html) | Publishability, blockers, suite identity, run counts, evidence coverage, and packet links. |
+| Did one run deliver the outcome? | <a :href="withBase('/samples/ruhroh-report.html')" target="_self">Single-run report</a> | Verdict, reviewer result, implementation timeline, commands, criteria, and saved evidence. |
+| Did the reviewer support the score? | <a :href="withBase('/samples/ruhroh-eval-quality.html')" target="_self">Evaluation evidence report</a> | Missing evidence, criteria coverage, commands, confidence, and judge details. |
+| What needs a person to inspect? | <a :href="withBase('/samples/ruhroh-review.html')" target="_self">Review queue</a> | Required and recommended review items with reasons and evidence links. |
+| What changes across repeated runs? | <a :href="withBase('/samples/ruhroh-compare.html')" target="_self">Compare report</a> | Pass rates, uncertainty, failure modes, usage, cohort warnings, review state, and source runs. |
+| Can the conclusion be cited? | <a :href="withBase('/samples/ruhroh-claims.html')" target="_self">Claim index</a> | Publishability, blockers, suite identity, run counts, evidence coverage, and packet links. |
 
 ## Understand The Whole Loop
 
-The [workflow guide](/samples/ruhroh-workflow.html) shows how a project moves from
+The <a :href="withBase('/samples/ruhroh-workflow.html')" target="_self">workflow guide</a> shows how a project moves from
 the credential-free fixture through task authoring, reviewer calibration, run
 planning, comparison, and publication readiness. Each stage stays open until
 the evidence required for that stage exists.
@@ -65,9 +65,9 @@ original working directory.
 
 | Packet view | Purpose |
 | --- | --- |
-| [Comparison](/samples/ruhroh-publication/ruhroh-compare.html) | Review the aggregate result, cohorts, warnings, and source-run links. |
-| [Evaluation evidence](/samples/ruhroh-publication/ruhroh-eval-quality.html) | Check whether reviewer judgments contain enough support. |
-| [Review queue](/samples/ruhroh-publication/ruhroh-review.html) | Resolve the human-review items that remain in the packet. |
+| <a :href="withBase('/samples/ruhroh-publication/ruhroh-compare.html')" target="_self">Comparison</a> | Review the aggregate result, cohorts, warnings, and source-run links. |
+| <a :href="withBase('/samples/ruhroh-publication/ruhroh-eval-quality.html')" target="_self">Evaluation evidence</a> | Check whether reviewer judgments contain enough support. |
+| <a :href="withBase('/samples/ruhroh-publication/ruhroh-review.html')" target="_self">Review queue</a> | Resolve the human-review items that remain in the packet. |
 | [Manifest](/samples/ruhroh-publication/manifest.json) | Verify the packet inventory and versioned contract. |
 
 The packet remains blocked for the same reasons as the source comparison. A
