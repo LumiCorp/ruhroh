@@ -25,11 +25,11 @@ of inferring outcomes from filenames.
 | `ruhroh_run_manifest_v1` | `ruhroh-run-manifest.json`, `runManifest` | Reproducibility metadata for one run. |
 | `ruhroh_eval_input_v1` | `ruhroh-loop-eval-input.json` | Stable context file for command-backed reviewers. |
 | `ruhroh_eval_result_v1` | `ruhroh-loop-eval.json`, `evalResult` | Reviewer judgment. |
-| `ruhroh_compare_v1` | `ruhroh compare --json` | Aggregated task/agent comparison. |
-| `ruhroh_publish_check_v1` | `ruhroh publish-check --json`, `publish-check.json` in publication packets | Publication verdict, remediation, compare output, and optional source verification. |
-| `ruhroh_publish_bundle_v1` | `manifest.json` in `publish-check --bundle` output | Packet inventory for every file in an audit-ready publication packet. |
-| `ruhroh_benchmark_claim_v1` | `benchmarkClaim` in `ruhroh compare --json` | Compact archive/export record for a benchmark claim. |
-| `ruhroh_benchmark_summary_v1` | `benchmarkSummary` in `ruhroh compare --json` | Row-oriented summary derived from a benchmark claim for reports or leaderboards. |
+| `ruhroh_compare_v2` | `ruhroh compare --json` | Target-aware aggregate comparison and optional outcome frontier. |
+| `ruhroh_publish_check_v2` | `ruhroh publish-check --json`, `publish-check.json` in publication packets | Publication verdict, remediation, compare output, and source verification. |
+| `ruhroh_publish_bundle_v2` | `manifest.json` in `publish-check --bundle` output | Hash-linked packet inventory for every file in an audit-ready publication packet. |
+| `ruhroh_benchmark_claim_v2` | `benchmarkClaim` in `ruhroh compare --json` | Target-aware archive/export record for a benchmark claim. |
+| `ruhroh_benchmark_summary_v2` | `benchmarkSummary` in `ruhroh compare --json` | Scenario and target rows derived from a benchmark claim. |
 | `ruhroh_run_results_report_v1` | `buildRuhrohRunResultsReport()` | Programmatic preserved-result report with saved evidence, summaries, aggregates, review queue, publication readiness, claim, and summary. |
 | `ruhroh_claim_source_verification_v1` | `verifyRuhrohBenchmarkClaimSources()` | Read-only source hash verification for archived benchmark claims. |
 | `ruhroh_publish_bundle_validation_report_v1` | `validateRuhrohPublishBundle()` | Read-only structural, cross-reference, and packet-local source validation for publication packets. |
@@ -324,11 +324,14 @@ entry in `artifactPaths`.
 
 `ruhroh compare <results-dir> --json` emits aggregate comparison data:
 
-- `version`: `ruhroh_compare_v1`.
+- `version`: `ruhroh_compare_v2`.
 - `groups`: one scenario/adapter aggregate per group.
 - `pairwiseComparisons`: adapter-vs-adapter pass-rate comparisons for scenarios
   that have multiple adapter groups.
-- `benchmarkClaim`: compact `ruhroh_benchmark_claim_v1` export object.
+- `benchmarkClaim`: compact `ruhroh_benchmark_claim_v2` export object.
+- `benchmarkSummary`: target-aware `ruhroh_benchmark_summary_v2` export object.
+- `outcomeFrontier`: quality-gated frontier; it is unavailable unless a v2
+  suite predeclares efficiency objectives.
 - `reviewQueue`: cross-run review items.
 - `claimReadiness`: publishability summary.
 - `suite`, `suiteWarnings`, and `suiteAdapterSummaries` when `--suite` is used.
@@ -339,7 +342,8 @@ entry in `artifactPaths`.
 
 Each group includes:
 
-- `scenarioId` and `adapter`.
+- `scenarioId`, `benchmarkTargetId`, `executionAdapterIds`, and the legacy
+  `adapter` display field.
 - `cohort`: sample ids/seeds, scenario versions, adapter versions, benchmark
   streams/targets, harness identities, provider paths, adapter-reported agent
   model identities, canonical agent model identities, evaluator model
@@ -353,12 +357,12 @@ Each group includes:
   `usage`, and
   `statisticalWarnings`.
 
-`usage` is present on aggregate groups, benchmark-claim adapter summaries,
-benchmark-claim scenario results, and benchmark-summary rows. It includes
-coverage counters (`runsWithUsage`, `runsWithCost`, `runsWithTokens`) plus
-optional `totalCostUsd`, `meanCostUsd`, `costPerPass`, `totalTokens`,
-`meanTotalTokens`, and `tokensPerPass` when run manifests reported those
-fields. Missing usage remains missing data, not zero cost.
+`usage` keeps cost and token coverage independent as `complete`, `partial`,
+`unknown`, or `unavailable`. Observed partial totals remain lower bounds. A
+per-accepted-outcome ratio is absent unless every included run has complete
+coverage for that metric and the accepted-outcome denominator is nonzero.
+Only billed or metered native-currency cost is publishable; Ruhroh performs no
+implicit currency conversion. Archived v1 usage is classified as unknown.
 
 Each `pairwiseComparisons` item includes:
 
@@ -394,21 +398,20 @@ quietly accompany a publishable claim.
 
 ## Publish Check
 
-`ruhroh_publish_check_v1` is the durable output of the publication gate. It
+`ruhroh_publish_check_v2` is the durable output of the publication gate. It
 wraps the compare report, publishable verdict, blocker/advisory counts,
 remediation actions, source paths, and optional source-verification report.
 
 The package ships a structural JSON Schema for this export at
-`node_modules/@kestrel-agents/ruhroh/schemas/publish-check-v1.schema.json`;
-`ruhroh init` also copies it to `ruhroh/schemas/publish-check-v1.schema.json`.
+`node_modules/@kestrel-agents/ruhroh/schemas/publish-check-v2.schema.json`.
 Use the schema for CI and registry shape checks. Use `publish-check` itself for
 semantic validation, artifact checks, source verification, bundle creation, and
 the final publishability gate.
 
 Required fields:
 
-- `$schema`: `https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json`.
-- `version`: `ruhroh_publish_check_v1`.
+- `$schema`: `https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json`.
+- `version`: `ruhroh_publish_check_v2`.
 - `source`: input and output paths used by the command, including `resultsPath`
   and optional suite, run-plan, rerun-ledger, claim, summary, HTML, bundle, and
   evaluator-calibration report paths.
@@ -417,29 +420,28 @@ Required fields:
 - `remediation`: stable remediation objects with `code`, `category`, `message`,
   `action`, and optional `blocker`/`docs`.
 - `advisoryCount` and `advisories`: non-blocking warnings.
-- `compare`: embedded `ruhroh_compare_v1` output.
+- `compare`: embedded `ruhroh_compare_v2` output.
 - `sourceVerification`: optional `ruhroh_claim_source_verification_v1` report
   when `--verify-sources` was used.
 
 ## Publication Packet Manifest
 
-`ruhroh_publish_bundle_v1` is the inventory file written to `manifest.json`
+`ruhroh_publish_bundle_v2` is the inventory file written to `manifest.json`
 when `publish-check --bundle <dir>` creates a publication packet. It records the
 source result directory, packet-relative file paths, publishability counts, and
 the role of each included evidence file so reviewers and registries can inspect a
 packet without inferring layout conventions from filenames.
 
 The package ships a structural JSON Schema for this manifest at
-`node_modules/@kestrel-agents/ruhroh/schemas/publish-bundle-v1.schema.json`;
-`ruhroh init` also copies it to
-`ruhroh/schemas/publish-bundle-v1.schema.json`. Use the schema for CI and
+`node_modules/@kestrel-agents/ruhroh/schemas/publish-bundle-v2.schema.json`.
+Use the schema for CI and
 registry shape checks. Use `validate-bundle` for cross-file checks, source hash
 verification, and publishability validation.
 
 Required fields:
 
-- `$schema`: `https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json`.
-- `version`: `ruhroh_publish_bundle_v1`.
+- `$schema`: `https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v2.schema.json`.
+- `version`: `ruhroh_publish_bundle_v2`.
 - `createdAt`: bundle creation timestamp.
 - `source`: bundle-local source paths, including `resultsPath`, `bundlePath`,
   and optional suite, run-plan, rerun-ledger, and evaluator-calibration report
@@ -458,14 +460,13 @@ the same object as a standalone JSON artifact. It does not replace the raw
 `groups`, `reviewQueue`, or run artifacts.
 
 The package ships a structural JSON Schema for this export at
-`node_modules/@kestrel-agents/ruhroh/schemas/benchmark-claim-v1.schema.json`;
-`ruhroh init` also copies it to
-`ruhroh/schemas/benchmark-claim-v1.schema.json`. Use the schema for ingestion
+`node_modules/@kestrel-agents/ruhroh/schemas/benchmark-claim-v2.schema.json`.
+Use the schema for ingestion
 and publication pipeline shape checks. Use
 `ruhroh validate-claim benchmark-claim.json --json` for Ruhroh's built-in
 structural and consistency checks. Add `--require-publishable` to return exit
 code 2 when a structurally valid archived claim is not publishable, using the
-claim's own `readiness.blockers` as the gate. Add `--verify-sources` to
+claim's own `readiness.publication.blockers` as the gate. Add `--verify-sources` to
 re-hash referenced suite manifests, run plans, result JSON files, and available
 run-artifact inventory files so archived claims cannot silently drift from the
 evidence they cite. Relative source paths are resolved from the claim file's
@@ -475,7 +476,7 @@ bundle-relative `sources/` paths.
 
 Required fields:
 
-- `version`: `ruhroh_benchmark_claim_v1`.
+- `version`: `ruhroh_benchmark_claim_v2`.
 - `createdAt`: export timestamp.
 - `tool`: Ruhroh package identity that produced the claim, including `name` and
   package `version` when available.
@@ -501,31 +502,28 @@ Required fields:
   with path, availability, size, and SHA-256 digest when the referenced file is
   readable.
 - `scope`: `suite` or `ad_hoc_compare`.
-- `publishable`: mirrors `readiness.publishable`.
+- `publishable`: mirrors `readiness.publication.publishable`.
 - `methodology`: confidence level, statistical methods, and suite min-run/retry
   policy when available. Statistical methods include Wilson pass-rate intervals,
   pass@k, pairwise pass-rate deltas/significance, and bootstrap mean-score
   intervals.
-- `summary`: scenario count, adapter count, total runs/passes, run-weighted
+- `summary`: scenario count, target count, total runs/accepted outcomes, run-weighted
   pass rate with Wilson CI, review counts, and pairwise comparison count.
-- `adapterSummaries`: adapter-level run/pass rollups, mean scenario pass rate,
-  and usage totals/rates. Suite claims also include `minRunsSatisfied`.
-- `scenarioResults`: scenario/adapter run/pass, score, statistical, review, and
+- `targetSummaries`: benchmark-target rollups with execution-adapter identity,
+  coverage-safe usage, quality-floor status, and dominance status.
+- `scenarioResults`: scenario/target run/accepted-outcome, score, statistical, review, and
   usage summaries. Each row includes `cohort` metadata with sample ids/seeds,
   scenario and adapter versions, benchmark target ids, harness identities,
   provider paths, adapter-reported agent models, canonical agent model
   identities, agent/evaluator prompt identities, evaluator model identities,
   judge identities, environment fingerprints, and comparability warnings.
-- `suiteCoverage`: suite-scoped coverage summary when `compare --suite` is
-  used. It records expected/covered scenario counts, scenario ids missing from
-  at least one adapter, overall minimum-run satisfaction, and per-adapter
-  coverage, run counts by scenario, and coverage warnings.
-- `scenarioResults`: compact scenario/adapter results with pass rate, Wilson CI,
-  pass@k, mean score, bootstrap mean-score CI, review count, and statistical
-  warnings.
+- `outcomeFrontier`: declared methodology, per-scenario Wilson floors,
+  objective coverage and intervals, and Pareto, dominated, ineligible, or
+  indeterminate target status.
 - `pairwiseComparisons`: same pairwise adapter delta objects exposed at the
   compare top level.
-- `readiness`: blockers and advisories used by the publishability gate.
+- `readiness`: separate outcome-comparison, pairwise-superiority,
+  efficiency-frontier, and publication readiness sections.
 - `evidence`: run-plan presence, run-plan warnings, artifact-validation error
   and warning counts, and review queue counts. It also includes
   `artifactCompletenessWarnings`, the total number of missing core artifact path
@@ -539,15 +537,12 @@ membership/version locks, minimum runs, and retry policy.
 `benchmarkSummary` is a row-oriented artifact derived from `benchmarkClaim`.
 Use `ruhroh compare <results-dir> --benchmark-summary benchmark-summary.json` to
 write it as a standalone JSON file. It preserves claim-level `scope`,
-`publishable`, `readiness`, and `evidence`, then flattens each scenario/adapter
-result into `rows` with suite id/version when available, run/pass counts, pass
-rate with Wilson CI, pass@k, mean score with bootstrap CI, usage totals/rates,
-review count, statistical warnings, and the same cohort stack metadata carried
-by the benchmark claim.
+`publishable`, `readiness`, `evidence`, and the frontier, then exposes separate
+`scenarioRows` and `targetRows` for downstream reports without collapsing
+benchmark targets into execution adapters.
 
 The package ships a structural JSON Schema at
-`node_modules/@kestrel-agents/ruhroh/schemas/benchmark-summary-v1.schema.json`;
-`ruhroh init` also copies it to `ruhroh/schemas/benchmark-summary-v1.schema.json`.
+`node_modules/@kestrel-agents/ruhroh/schemas/benchmark-summary-v2.schema.json`.
 Use `ruhroh validate-summary benchmark-summary.json --json` for Ruhroh's
 built-in row and top-level consistency checks before ingesting the summary into
 external reports or lightweight leaderboards.
@@ -561,24 +556,25 @@ local registries, dashboards, and publication pipelines that need to ingest
 multiple archived claims without losing claim-level blockers.
 
 The package ships a structural JSON Schema at
-`node_modules/@kestrel-agents/ruhroh/schemas/claim-index-v1.schema.json`;
-`ruhroh init` also copies it to `ruhroh/schemas/claim-index-v1.schema.json`.
+`node_modules/@kestrel-agents/ruhroh/schemas/claim-index-v2.schema.json` for
+v2-only inputs. Mixed or archived v1 inputs remain readable through the v1
+index contract.
 Use the schema as the external ingestion contract, then use
 `ruhroh claim-index <path> --require-publishable --json` as the readiness gate.
 
 Required fields:
 
-- `$schema`: `https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json`.
-- `version`: `ruhroh_claim_index_v1`.
+- `$schema`: `https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json`.
+- `version`: `ruhroh_claim_index_v2`.
 - `generatedAt`: index creation timestamp.
 - `source`: input path and optional HTML output path.
 - `registryReady`: true only when at least one claim was found, no claims are
   malformed, and every valid claim is publishable.
 - `registryBlockers`: one blocker per invalid or blocked claim.
 - `claimCount`, `publishableCount`, `blockedCount`, `invalidCount`,
-  `suiteCount`, `adapterCount`, and `totalRuns`: top-level registry rollups.
+  `suiteCount`, `targetCount`, `totalRuns`, and `totalAcceptedOutcomes`: top-level registry rollups.
 - `claims`: per-claim entries with claim path, optional bundle path, validation
-  status, publishability, suite/version, adapters, run summary, evidence counts,
+  status, publishability, suite/version, targets, frontier summary, evidence counts,
   source paths, blockers, advisories, and validation diagnostics.
 
 ## Benchmark Target Config

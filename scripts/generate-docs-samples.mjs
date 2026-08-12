@@ -1,6 +1,6 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { chmodSync, copyFileSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -614,13 +614,13 @@ function assertCleanSourceVerification(report) {
 }
 
 function assertPublishCheckSample(report) {
-  if (report.$schema !== "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json") {
+  if (report.$schema !== "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json") {
     throw new Error("docs sample publish-check must include the publish-check schema URL");
   }
-  if (report.version !== "ruhroh_publish_check_v1") {
-    throw new Error("docs sample publish-check must be versioned as ruhroh_publish_check_v1");
+  if (report.version !== "ruhroh_publish_check_v2") {
+    throw new Error("docs sample publish-check must be versioned as ruhroh_publish_check_v2");
   }
-  if (report.compare?.version !== "ruhroh_compare_v1") {
+  if (report.compare?.version !== "ruhroh_compare_v2") {
     throw new Error("docs sample publish-check must embed compare output");
   }
   if (!Array.isArray(report.remediation) || report.remediation.length === 0) {
@@ -629,11 +629,11 @@ function assertPublishCheckSample(report) {
 }
 
 function assertPublishBundleManifestSample(report) {
-  if (report.$schema !== "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json") {
+  if (report.$schema !== "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v2.schema.json") {
     throw new Error("docs sample publication packet manifest must include the publish-bundle schema URL");
   }
-  if (report.version !== "ruhroh_publish_bundle_v1") {
-    throw new Error("docs sample publication packet manifest must be versioned as ruhroh_publish_bundle_v1");
+  if (report.version !== "ruhroh_publish_bundle_v2") {
+    throw new Error("docs sample publication packet manifest must be versioned as ruhroh_publish_bundle_v2");
   }
   if (!Array.isArray(report.files) || !report.files.some((file) => file.role === "publish-check")) {
     throw new Error("docs sample publication packet manifest must list the bundled publish-check file");
@@ -651,18 +651,17 @@ function assertCleanBundleValidation(report) {
 }
 
 function assertClaimIndex(report) {
-  if (report.$schema !== "https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json") {
+  if (report.$schema !== "https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json") {
     throw new Error("docs sample claim index must include the claim-index schema URL");
   }
-  if (report.version !== "ruhroh_claim_index_v1" || report.claimCount !== 1 || report.invalidCount !== 0) {
+  if (report.version !== "ruhroh_claim_index_v2" || report.claimCount !== 1 || report.invalidCount !== 0) {
     throw new Error("docs sample claim index must contain one valid claim");
   }
   if (!Array.isArray(report.claims) || report.claims[0]?.bundlePath === undefined) {
     throw new Error("docs sample claim index must point at the publication packet");
   }
-  const context = report.claims[0]?.benchmarkContext;
-  if (!context?.streams?.includes("native-stack") || !context?.targets?.includes(sampleBenchmarkTarget.targetId)) {
-    throw new Error("docs sample claim index must expose benchmark stream and target context");
+  if (!report.claims[0]?.targets?.some((target) => target.benchmarkTargetId === sampleBenchmarkTarget.targetId)) {
+    throw new Error("docs sample claim index must expose benchmark target identity");
   }
   const claimsHtml = readFileSync(path.join(sampleRoot, "ruhroh-claims.html"), "utf8");
   if (!claimsHtml.includes("Benchmark context") || !claimsHtml.includes("target=docs-fixture-native-stack")) {
@@ -798,6 +797,8 @@ function refreshScrubbedClaimArtifacts(basePath) {
   const claimPath = path.join(basePath, "benchmark-claim.json");
   const summaryPath = path.join(basePath, "benchmark-summary.json");
   const publishCheckPath = path.join(basePath, "publish-check.json");
+  const comparePath = path.join(basePath, "compare.json");
+  const publicationPath = path.join(basePath, "publication.json");
   const claim = JSON.parse(readFileSync(claimPath, "utf8"));
   const summary = JSON.parse(readFileSync(summaryPath, "utf8"));
   const publishCheck = JSON.parse(readFileSync(publishCheckPath, "utf8"));
@@ -811,7 +812,19 @@ function refreshScrubbedClaimArtifacts(basePath) {
   }
   writeJson(claimPath, claim);
   writeJson(summaryPath, summary);
+  if (existsSync(comparePath)) {
+    writeJson(comparePath, publishCheck.compare);
+  }
   writeJson(publishCheckPath, publishCheck);
+  if (existsSync(publicationPath)) {
+    const publication = JSON.parse(readFileSync(publicationPath, "utf8"));
+    for (const artifact of publication.artifacts ?? []) {
+      if (artifact !== null && typeof artifact === "object" && typeof artifact.path === "string") {
+        artifact.sha256 = sha256File(resolvePublicArtifactPath(artifact.path, basePath));
+      }
+    }
+    writeJson(publicationPath, publication);
+  }
 }
 
 function refreshClaimSourceHashes(claim, basePath) {

@@ -1,6 +1,6 @@
 {
   "name": "@kestrel-agents/ruhroh",
-  "version": "0.6.0-beta.0",
+  "version": "0.7.0-beta.0",
   "description": "Realistic user-request benchmarks for coding agents",
   "license": "MIT",
   "repository": {
@@ -33,20 +33,91 @@
       "types": "./dist/cli.d.ts",
       "import": "./dist/cli.js"
     },
+    "./artifacts": {
+      "types": "./dist/artifacts.d.ts",
+      "import": "./dist/artifacts.js"
+    },
+    "./billing": {
+      "types": "./dist/billing.d.ts",
+      "import": "./dist/billing.js"
+    },
+    "./decision": {
+      "types": "./dist/decision.d.ts",
+      "import": "./dist/decision.js"
+    },
+    "./drift": {
+      "types": "./dist/drift.d.ts",
+      "import": "./dist/drift.js"
+    },
+    "./economics": {
+      "types": "./dist/economics.d.ts",
+      "import": "./dist/economics.js"
+    },
+    "./economics-runtime": {
+      "types": "./dist/economics-runtime.d.ts",
+      "import": "./dist/economics-runtime.js"
+    },
+    "./economics-cli": {
+      "types": "./dist/economics-cli.d.ts",
+      "import": "./dist/economics-cli.js"
+    },
+    "./findings": {
+      "types": "./dist/findings.d.ts",
+      "import": "./dist/findings.js"
+    },
+    "./scale": {
+      "types": "./dist/scale.d.ts",
+      "import": "./dist/scale.js"
+    },
+    "./schemas/adapter-manifest-v1.schema.json": "./schemas/adapter-manifest-v1.schema.json",
+    "./schemas/adapter-conformance-v1.schema.json": "./schemas/adapter-conformance-v1.schema.json",
     "./schemas/benchmark-claim-v1.schema.json": "./schemas/benchmark-claim-v1.schema.json",
+    "./schemas/benchmark-claim-v2.schema.json": "./schemas/benchmark-claim-v2.schema.json",
     "./schemas/benchmark-summary-v1.schema.json": "./schemas/benchmark-summary-v1.schema.json",
+    "./schemas/benchmark-summary-v2.schema.json": "./schemas/benchmark-summary-v2.schema.json",
     "./schemas/benchmark-target-config-v1.schema.json": "./schemas/benchmark-target-config-v1.schema.json",
+    "./schemas/billing-mapping-profile-v1.schema.json": "./schemas/billing-mapping-profile-v1.schema.json",
+    "./schemas/billing-source-manifest-v1.schema.json": "./schemas/billing-source-manifest-v1.schema.json",
     "./schemas/claim-index-v1.schema.json": "./schemas/claim-index-v1.schema.json",
+    "./schemas/claim-index-v2.schema.json": "./schemas/claim-index-v2.schema.json",
+    "./schemas/compare-v2.schema.json": "./schemas/compare-v2.schema.json",
+    "./schemas/control-surface-v1.schema.json": "./schemas/control-surface-v1.schema.json",
+    "./schemas/cost-reconciliation-v1.schema.json": "./schemas/cost-reconciliation-v1.schema.json",
+    "./schemas/decision-context-v1.schema.json": "./schemas/decision-context-v1.schema.json",
+    "./schemas/decision-packet-v1.schema.json": "./schemas/decision-packet-v1.schema.json",
+    "./schemas/economic-trace-span-v1.schema.json": "./schemas/economic-trace-span-v1.schema.json",
+    "./schemas/evidence-artifact-reference-v1.schema.json": "./schemas/evidence-artifact-reference-v1.schema.json",
+    "./schemas/economics-envelope-v1.schema.json": "./schemas/economics-envelope-v1.schema.json",
+    "./schemas/economics-observation-v1.schema.json": "./schemas/economics-observation-v1.schema.json",
     "./schemas/eval-calibration-report-v1.schema.json": "./schemas/eval-calibration-report-v1.schema.json",
     "./schemas/eval-result-v1.schema.json": "./schemas/eval-result-v1.schema.json",
+    "./schemas/findings-v1.schema.json": "./schemas/findings-v1.schema.json",
+    "./schemas/intervention-ledger-v1.schema.json": "./schemas/intervention-ledger-v1.schema.json",
     "./schemas/loop-result-v1.schema.json": "./schemas/loop-result-v1.schema.json",
+    "./schemas/normalized-billing-row-v1.schema.json": "./schemas/normalized-billing-row-v1.schema.json",
+    "./schemas/outcome-frontier-v1.schema.json": "./schemas/outcome-frontier-v1.schema.json",
+    "./schemas/product-engineering-decision-view-v1.schema.json": "./schemas/product-engineering-decision-view-v1.schema.json",
+    "./schemas/publication-v2.schema.json": "./schemas/publication-v2.schema.json",
+    "./schemas/provider-baseline-v1.schema.json": "./schemas/provider-baseline-v1.schema.json",
+    "./schemas/provider-drift-report-v1.schema.json": "./schemas/provider-drift-report-v1.schema.json",
     "./schemas/publish-bundle-v1.schema.json": "./schemas/publish-bundle-v1.schema.json",
+    "./schemas/publish-bundle-v2.schema.json": "./schemas/publish-bundle-v2.schema.json",
     "./schemas/publish-check-v1.schema.json": "./schemas/publish-check-v1.schema.json",
+    "./schemas/publish-check-v2.schema.json": "./schemas/publish-check-v2.schema.json",
     "./schemas/run-manifest-v1.schema.json": "./schemas/run-manifest-v1.schema.json",
     "./schemas/run-plan-v1.schema.json": "./schemas/run-plan-v1.schema.json",
     "./schemas/rerun-ledger-v1.schema.json": "./schemas/rerun-ledger-v1.schema.json",
+    "./schemas/resource-budget-outcome-v1.schema.json": "./schemas/resource-budget-outcome-v1.schema.json",
+    "./schemas/resource-budgets-v1.schema.json": "./schemas/resource-budgets-v1.schema.json",
+    "./schemas/run-agent-result-v2.schema.json": "./schemas/run-agent-result-v2.schema.json",
     "./schemas/scenario-v2.schema.json": "./schemas/scenario-v2.schema.json",
+    "./schemas/scale-analysis-v1.schema.json": "./schemas/scale-analysis-v1.schema.json",
+    "./schemas/scale-experiment-v1.schema.json": "./schemas/scale-experiment-v1.schema.json",
     "./schemas/suite-v1.schema.json": "./schemas/suite-v1.schema.json",
+    "./schemas/suite-v2.schema.json": "./schemas/suite-v2.schema.json",
+    "./schemas/technical-economic-fact-v1.schema.json": "./schemas/technical-economic-fact-v1.schema.json",
+    "./schemas/workload-binding-v1.schema.json": "./schemas/workload-binding-v1.schema.json",
+    "./schemas/workload-profile-v1.schema.json": "./schemas/workload-profile-v1.schema.json",
     "./schemas/workspace-summary-v1.schema.json": "./schemas/workspace-summary-v1.schema.json"
   },
   "bin": {

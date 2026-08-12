@@ -72,8 +72,8 @@ Run `pnpm exec ruhroh explain` with no code to list the full remediation
 catalog.
 
 The JSON output includes a `$schema` value of
-`https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json` and is
-versioned as `ruhroh_publish_check_v1`. The npm package ships the matching
+`https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json` and is
+versioned as `ruhroh_publish_check_v2`. The npm package ships the matching
 schema, and `ruhroh init` copies it into local starters, so CI can validate the
 report shape before inspecting remediation codes or the embedded compare
 output.
@@ -148,13 +148,13 @@ pnpm exec ruhroh claim-index ruhroh-publication --json
 pnpm exec ruhroh claim-index ./published-claims --html ruhroh-claims.html
 ```
 
-JSON output is versioned as `ruhroh_claim_index_v1` and includes each claim's
+For v2-only inputs, JSON output is versioned as `ruhroh_claim_index_v2` and includes each claim's
 path, packet path when present, validation status, publishability, benchmark suite and
-version, agent connectors, run counts, pass rate, evidence coverage, blockers,
+version, benchmark targets, execution adapters, run counts, accepted outcomes,
+frontier status, evidence coverage, blockers,
 and source paths. The package ships its structural schema at
-`node_modules/@kestrel-agents/ruhroh/schemas/claim-index-v1.schema.json`, and
-`ruhroh init` copies the same schema to
-`ruhroh/schemas/claim-index-v1.schema.json` for local registry checks. HTML
+`node_modules/@kestrel-agents/ruhroh/schemas/claim-index-v2.schema.json`.
+Mixed or archived v1 inputs continue through the v1 reader. HTML
 output is a static claim index for internal reports, release notes, or a
 lightweight benchmark-claim registry.
 

@@ -14,6 +14,7 @@ export const RUHROH_ARTIFACTS = [
     "/installed-agent/ruhroh-workspace.tar.gz",
     "/installed-agent/ruhroh-loop-events.tar.gz",
     "/installed-agent/ruhroh-loop-transcripts.tar.gz",
+    "/installed-agent/ruhroh-economic-trace.jsonl",
 ];
 export function buildRuhrohHarborCommand(input) {
     const tasksPath = path.join(input.datasetPath, "tasks");

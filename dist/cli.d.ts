@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { spawnSync } from "node:child_process";
 import type { RuhrohScenarioTier } from "./scenarios.js";
+import { type RuhrohEconomicsCommand } from "./economics-cli.js";
 type RuhrohEvaluatorTemplate = "review" | "deterministic" | "model" | "hybrid";
 type RuhrohAdapterTemplate = "generic" | "kestrel-cli" | "codex-cli" | "claude-code" | "gemini-cli" | "aider" | "fixture";
 interface RuntimeDeps {
@@ -12,7 +13,8 @@ interface RuntimeDeps {
     stdin?: NodeJS.ReadStream | undefined;
 }
 export interface RuhrohCliOptions {
-    command: "run" | "demo" | "generate" | "list" | "list-suites" | "plan" | "validate" | "inspect-pack" | "validate-artifacts" | "validate-targets" | "validate-claim" | "validate-summary" | "validate-bundle" | "claim-index" | "report" | "compare" | "review" | "eval-quality" | "publish-check" | "explain" | "examples" | "first-run" | "workflow" | "doctor" | "init" | "new-scenario" | "new-suite" | "new-adapter" | "new-evaluator" | "calibrate-evaluator";
+    command: "run" | "demo" | "generate" | "list" | "list-suites" | "plan" | "validate" | "inspect-pack" | "validate-artifacts" | "validate-targets" | "validate-claim" | "validate-summary" | "validate-bundle" | "claim-index" | "report" | "compare" | "review" | "eval-quality" | "publish-check" | "economics" | "explain" | "examples" | "first-run" | "workflow" | "doctor" | "init" | "new-scenario" | "new-suite" | "new-adapter" | "new-evaluator" | "calibrate-evaluator";
+    economicsCommand?: RuhrohEconomicsCommand | undefined;
     list: boolean;
     listSuites: boolean;
     dryRun: boolean;
@@ -41,6 +43,8 @@ export interface RuhrohCliOptions {
     iterations?: number | undefined;
     adapter?: string | undefined;
     targetConfigPath?: string | undefined;
+    adapterManifestPath?: string | undefined;
+    workloadBindingPath?: string | undefined;
     targets: string[];
     evaluator?: string | undefined;
     evaluatorTemplate: RuhrohEvaluatorTemplate;

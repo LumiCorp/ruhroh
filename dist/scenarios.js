@@ -1,4 +1,6 @@
 import { adapterSatisfiesRequirements, } from "./adapters.js";
+import { validateRuhrohWorkloadProfile } from "./decision.js";
+import { validateResourceBudgets } from "./economics-runtime.js";
 export function validateRuhrohScenario(scenario, options = {}) {
     const errors = [];
     if (scenario.version !== "ruhroh_scenario_v1" && scenario.version !== "ruhroh_scenario_v2") {
@@ -15,6 +17,9 @@ export function validateRuhrohScenario(scenario, options = {}) {
     }
     if (scenario.metadata !== undefined) {
         errors.push(...validateScenarioMetadata(scenario.metadata));
+    }
+    if (scenario.workloadProfile !== undefined) {
+        errors.push(...validateRuhrohWorkloadProfile(scenario.workloadProfile).map((error) => `workloadProfile.${error}`));
     }
     errors.push(...validatePublishedScenarioMetadata(scenario));
     if (scenario.userPrompt.trim().length === 0) {
@@ -33,6 +38,9 @@ export function validateRuhrohScenario(scenario, options = {}) {
     }
     if (scenario.run.timeoutSeconds <= 0) {
         errors.push("run.timeoutSeconds must be positive");
+    }
+    if (scenario.run.resourceBudgets !== undefined) {
+        errors.push(...validateResourceBudgets(scenario.run.resourceBudgets).map((error) => `run.resourceBudgets.${error}`));
     }
     if (!["native_session", "workspace_plus_transcript", "workspace_only"].includes(scenario.requires.continuity)) {
         errors.push("requires.continuity must be native_session, workspace_plus_transcript, or workspace_only");

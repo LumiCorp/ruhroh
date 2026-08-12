@@ -1,0 +1,44 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/publication-v2.schema.json",
+  "version": "ruhroh_publication_v2",
+  "createdAt": "2026-07-08T12:00:00.000Z",
+  "publishable": false,
+  "artifacts": [
+    {
+      "role": "publish-check",
+      "path": "publish-check.json",
+      "sha256": "45467837cdba2809eb7861fa0b044d0aa9e540055126171cf17565888a6398b1",
+      "contractVersion": "ruhroh_publish_check_v2"
+    },
+    {
+      "role": "bundle-manifest",
+      "path": "manifest.json",
+      "sha256": "8a7bb9fde0f77e9c75cc89137838eed07121709aee4bf95e5914b29fca659397",
+      "contractVersion": "ruhroh_publish_bundle_v2"
+    },
+    {
+      "role": "compare",
+      "path": "compare.json",
+      "sha256": "33f1d252456232a985a2c1cb2446b49e7566e2ee137292a99fd85473b2f66b70",
+      "contractVersion": "ruhroh_compare_v2"
+    },
+    {
+      "role": "benchmark-claim",
+      "path": "benchmark-claim.json",
+      "sha256": "825d48da3a5fa7795948dc08593a5fbf39ad07d6f21ec398419fa641f5379db7",
+      "contractVersion": "ruhroh_benchmark_claim_v2"
+    },
+    {
+      "role": "benchmark-summary",
+      "path": "benchmark-summary.json",
+      "sha256": "3b4e5a539a801828673e1bae83f9c4b2a02813baf3213d7d54c55eb3c6030f33",
+      "contractVersion": "ruhroh_benchmark_summary_v2"
+    },
+    {
+      "role": "outcome-frontier",
+      "path": "outcome-frontier.json",
+      "sha256": "02f04de7afc8071010fafd8c1882da991d4d0bd94ea9d8b2b33b8afc17ee34bc",
+      "contractVersion": "ruhroh_outcome_frontier_v1"
+    }
+  ]
+}

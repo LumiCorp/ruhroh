@@ -1,0 +1,18 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/outcome-frontier-v1.schema.json",
+  "version": "ruhroh_outcome_frontier_v1",
+  "status": "quality_only",
+  "reasonCodes": [
+    "suite_has_no_efficiency_contract"
+  ],
+  "coverage": {
+    "targetCount": 0,
+    "qualityEligibleTargetCount": 0,
+    "comparableTargetCount": 0,
+    "paretoFrontierTargetCount": 0,
+    "robustFrontierTargetCount": 0
+  },
+  "targets": [],
+  "paretoFrontierTargetIds": [],
+  "robustFrontierTargetIds": []
+}

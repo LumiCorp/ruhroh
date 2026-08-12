@@ -1,8 +1,12 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import path from "node:path";
+import { validateRuhrohOutcomeFrontier, } from "./economics.js";
 const BENCHMARK_CLAIM_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v1.schema.json";
 const BENCHMARK_SUMMARY_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/benchmark-summary-v1.schema.json";
+const BENCHMARK_CLAIM_V2_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v2.schema.json";
+const BENCHMARK_SUMMARY_V2_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/benchmark-summary-v2.schema.json";
+const COMPARE_V2_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/compare-v2.schema.json";
 const STANDARD_SUBSCORE_DIMENSIONS = [
     "functionality",
     "workflow",
@@ -220,21 +224,31 @@ export function inventoryRuhrohArtifacts(artifactPaths) {
 }
 export function summarizeRuhrohRun(run) {
     const evalResult = normalizeRuhrohEvalResult(run.evalResult);
-    const evalQualityWarnings = assessRuhrohEvalQuality(evalResult);
+    const acceptedOutcomeInvariantWarnings = summarizeAcceptedOutcomeInvariantWarnings(run.score, evalResult.status);
+    const evalQualityWarnings = [...assessRuhrohEvalQuality(evalResult), ...acceptedOutcomeInvariantWarnings];
     const artifactCompletenessWarnings = assessRuhrohArtifactCompleteness(run);
-    const usage = readRunUsage(run.runManifest?.usage);
+    const economicsEnvelope = readRunEconomicsEnvelope(run);
+    const economicsUsage = readRunUsageFromEconomicsEnvelope(economicsEnvelope);
+    const implementationWallTimeMs = readImplementationWallTimeMs(economicsEnvelope);
+    const usage = mergeRunUsage(economicsUsage, readRunUsage(run.runManifest?.usage));
+    const usageCoverage = readRunUsageCoverage(economicsEnvelope, economicsUsage);
     const sample = run.runManifest?.sample;
     const artifactPaths = run.artifactPaths ?? evalResult.artifacts;
+    const benchmarkTargetId = readStringField(run.runManifest?.benchmarkTarget, "targetId");
+    const executionAdapterId = run.runManifest?.runAgent.adapterId || run.runAgentAdapterId || run.adapter;
     return {
         scenarioId: run.scenarioId,
         ...((run.runId ?? run.runManifest?.runId) === undefined ? {} : { runId: run.runId ?? run.runManifest?.runId }),
-        adapter: run.runAgentAdapterId || run.adapter,
+        ...(benchmarkTargetId === undefined ? {} : { benchmarkTargetId }),
+        executionAdapterId,
+        adapter: benchmarkTargetId ?? executionAdapterId,
         status: run.status,
         evalStatus: evalResult.status,
         failureBucket: run.failureBucket || run.failure_kind,
         score: run.score,
         iterationsUsed: run.implementationIterationsUsed || run.iterationsUsed,
         durationMs: run.duration_ms,
+        ...(implementationWallTimeMs === undefined ? {} : { implementationWallTimeMs }),
         finalSummary: evalResult.finalSummary,
         implementationTimeline: readImplementationTimeline(run.implementationRuns),
         unmetCriteria: evalResult.unmetCriteria,
@@ -249,11 +263,24 @@ export function summarizeRuhrohRun(run) {
         artifactInventory: inventoryRuhrohArtifacts(artifactPaths),
         artifactCompletenessWarnings,
         ...(usage === undefined ? {} : { usage }),
+        usageCoverage,
         ...(sample === undefined ? {} : { sample }),
         evalQualityWarnings,
+        acceptedOutcome: isAcceptedRuhrohOutcome(run.score, evalResult.status),
+        acceptedOutcomeInvariantWarnings,
         humanReviewRequired: evalResult.status === "review" || evalQualityWarnings.some((warning) => warning.includes("human review")),
         ...(run.runManifest === undefined ? {} : { runManifest: run.runManifest }),
     };
+}
+export function isAcceptedRuhrohOutcome(score, evalStatus) {
+    return score === 1 && evalStatus === "passed";
+}
+function summarizeAcceptedOutcomeInvariantWarnings(score, evalStatus) {
+    const scoreAccepted = score === 1;
+    const evalAccepted = evalStatus === "passed";
+    return scoreAccepted === evalAccepted
+        ? []
+        : [`accepted-outcome invariant mismatch: score=${score} while evalStatus=${evalStatus}`];
 }
 export function readImplementationTimeline(runs) {
     return runs.flatMap((run, index) => {
@@ -291,10 +318,12 @@ export function aggregateRuhrohRuns(runs, options = {}) {
         }
         const durations = summaries.map((summary) => summary.durationMs).sort((left, right) => left - right);
         const scores = summaries.map((summary) => summary.score);
-        const passes = summaries.filter((summary) => summary.score === 1).length;
+        const passes = summaries.filter((summary) => summary.acceptedOutcome).length;
         const cohort = aggregateCohort(summaries);
         return {
             scenarioId: first.scenarioId,
+            ...(first.benchmarkTargetId === undefined ? {} : { benchmarkTargetId: first.benchmarkTargetId }),
+            executionAdapterIds: uniqueSorted(summaries.map((summary) => summary.executionAdapterId)),
             adapter: first.adapter,
             cohort,
             runs: summaries.length,
@@ -311,9 +340,11 @@ export function aggregateRuhrohRuns(runs, options = {}) {
             reviewRequired: summaries.filter((summary) => summary.humanReviewRequired).length,
             evalQualityWarnings: countBy(summaries.flatMap((summary) => summary.evalQualityWarnings)),
             artifactCompletenessWarnings: countBy(summaries.flatMap((summary) => summary.artifactCompletenessWarnings)),
+            acceptedOutcomeInvariantWarnings: countBy(summaries.flatMap((summary) => summary.acceptedOutcomeInvariantWarnings)),
             usage: aggregateUsage(summaries, passes),
             statisticalWarnings: [
                 ...statisticalWarnings(summaries.length, options.minRuns),
+                ...uniquePreserveOrder(summaries.flatMap((summary) => summary.acceptedOutcomeInvariantWarnings)),
                 ...cohort.comparabilityWarnings,
                 ...suiteScenarioVersionWarnings(first.scenarioId, cohort, options.expectedScenarioVersions),
             ],
@@ -636,7 +667,221 @@ export function summarizeRuhrohBenchmarkSummary(claim) {
         })),
     };
 }
+export function summarizeRuhrohBenchmarkClaimV2(groups, options) {
+    const effectiveTargetId = (group) => group.benchmarkTargetId ?? `legacy_execution_adapter:${group.adapter}`;
+    const totalRuns = groups.reduce((total, group) => total + group.runs, 0);
+    const totalAcceptedOutcomes = groups.reduce((total, group) => total + group.passes, 0);
+    const reviewQueue = options.reviewQueue ?? [];
+    const targetIdByAdapter = new Map(groups.map((group) => [group.adapter, effectiveTargetId(group)]));
+    const pairwiseComparisons = (options.pairwiseComparisons ?? []).map((comparison) => ({
+        ...comparison,
+        baselineBenchmarkTargetId: targetIdByAdapter.get(comparison.baselineAdapter) ?? `legacy_execution_adapter:${comparison.baselineAdapter}`,
+        contenderBenchmarkTargetId: targetIdByAdapter.get(comparison.contenderAdapter) ?? `legacy_execution_adapter:${comparison.contenderAdapter}`,
+    }));
+    const targetIds = uniqueSorted(groups.map(effectiveTargetId));
+    const frontierTargets = new Map(options.outcomeFrontier.targets.map((target) => [target.benchmarkTargetId, target]));
+    const targetSummaries = targetIds.map((benchmarkTargetId) => {
+        const targetGroups = groups.filter((group) => effectiveTargetId(group) === benchmarkTargetId);
+        const runs = targetGroups.reduce((total, group) => total + group.runs, 0);
+        const acceptedOutcomes = targetGroups.reduce((total, group) => total + group.passes, 0);
+        const frontierTarget = frontierTargets.get(benchmarkTargetId);
+        return {
+            benchmarkTargetId,
+            identityStatus: targetGroups.every((group) => group.benchmarkTargetId !== undefined)
+                ? "declared"
+                : "legacy_execution_adapter_fallback",
+            executionAdapterIds: uniqueSorted(targetGroups.flatMap((group) => group.executionAdapterIds)),
+            scenarioCount: targetGroups.length,
+            runs,
+            acceptedOutcomes,
+            runWeightedPassRate: runs === 0 ? 0 : acceptedOutcomes / runs,
+            runWeightedPassRateCi95: wilsonConfidenceInterval(acceptedOutcomes, runs),
+            meanScenarioPassRate: targetGroups.length === 0 ? 0 : mean(targetGroups.map((group) => group.passRate)),
+            usage: aggregateGroupUsage(targetGroups, acceptedOutcomes),
+            qualityFloorStatus: frontierTarget?.quality.floorStatus ?? "indeterminate",
+            objectives: cloneJsonValue(frontierTarget?.objectives ?? []),
+            paretoStatus: frontierTarget?.paretoStatus ?? "indeterminate",
+            robustStatus: frontierTarget?.robustStatus ?? "indeterminate",
+            warnings: uniquePreserveOrder([
+                ...(frontierTarget?.reasonCodes ?? []),
+                ...targetGroups.flatMap((group) => group.statisticalWarnings.map((warning) => `${group.scenarioId}: ${warning}`)),
+            ]),
+        };
+    });
+    const scenarioResults = groups.map((group) => {
+        const benchmarkTargetId = effectiveTargetId(group);
+        const frontierTarget = frontierTargets.get(benchmarkTargetId);
+        const qualityFloorStatus = frontierTarget?.quality.scenarioResults.find((result) => result.scenarioId === group.scenarioId)?.floorStatus ?? "indeterminate";
+        return {
+            scenarioId: group.scenarioId,
+            benchmarkTargetId,
+            identityStatus: group.benchmarkTargetId === undefined ? "legacy_execution_adapter_fallback" : "declared",
+            executionAdapterIds: [...group.executionAdapterIds],
+            runs: group.runs,
+            acceptedOutcomes: group.passes,
+            passRate: group.passRate,
+            passRateCi95: { ...group.passRateCi95 },
+            passAtK: { ...group.passAtK },
+            meanScore: group.meanScore,
+            meanScoreCi95: { ...group.meanScoreCi95 },
+            usage: copyAggregateUsage(group.usage),
+            qualityFloorStatus,
+            reviewRequired: group.reviewRequired,
+            statisticalWarnings: [...group.statisticalWarnings],
+            cohort: copyAggregateCohort(group.cohort),
+        };
+    });
+    const fallbackIdentityBlockers = groups
+        .filter((group) => group.benchmarkTargetId === undefined)
+        .map((group) => `${group.scenarioId}/${effectiveTargetId(group)}: benchmark target identity missing; using legacy execution-adapter fallback`);
+    const readiness = buildComparisonReadinessV2(groups, pairwiseComparisons, {
+        ...options.claimReadiness,
+        publishable: options.claimReadiness.publishable && fallbackIdentityBlockers.length === 0,
+        blockers: uniquePreserveOrder([...options.claimReadiness.blockers, ...fallbackIdentityBlockers]),
+    }, options.outcomeFrontier);
+    return {
+        $schema: BENCHMARK_CLAIM_V2_SCHEMA_URL,
+        version: "ruhroh_benchmark_claim_v2",
+        createdAt: options.createdAt ?? new Date().toISOString(),
+        tool: options.tool ?? { name: "ruhroh" },
+        ...(options.source === undefined ? {} : { source: compactBenchmarkClaimSource(options.source) }),
+        scope: options.claimReadiness.scope,
+        publishable: readiness.publication.publishable,
+        ...(options.suite === undefined ? {} : { suite: options.suite }),
+        methodology: {
+            confidenceLevel: 0.95,
+            acceptedOutcome: "score_1_and_eval_passed",
+            ...(options.outcomeFrontier.methodology === undefined ? {} : { aggregation: { ...options.outcomeFrontier.methodology.aggregation } }),
+            suitableWorkloads: [...(options.outcomeFrontier.methodology?.suitableWorkloads ?? [])],
+            requiredEvidence: [...(options.outcomeFrontier.methodology?.requiredEvidence ?? [])],
+            hiddenWork: [...(options.outcomeFrontier.methodology?.hiddenWork ?? [])],
+            gamingRisks: [...(options.outcomeFrontier.methodology?.gamingRisks ?? [])],
+            statisticalMethods: [
+                "wilson_pass_rate_ci",
+                "normal_approximation_pass_rate_delta_ci",
+                "fisher_exact_two_sided",
+                "pass_at_k",
+                "bootstrap_mean_score_ci",
+                "stratified_bootstrap_outcome_frontier_ci",
+                "pareto_minimize",
+                "robust_ci_dominance",
+            ],
+            ...(options.outcomeFrontier.methodology === undefined ? {} : { qualityFloor: { ...options.outcomeFrontier.methodology.qualityFloor } }),
+            objectives: [...(options.outcomeFrontier.methodology?.objectives ?? [])],
+            ...(options.suite?.minRuns === undefined ? {} : { minRuns: options.suite.minRuns }),
+            ...(options.suite?.retryPolicy === undefined ? {} : { retryPolicy: options.suite.retryPolicy }),
+        },
+        summary: {
+            scenarioCount: uniqueSorted(groups.map((group) => group.scenarioId)).length,
+            targetCount: targetIds.length,
+            totalRuns,
+            totalAcceptedOutcomes,
+            runWeightedPassRate: totalRuns === 0 ? 0 : totalAcceptedOutcomes / totalRuns,
+            runWeightedPassRateCi95: wilsonConfidenceInterval(totalAcceptedOutcomes, totalRuns),
+            reviewRequired: reviewQueue.filter((item) => item.priority === "required").length,
+            reviewRecommended: reviewQueue.filter((item) => item.priority === "recommended").length,
+            pairwiseComparisonCount: pairwiseComparisons.length,
+        },
+        targetSummaries,
+        scenarioResults,
+        pairwiseComparisons,
+        outcomeFrontier: cloneJsonValue(options.outcomeFrontier),
+        readiness,
+        evidence: {
+            runPlanPresent: options.runPlanPresent ?? false,
+            runPlanWarnings: [...(options.runPlanWarnings ?? [])],
+            artifactValidationErrors: options.artifactValidationErrors ?? 0,
+            artifactValidationWarnings: options.artifactValidationWarnings ?? 0,
+            artifactCompletenessWarnings: artifactCompletenessWarningCount(groups),
+            reviewQueueItems: reviewQueue.length,
+            requiredReviewItems: reviewQueue.filter((item) => item.priority === "required").length,
+            recommendedReviewItems: reviewQueue.filter((item) => item.priority === "recommended").length,
+        },
+    };
+}
+export const buildRuhrohBenchmarkClaimV2 = summarizeRuhrohBenchmarkClaimV2;
+export function summarizeRuhrohBenchmarkSummaryV2(claim) {
+    return {
+        $schema: BENCHMARK_SUMMARY_V2_SCHEMA_URL,
+        version: "ruhroh_benchmark_summary_v2",
+        createdAt: claim.createdAt,
+        claimVersion: claim.version,
+        tool: { ...claim.tool },
+        ...(claim.source === undefined ? {} : { source: compactBenchmarkClaimSource(claim.source) }),
+        scope: claim.scope,
+        publishable: claim.publishable,
+        ...(claim.suite === undefined ? {} : { suite: cloneJsonValue(claim.suite) }),
+        summary: cloneJsonValue(claim.summary),
+        readiness: cloneJsonValue(claim.readiness),
+        evidence: cloneJsonValue(claim.evidence),
+        outcomeFrontier: cloneJsonValue(claim.outcomeFrontier),
+        scenarioRows: cloneJsonValue(claim.scenarioResults),
+        targetRows: cloneJsonValue(claim.targetSummaries),
+    };
+}
+export const buildRuhrohBenchmarkSummaryV2 = summarizeRuhrohBenchmarkSummaryV2;
+export function buildRuhrohCompareV2(input) {
+    const benchmarkClaim = summarizeRuhrohBenchmarkClaimV2(input.groups, {
+        createdAt: input.createdAt,
+        tool: input.tool,
+        source: input.source,
+        suite: input.suite,
+        suiteAdapterSummaries: input.suiteAdapterSummaries,
+        pairwiseComparisons: input.pairwiseComparisons,
+        reviewQueue: input.reviewQueue,
+        claimReadiness: input.claimReadiness,
+        runPlanPresent: input.runPlanPresent,
+        runPlanWarnings: input.runPlanWarnings,
+        artifactValidationErrors: input.artifactValidationErrors,
+        artifactValidationWarnings: input.artifactValidationWarnings,
+        outcomeFrontier: input.outcomeFrontier,
+    });
+    return {
+        $schema: COMPARE_V2_SCHEMA_URL,
+        version: "ruhroh_compare_v2",
+        createdAt: benchmarkClaim.createdAt,
+        groups: input.groups,
+        pairwiseComparisons: benchmarkClaim.pairwiseComparisons,
+        claimReadiness: cloneJsonValue(input.claimReadiness),
+        outcomeFrontier: cloneJsonValue(input.outcomeFrontier),
+        benchmarkClaim,
+        benchmarkSummary: summarizeRuhrohBenchmarkSummaryV2(benchmarkClaim),
+    };
+}
+function buildComparisonReadinessV2(groups, pairwiseComparisons, publication, frontier) {
+    const pairwiseWarnings = pairwiseComparisons.flatMap((comparison) => comparison.warnings.map((warning) => `${comparison.scenarioId}/${comparison.contenderBenchmarkTargetId} vs ${comparison.baselineBenchmarkTargetId}: ${warning}`));
+    return {
+        publication: {
+            scope: publication.scope,
+            publishable: publication.publishable,
+            blockers: [...publication.blockers],
+            advisories: [...publication.advisories],
+        },
+        outcomeComparison: {
+            ready: groups.length > 0,
+            blockers: groups.length > 0 ? [] : ["no aggregate result groups available"],
+            advisories: [],
+        },
+        pairwiseSuperiority: {
+            ready: pairwiseComparisons.length > 0 && pairwiseComparisons.some((comparison) => comparison.conclusion !== "inconclusive"),
+            blockers: pairwiseComparisons.length === 0
+                ? ["no pairwise target comparisons available"]
+                : pairwiseComparisons.every((comparison) => comparison.conclusion === "inconclusive")
+                    ? ["all pairwise target comparisons are inconclusive"]
+                    : [],
+            advisories: uniquePreserveOrder(pairwiseWarnings),
+        },
+        efficiencyFrontier: {
+            ready: frontier.status === "available",
+            blockers: frontier.status === "available" ? [] : [...frontier.reasonCodes],
+            advisories: [],
+        },
+    };
+}
 export function validateRuhrohBenchmarkClaim(input) {
+    if (isRecord(input) && input.version === "ruhroh_benchmark_claim_v2") {
+        return validateRuhrohBenchmarkClaimV2(input);
+    }
     const errors = [];
     const warnings = [];
     if (!isRecord(input)) {
@@ -744,6 +989,9 @@ export function validateRuhrohBenchmarkClaim(input) {
     };
 }
 export function validateRuhrohBenchmarkSummary(input) {
+    if (isRecord(input) && input.version === "ruhroh_benchmark_summary_v2") {
+        return validateRuhrohBenchmarkSummaryV2(input);
+    }
     const errors = [];
     const warnings = [];
     if (!isRecord(input)) {
@@ -813,6 +1061,515 @@ export function validateRuhrohBenchmarkSummary(input) {
         errors: uniquePreserveOrder(errors),
         warnings: uniquePreserveOrder(warnings),
     };
+}
+export function validateRuhrohBenchmarkClaimV2(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_benchmark_claim_validation_v2", errors: ["claim must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_benchmark_claim_v2") {
+        errors.push("version must be ruhroh_benchmark_claim_v2");
+    }
+    if (input.$schema !== undefined && input.$schema !== BENCHMARK_CLAIM_V2_SCHEMA_URL) {
+        warnings.push("claim $schema does not match Ruhroh benchmark claim v2 schema URL");
+    }
+    validateV2ClaimMetadata(input, errors);
+    const summary = requireRecordField(input, "summary", errors);
+    if (summary !== undefined) {
+        for (const field of ["scenarioCount", "targetCount", "totalRuns", "totalAcceptedOutcomes", "reviewRequired", "reviewRecommended", "pairwiseComparisonCount"]) {
+            validateNonNegativeNumber(summary, field, errors, `summary.${field}`);
+        }
+        validateRateNumber(summary, "runWeightedPassRate", errors, "summary.runWeightedPassRate");
+        validateConfidenceInterval(optionalRecordField(summary, "runWeightedPassRateCi95", errors, "summary.runWeightedPassRateCi95"), errors, "summary.runWeightedPassRateCi95");
+    }
+    const targetSummaries = requireRecordArrayField(input, "targetSummaries", errors);
+    const targetIds = new Set();
+    for (const [index, targetSummary] of targetSummaries.entries()) {
+        const pathLabel = `targetSummaries[${index}]`;
+        const targetId = requireNonEmptyString(targetSummary, "benchmarkTargetId", errors, `${pathLabel}.benchmarkTargetId`);
+        if (targetId !== undefined && targetIds.has(targetId)) {
+            errors.push(`targetSummaries contains duplicate benchmarkTargetId: ${targetId}`);
+        }
+        if (targetId !== undefined) {
+            targetIds.add(targetId);
+        }
+        validateV2TargetSummary(targetSummary, errors, pathLabel);
+    }
+    const scenarioResults = requireRecordArrayField(input, "scenarioResults", errors);
+    const scenarioTargetKeys = new Set();
+    for (const [index, scenarioResult] of scenarioResults.entries()) {
+        const pathLabel = `scenarioResults[${index}]`;
+        validateV2ScenarioResult(scenarioResult, targetIds, errors, pathLabel);
+        if (typeof scenarioResult.scenarioId === "string" && typeof scenarioResult.benchmarkTargetId === "string") {
+            const key = `${scenarioResult.scenarioId}\u0000${scenarioResult.benchmarkTargetId}`;
+            if (scenarioTargetKeys.has(key)) {
+                errors.push(`${pathLabel} duplicates scenario/benchmark target row`);
+            }
+            scenarioTargetKeys.add(key);
+        }
+    }
+    validateV2ClaimTotals(summary, targetSummaries, scenarioResults, errors);
+    const frontier = requireRecordField(input, "outcomeFrontier", errors);
+    const methodology = requireRecordField(input, "methodology", errors);
+    if (methodology !== undefined) {
+        if (methodology.confidenceLevel !== 0.95) {
+            errors.push("methodology.confidenceLevel must be 0.95");
+        }
+        if (methodology.acceptedOutcome !== "score_1_and_eval_passed") {
+            errors.push("methodology.acceptedOutcome must be score_1_and_eval_passed");
+        }
+        for (const field of ["suitableWorkloads", "requiredEvidence", "hiddenWork", "gamingRisks"]) {
+            const values = requireStringArrayField(methodology, field, errors, `methodology.${field}`);
+            if (input.scope === "suite" && isRecord(frontier?.methodology) && values.length === 0) {
+                errors.push(`suite claim methodology.${field} must include at least one entry`);
+            }
+        }
+        const objectives = requireStringArrayField(methodology, "objectives", errors, "methodology.objectives");
+        if (new Set(objectives).size !== objectives.length) {
+            errors.push("methodology.objectives must be unique");
+        }
+        const frontierMethodology = isRecord(frontier?.methodology) ? frontier.methodology : undefined;
+        if (frontierMethodology !== undefined) {
+            const frontierObjectives = requireStringArrayField(frontierMethodology, "objectives", errors, "outcomeFrontier.methodology.objectives");
+            if (stableJsonValue([...objectives].sort()) !== stableJsonValue([...frontierObjectives].sort())) {
+                errors.push("methodology.objectives must match outcomeFrontier.methodology.objectives");
+            }
+            if (stableJsonValue(methodology.aggregation) !== stableJsonValue(frontierMethodology.aggregation)) {
+                errors.push("methodology.aggregation must match outcomeFrontier.methodology.aggregation");
+            }
+            if (stableJsonValue(methodology.qualityFloor) !== stableJsonValue(frontierMethodology.qualityFloor)) {
+                errors.push("methodology.qualityFloor must match outcomeFrontier.methodology.qualityFloor");
+            }
+        }
+    }
+    const pairwiseComparisons = requireRecordArrayField(input, "pairwiseComparisons", errors);
+    for (const [index, comparison] of pairwiseComparisons.entries()) {
+        const pathLabel = `pairwiseComparisons[${index}]`;
+        const baselineId = requireNonEmptyString(comparison, "baselineBenchmarkTargetId", errors, `${pathLabel}.baselineBenchmarkTargetId`);
+        const contenderId = requireNonEmptyString(comparison, "contenderBenchmarkTargetId", errors, `${pathLabel}.contenderBenchmarkTargetId`);
+        if (baselineId !== undefined && !targetIds.has(baselineId)) {
+            errors.push(`${pathLabel}.baselineBenchmarkTargetId must reference targetSummaries`);
+        }
+        if (contenderId !== undefined && !targetIds.has(contenderId)) {
+            errors.push(`${pathLabel}.contenderBenchmarkTargetId must reference targetSummaries`);
+        }
+    }
+    validateV2FrontierReference(frontier, targetIds, errors, "outcomeFrontier");
+    const readiness = requireRecordField(input, "readiness", errors);
+    validateComparisonReadinessV2(readiness, input, errors);
+    const evidence = requireRecordField(input, "evidence", errors);
+    if (evidence !== undefined) {
+        validateClaimEvidence(evidence, errors);
+    }
+    return {
+        version: "ruhroh_benchmark_claim_validation_v2",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export function validateRuhrohBenchmarkSummaryV2(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_benchmark_summary_validation_v2", errors: ["summary must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_benchmark_summary_v2") {
+        errors.push("version must be ruhroh_benchmark_summary_v2");
+    }
+    if (input.claimVersion !== "ruhroh_benchmark_claim_v2") {
+        errors.push("claimVersion must be ruhroh_benchmark_claim_v2");
+    }
+    if (input.$schema !== undefined && input.$schema !== BENCHMARK_SUMMARY_V2_SCHEMA_URL) {
+        warnings.push("summary $schema does not match Ruhroh benchmark summary v2 schema URL");
+    }
+    validateV2ClaimMetadata(input, errors);
+    const summary = requireRecordField(input, "summary", errors);
+    if (summary !== undefined) {
+        for (const field of ["scenarioCount", "targetCount", "totalRuns", "totalAcceptedOutcomes", "reviewRequired", "reviewRecommended", "pairwiseComparisonCount"]) {
+            validateNonNegativeNumber(summary, field, errors, `summary.${field}`);
+        }
+        validateRateNumber(summary, "runWeightedPassRate", errors, "summary.runWeightedPassRate");
+    }
+    const targetRows = requireRecordArrayField(input, "targetRows", errors);
+    const targetIds = new Set();
+    for (const [index, targetRow] of targetRows.entries()) {
+        const pathLabel = `targetRows[${index}]`;
+        const targetId = requireNonEmptyString(targetRow, "benchmarkTargetId", errors, `${pathLabel}.benchmarkTargetId`);
+        if (targetId !== undefined && targetIds.has(targetId)) {
+            errors.push(`targetRows contains duplicate benchmarkTargetId: ${targetId}`);
+        }
+        if (targetId !== undefined) {
+            targetIds.add(targetId);
+        }
+        validateV2TargetSummary(targetRow, errors, pathLabel);
+    }
+    const scenarioRows = requireRecordArrayField(input, "scenarioRows", errors);
+    for (const [index, scenarioRow] of scenarioRows.entries()) {
+        validateV2ScenarioResult(scenarioRow, targetIds, errors, `scenarioRows[${index}]`);
+    }
+    validateV2ClaimTotals(summary, targetRows, scenarioRows, errors);
+    validateV2FrontierReference(requireRecordField(input, "outcomeFrontier", errors), targetIds, errors, "outcomeFrontier");
+    validateComparisonReadinessV2(requireRecordField(input, "readiness", errors), input, errors);
+    const evidence = requireRecordField(input, "evidence", errors);
+    if (evidence !== undefined) {
+        validateClaimEvidence(evidence, errors);
+    }
+    return {
+        version: "ruhroh_benchmark_summary_validation_v2",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export function validateRuhrohCompareV2(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_compare_validation_v2", errors: ["compare output must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_compare_v2") {
+        errors.push("version must be ruhroh_compare_v2");
+    }
+    if (input.$schema !== undefined && input.$schema !== COMPARE_V2_SCHEMA_URL) {
+        warnings.push("compare $schema does not match Ruhroh compare v2 schema URL");
+    }
+    requireNonEmptyString(input, "createdAt", errors);
+    const groups = requireRecordArrayField(input, "groups", errors);
+    const claimReadiness = requireRecordField(input, "claimReadiness", errors);
+    validateCompareClaimReadiness(claimReadiness, errors);
+    const claimValidation = validateRuhrohBenchmarkClaimV2(input.benchmarkClaim);
+    errors.push(...claimValidation.errors.map((error) => `benchmarkClaim: ${error}`));
+    warnings.push(...claimValidation.warnings.map((warning) => `benchmarkClaim: ${warning}`));
+    const summaryValidation = validateRuhrohBenchmarkSummaryV2(input.benchmarkSummary);
+    errors.push(...summaryValidation.errors.map((error) => `benchmarkSummary: ${error}`));
+    warnings.push(...summaryValidation.warnings.map((warning) => `benchmarkSummary: ${warning}`));
+    if (isRecord(input.benchmarkClaim) && isRecord(input.benchmarkSummary)) {
+        for (const [summaryField, claimField] of [
+            ["summary", "summary"],
+            ["readiness", "readiness"],
+            ["evidence", "evidence"],
+            ["outcomeFrontier", "outcomeFrontier"],
+            ["scenarioRows", "scenarioResults"],
+            ["targetRows", "targetSummaries"],
+        ]) {
+            if (stableJsonValue(input.benchmarkSummary[summaryField]) !== stableJsonValue(input.benchmarkClaim[claimField])) {
+                errors.push(`benchmarkSummary.${summaryField} must match benchmarkClaim.${claimField}`);
+            }
+        }
+    }
+    if (isRecord(input.benchmarkClaim) && stableJsonValue(input.pairwiseComparisons) !== stableJsonValue(input.benchmarkClaim.pairwiseComparisons)) {
+        errors.push("pairwiseComparisons must match benchmarkClaim.pairwiseComparisons");
+    }
+    if (isRecord(input.benchmarkClaim) && input.createdAt !== input.benchmarkClaim.createdAt) {
+        errors.push("createdAt must match benchmarkClaim.createdAt");
+    }
+    if (isRecord(input.benchmarkClaim) && stableJsonValue(input.outcomeFrontier) !== stableJsonValue(input.benchmarkClaim.outcomeFrontier)) {
+        errors.push("outcomeFrontier must match benchmarkClaim.outcomeFrontier");
+    }
+    const benchmarkClaim = isRecord(input.benchmarkClaim) ? input.benchmarkClaim : undefined;
+    validateCompareGroups(groups, benchmarkClaim, errors);
+    const benchmarkClaimReadiness = benchmarkClaim !== undefined && isRecord(benchmarkClaim.readiness)
+        ? benchmarkClaim.readiness
+        : undefined;
+    if (claimReadiness !== undefined && benchmarkClaimReadiness !== undefined && isRecord(benchmarkClaimReadiness.publication)) {
+        const publication = benchmarkClaimReadiness.publication;
+        if (publication.scope !== claimReadiness.scope) {
+            errors.push("benchmarkClaim.readiness.publication.scope must match claimReadiness.scope");
+        }
+        if (claimReadiness.publishable === false && publication.publishable !== false) {
+            errors.push("benchmarkClaim.readiness.publication cannot be publishable when claimReadiness is not publishable");
+        }
+        for (const field of ["blockers", "advisories"]) {
+            const original = Array.isArray(claimReadiness[field]) ? claimReadiness[field] : [];
+            const finalValues = new Set(Array.isArray(publication[field]) ? publication[field] : []);
+            for (const value of original) {
+                if (typeof value === "string" && !finalValues.has(value)) {
+                    errors.push(`benchmarkClaim.readiness.publication.${field} must retain claimReadiness.${field}`);
+                }
+            }
+        }
+    }
+    return {
+        version: "ruhroh_compare_validation_v2",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+function validateCompareClaimReadiness(readiness, errors) {
+    if (readiness === undefined) {
+        return;
+    }
+    if (readiness.scope !== "suite" && readiness.scope !== "ad_hoc_compare") {
+        errors.push("claimReadiness.scope must be suite or ad_hoc_compare");
+    }
+    if (typeof readiness.publishable !== "boolean") {
+        errors.push("claimReadiness.publishable must be boolean");
+    }
+    const blockers = requireStringArrayField(readiness, "blockers", errors, "claimReadiness.blockers");
+    requireStringArrayField(readiness, "advisories", errors, "claimReadiness.advisories");
+    if (readiness.publishable === true && blockers.length > 0) {
+        errors.push("claimReadiness.publishable cannot be true with blockers");
+    }
+}
+function validateCompareGroups(groups, claim, errors) {
+    const scenarioResults = claim === undefined || !Array.isArray(claim.scenarioResults)
+        ? []
+        : claim.scenarioResults.filter((value) => isRecord(value));
+    const seen = new Set();
+    for (const [index, group] of groups.entries()) {
+        const pathLabel = `groups[${index}]`;
+        const scenarioId = requireNonEmptyString(group, "scenarioId", errors, `${pathLabel}.scenarioId`);
+        const adapter = requireNonEmptyString(group, "adapter", errors, `${pathLabel}.adapter`);
+        const targetId = group.benchmarkTargetId === undefined
+            ? undefined
+            : requireNonEmptyString(group, "benchmarkTargetId", errors, `${pathLabel}.benchmarkTargetId`);
+        if (targetId !== undefined && adapter !== targetId) {
+            errors.push(`${pathLabel}.adapter must equal benchmarkTargetId when target identity is declared`);
+        }
+        const executionAdapterIds = requireStringArrayField(group, "executionAdapterIds", errors, `${pathLabel}.executionAdapterIds`);
+        if (executionAdapterIds.length === 0) {
+            errors.push(`${pathLabel}.executionAdapterIds must include at least one execution adapter`);
+        }
+        for (const field of ["runs", "passes"]) {
+            validateNonNegativeNumber(group, field, errors, `${pathLabel}.${field}`);
+        }
+        if (typeof group.runs === "number" && typeof group.passes === "number" && group.passes > group.runs) {
+            errors.push(`${pathLabel}.passes must be <= runs`);
+        }
+        validateRateNumber(group, "passRate", errors, `${pathLabel}.passRate`);
+        if (typeof group.runs === "number" && group.runs > 0 && typeof group.passes === "number" && typeof group.passRate === "number"
+            && Math.abs(group.passRate - group.passes / group.runs) > 0.000001) {
+            errors.push(`${pathLabel}.passRate must equal passes / runs`);
+        }
+        validateAggregateUsage(requireRecordField(group, "usage", errors, `${pathLabel}.usage`), errors, `${pathLabel}.usage`);
+        const effectiveTargetId = targetId ?? (adapter === undefined ? undefined : `legacy_execution_adapter:${adapter}`);
+        if (scenarioId === undefined || effectiveTargetId === undefined) {
+            continue;
+        }
+        const key = `${scenarioId}\u0000${effectiveTargetId}`;
+        if (seen.has(key)) {
+            errors.push(`${pathLabel} duplicates scenario/benchmark target group`);
+        }
+        seen.add(key);
+        const row = scenarioResults.find((candidate) => candidate.scenarioId === scenarioId && candidate.benchmarkTargetId === effectiveTargetId);
+        if (row === undefined) {
+            errors.push(`${pathLabel} must have a matching benchmarkClaim.scenarioResults row`);
+            continue;
+        }
+        for (const [groupField, rowField] of [["runs", "runs"], ["passes", "acceptedOutcomes"], ["passRate", "passRate"], ["usage", "usage"]]) {
+            if (stableJsonValue(group[groupField]) !== stableJsonValue(row[rowField])) {
+                errors.push(`${pathLabel}.${groupField} must match benchmarkClaim.scenarioResults.${rowField}`);
+            }
+        }
+        if (stableJsonValue([...executionAdapterIds].sort()) !== stableJsonValue(Array.isArray(row.executionAdapterIds) ? [...row.executionAdapterIds].sort() : row.executionAdapterIds)) {
+            errors.push(`${pathLabel}.executionAdapterIds must match benchmarkClaim.scenarioResults.executionAdapterIds`);
+        }
+    }
+    if (scenarioResults.length !== groups.length) {
+        errors.push("groups must correspond one-to-one with benchmarkClaim.scenarioResults");
+    }
+}
+function validateV2ClaimMetadata(input, errors) {
+    requireNonEmptyString(input, "createdAt", errors);
+    const tool = requireRecordField(input, "tool", errors);
+    if (tool !== undefined) {
+        requireNonEmptyString(tool, "name", errors, "tool.name");
+    }
+    if (input.scope !== "suite" && input.scope !== "ad_hoc_compare") {
+        errors.push("scope must be suite or ad_hoc_compare");
+    }
+    if (typeof input.publishable !== "boolean") {
+        errors.push("publishable must be boolean");
+    }
+    const suite = optionalRecordField(input, "suite", errors);
+    if (input.scope === "suite" && suite === undefined) {
+        errors.push("suite output must include suite metadata");
+    }
+    if (suite !== undefined) {
+        validateClaimSuiteSummary(suite, errors);
+    }
+}
+function validateV2ScenarioResult(result, targetIds, errors, pathLabel) {
+    requireNonEmptyString(result, "scenarioId", errors, `${pathLabel}.scenarioId`);
+    const targetId = requireNonEmptyString(result, "benchmarkTargetId", errors, `${pathLabel}.benchmarkTargetId`);
+    if (targetId !== undefined && !targetIds.has(targetId)) {
+        errors.push(`${pathLabel}.benchmarkTargetId must reference a target row`);
+    }
+    validateV2IdentityStatus(result, targetId, errors, pathLabel);
+    const executionAdapterIds = requireStringArrayField(result, "executionAdapterIds", errors, `${pathLabel}.executionAdapterIds`);
+    if (executionAdapterIds.length === 0) {
+        errors.push(`${pathLabel}.executionAdapterIds must include at least one execution adapter`);
+    }
+    for (const field of ["runs", "acceptedOutcomes", "reviewRequired"]) {
+        validateNonNegativeNumber(result, field, errors, `${pathLabel}.${field}`);
+    }
+    if (typeof result.runs === "number" && typeof result.acceptedOutcomes === "number" && result.acceptedOutcomes > result.runs) {
+        errors.push(`${pathLabel}.acceptedOutcomes must be <= runs`);
+    }
+    validateRateNumber(result, "passRate", errors, `${pathLabel}.passRate`);
+    if (typeof result.runs === "number" && result.runs > 0 && typeof result.acceptedOutcomes === "number" && typeof result.passRate === "number") {
+        if (Math.abs(result.passRate - result.acceptedOutcomes / result.runs) > 0.000001) {
+            errors.push(`${pathLabel}.passRate must equal acceptedOutcomes / runs`);
+        }
+    }
+    const usage = requireRecordField(result, "usage", errors, `${pathLabel}.usage`);
+    validateAggregateUsage(usage, errors, `${pathLabel}.usage`);
+    validateAcceptedUnitEconomics(usage, result.acceptedOutcomes, errors, `${pathLabel}.usage`);
+    validateQualityFloorStatus(result.qualityFloorStatus, errors, `${pathLabel}.qualityFloorStatus`);
+}
+function validateV2TargetSummary(target, errors, pathLabel) {
+    validateV2IdentityStatus(target, typeof target.benchmarkTargetId === "string" ? target.benchmarkTargetId : undefined, errors, pathLabel);
+    const executionAdapterIds = requireStringArrayField(target, "executionAdapterIds", errors, `${pathLabel}.executionAdapterIds`);
+    if (executionAdapterIds.length === 0) {
+        errors.push(`${pathLabel}.executionAdapterIds must include at least one execution adapter`);
+    }
+    for (const field of ["scenarioCount", "runs", "acceptedOutcomes"]) {
+        validateNonNegativeNumber(target, field, errors, `${pathLabel}.${field}`);
+    }
+    if (typeof target.runs === "number" && typeof target.acceptedOutcomes === "number" && target.acceptedOutcomes > target.runs) {
+        errors.push(`${pathLabel}.acceptedOutcomes must be <= runs`);
+    }
+    validateRateNumber(target, "runWeightedPassRate", errors, `${pathLabel}.runWeightedPassRate`);
+    validateRateNumber(target, "meanScenarioPassRate", errors, `${pathLabel}.meanScenarioPassRate`);
+    validateConfidenceInterval(optionalRecordField(target, "runWeightedPassRateCi95", errors, `${pathLabel}.runWeightedPassRateCi95`), errors, `${pathLabel}.runWeightedPassRateCi95`);
+    if (typeof target.runs === "number" && target.runs > 0 && typeof target.acceptedOutcomes === "number" && typeof target.runWeightedPassRate === "number") {
+        if (Math.abs(target.runWeightedPassRate - target.acceptedOutcomes / target.runs) > 0.000001) {
+            errors.push(`${pathLabel}.runWeightedPassRate must equal acceptedOutcomes / runs`);
+        }
+    }
+    const usage = requireRecordField(target, "usage", errors, `${pathLabel}.usage`);
+    validateAggregateUsage(usage, errors, `${pathLabel}.usage`);
+    validateAcceptedUnitEconomics(usage, target.acceptedOutcomes, errors, `${pathLabel}.usage`);
+    validateQualityFloorStatus(target.qualityFloorStatus, errors, `${pathLabel}.qualityFloorStatus`);
+    requireRecordArrayField(target, "objectives", errors, `${pathLabel}.objectives`);
+    requireStringArrayField(target, "warnings", errors, `${pathLabel}.warnings`);
+}
+function validateV2IdentityStatus(record, benchmarkTargetId, errors, pathLabel) {
+    if (record.identityStatus !== "declared" && record.identityStatus !== "legacy_execution_adapter_fallback") {
+        errors.push(`${pathLabel}.identityStatus must be declared or legacy_execution_adapter_fallback`);
+        return;
+    }
+    if (record.identityStatus === "legacy_execution_adapter_fallback" && !benchmarkTargetId?.startsWith("legacy_execution_adapter:")) {
+        errors.push(`${pathLabel}.legacy_execution_adapter_fallback requires a legacy_execution_adapter: target id`);
+    }
+    if (record.identityStatus === "declared" && benchmarkTargetId?.startsWith("legacy_execution_adapter:")) {
+        errors.push(`${pathLabel}.declared identity cannot use a legacy_execution_adapter: target id`);
+    }
+}
+function validateV2ClaimTotals(summary, targetRows, scenarioRows, errors) {
+    if (summary === undefined) {
+        return;
+    }
+    assertNumericSummaryTotal(summary, "targetCount", targetRows.length, errors);
+    assertNumericSummaryTotal(summary, "scenarioCount", new Set(scenarioRows.flatMap((row) => typeof row.scenarioId === "string" ? [row.scenarioId] : [])).size, errors);
+    const totalRuns = sumNumericField(scenarioRows, "runs");
+    const totalAcceptedOutcomes = sumNumericField(scenarioRows, "acceptedOutcomes");
+    assertNumericSummaryTotal(summary, "totalRuns", totalRuns, errors);
+    assertNumericSummaryTotal(summary, "totalAcceptedOutcomes", totalAcceptedOutcomes, errors);
+    if (typeof summary.runWeightedPassRate === "number" && totalRuns > 0 && Math.abs(summary.runWeightedPassRate - totalAcceptedOutcomes / totalRuns) > 0.000001) {
+        errors.push("summary.runWeightedPassRate must equal totalAcceptedOutcomes / totalRuns");
+    }
+    for (const targetRow of targetRows) {
+        if (typeof targetRow.benchmarkTargetId !== "string") {
+            continue;
+        }
+        const targetScenarioRows = scenarioRows.filter((row) => row.benchmarkTargetId === targetRow.benchmarkTargetId);
+        const targetRuns = sumNumericField(targetScenarioRows, "runs");
+        const targetAcceptedOutcomes = sumNumericField(targetScenarioRows, "acceptedOutcomes");
+        if (targetRow.runs !== targetRuns) {
+            errors.push(`target ${targetRow.benchmarkTargetId} runs must match scenario rows (${targetRuns})`);
+        }
+        if (targetRow.acceptedOutcomes !== targetAcceptedOutcomes) {
+            errors.push(`target ${targetRow.benchmarkTargetId} acceptedOutcomes must match scenario rows (${targetAcceptedOutcomes})`);
+        }
+        if (targetRow.scenarioCount !== undefined && targetRow.scenarioCount !== targetScenarioRows.length) {
+            errors.push(`target ${targetRow.benchmarkTargetId} scenarioCount must match scenario rows (${targetScenarioRows.length})`);
+        }
+    }
+}
+function validateV2FrontierReference(frontier, targetIds, errors, pathLabel) {
+    if (frontier === undefined) {
+        return;
+    }
+    const frontierValidation = validateRuhrohOutcomeFrontier(frontier);
+    errors.push(...frontierValidation.errors.map((error) => `${pathLabel}: ${error}`));
+    if (frontier.version !== "ruhroh_outcome_frontier_v1") {
+        errors.push(`${pathLabel}.version must be ruhroh_outcome_frontier_v1`);
+    }
+    const targets = requireRecordArrayField(frontier, "targets", errors, `${pathLabel}.targets`);
+    const frontierTargetIds = new Set();
+    for (const [index, target] of targets.entries()) {
+        const targetId = requireNonEmptyString(target, "benchmarkTargetId", errors, `${pathLabel}.targets[${index}].benchmarkTargetId`);
+        if (targetId !== undefined && !targetIds.has(targetId)) {
+            errors.push(`${pathLabel}.targets[${index}].benchmarkTargetId must reference target summaries`);
+        }
+        if (targetId !== undefined) {
+            frontierTargetIds.add(targetId);
+        }
+    }
+    const requiresExactTargetSet = targets.length > 0 || frontier.status === "available" || isRecord(frontier.methodology);
+    if (requiresExactTargetSet && stableJsonValue([...frontierTargetIds].sort()) !== stableJsonValue([...targetIds].sort())) {
+        errors.push(`${pathLabel}.targets must exactly match target summaries`);
+    }
+    for (const field of ["paretoFrontierTargetIds", "robustFrontierTargetIds"]) {
+        for (const targetId of requireStringArrayField(frontier, field, errors, `${pathLabel}.${field}`)) {
+            if (!targetIds.has(targetId)) {
+                errors.push(`${pathLabel}.${field} contains unknown target: ${targetId}`);
+            }
+        }
+    }
+}
+function validateComparisonReadinessV2(readiness, output, errors) {
+    if (readiness === undefined) {
+        return;
+    }
+    const publication = requireRecordField(readiness, "publication", errors, "readiness.publication");
+    if (publication !== undefined) {
+        if (publication.scope !== output.scope) {
+            errors.push("readiness.publication.scope must match scope");
+        }
+        if (publication.publishable !== output.publishable) {
+            errors.push("readiness.publication.publishable must match publishable");
+        }
+        requireStringArrayField(publication, "blockers", errors, "readiness.publication.blockers");
+        requireStringArrayField(publication, "advisories", errors, "readiness.publication.advisories");
+    }
+    for (const sectionName of ["outcomeComparison", "pairwiseSuperiority", "efficiencyFrontier"]) {
+        const section = requireRecordField(readiness, sectionName, errors, `readiness.${sectionName}`);
+        if (section !== undefined) {
+            if (typeof section.ready !== "boolean") {
+                errors.push(`readiness.${sectionName}.ready must be boolean`);
+            }
+            const blockers = requireStringArrayField(section, "blockers", errors, `readiness.${sectionName}.blockers`);
+            requireStringArrayField(section, "advisories", errors, `readiness.${sectionName}.advisories`);
+            if (section.ready === true && blockers.length > 0) {
+                errors.push(`readiness.${sectionName}.ready cannot be true with blockers`);
+            }
+        }
+    }
+}
+function validateQualityFloorStatus(value, errors, pathLabel) {
+    if (value !== "passed" && value !== "failed" && value !== "indeterminate") {
+        errors.push(`${pathLabel} must be passed, failed, or indeterminate`);
+    }
+}
+function validateAcceptedUnitEconomics(usage, acceptedOutcomes, errors, pathLabel) {
+    if (usage === undefined || typeof acceptedOutcomes !== "number" || !Number.isFinite(acceptedOutcomes)) {
+        return;
+    }
+    if (acceptedOutcomes === 0 && (usage.costPerAcceptedOutcome !== undefined || usage.tokensPerAcceptedOutcome !== undefined)) {
+        errors.push(`${pathLabel} accepted-outcome ratios must be omitted when acceptedOutcomes is zero`);
+    }
+    if (acceptedOutcomes > 0 && typeof usage.totalCostUsd === "number" && typeof usage.costPerAcceptedOutcome === "number") {
+        if (Math.abs(usage.costPerAcceptedOutcome - usage.totalCostUsd / acceptedOutcomes) > 0.000001) {
+            errors.push(`${pathLabel}.costPerAcceptedOutcome must equal totalCostUsd / acceptedOutcomes`);
+        }
+    }
+    if (acceptedOutcomes > 0 && typeof usage.totalTokens === "number" && typeof usage.tokensPerAcceptedOutcome === "number") {
+        if (Math.abs(usage.tokensPerAcceptedOutcome - usage.totalTokens / acceptedOutcomes) > 0.000001) {
+            errors.push(`${pathLabel}.tokensPerAcceptedOutcome must equal totalTokens / acceptedOutcomes`);
+        }
+    }
 }
 function benchmarkClaimSuiteCoverage(suiteAdapterSummaries) {
     const expectedScenarios = Math.max(0, ...suiteAdapterSummaries.map((summary) => summary.expectedScenarios));
@@ -1040,6 +1797,9 @@ function validateOptionalCohort(record, errors, pathLabel) {
         requireStringArrayField(cohort, field, errors, `${pathLabel}.${field}`);
     }
     validateOptionalStringArrayField(cohort, "benchmarkStreams", errors, `${pathLabel}.benchmarkStreams`);
+    validateOptionalStringArrayField(cohort, "executionAdapterIds", errors, `${pathLabel}.executionAdapterIds`);
+    validateOptionalStringArrayField(cohort, "effectiveBudgetHashes", errors, `${pathLabel}.effectiveBudgetHashes`);
+    validateOptionalStringArrayField(cohort, "effectiveCapabilitiesHashes", errors, `${pathLabel}.effectiveCapabilitiesHashes`);
     requireStringArrayField(cohort, "benchmarkTargets", errors, `${pathLabel}.benchmarkTargets`);
 }
 function validateAggregateUsage(usage, errors, pathLabel) {
@@ -1049,14 +1809,55 @@ function validateAggregateUsage(usage, errors, pathLabel) {
     for (const field of ["runsWithUsage", "runsWithCost", "runsWithTokens"]) {
         validateNonNegativeNumber(usage, field, errors, `${pathLabel}.${field}`);
     }
-    for (const field of ["totalCostUsd", "meanCostUsd", "costPerPass", "totalTokens", "meanTotalTokens", "tokensPerPass"]) {
+    for (const field of ["totalCostUsd", "meanCostUsd", "costPerPass", "costPerAcceptedOutcome", "totalTokens", "meanTotalTokens", "tokensPerPass", "tokensPerAcceptedOutcome"]) {
         validateOptionalNonNegativeNumber(usage, field, errors, `${pathLabel}.${field}`);
+    }
+    const coverage = optionalRecordField(usage, "coverage", errors, `${pathLabel}.coverage`);
+    if (coverage !== undefined) {
+        validateMetricCoverage(optionalRecordField(coverage, "cost", errors, `${pathLabel}.coverage.cost`), errors, `${pathLabel}.coverage.cost`);
+        validateMetricCoverage(optionalRecordField(coverage, "totalTokens", errors, `${pathLabel}.coverage.totalTokens`), errors, `${pathLabel}.coverage.totalTokens`);
     }
     if (typeof usage.runsWithCost === "number" && typeof usage.runsWithUsage === "number" && usage.runsWithCost > usage.runsWithUsage) {
         errors.push(`${pathLabel}.runsWithCost must be <= ${pathLabel}.runsWithUsage`);
     }
     if (typeof usage.runsWithTokens === "number" && typeof usage.runsWithUsage === "number" && usage.runsWithTokens > usage.runsWithUsage) {
         errors.push(`${pathLabel}.runsWithTokens must be <= ${pathLabel}.runsWithUsage`);
+    }
+    if (coverage !== undefined) {
+        const cost = isRecord(coverage.cost) ? coverage.cost : undefined;
+        const tokens = isRecord(coverage.totalTokens) ? coverage.totalTokens : undefined;
+        if (cost?.status !== "complete" && (usage.costPerPass !== undefined || usage.costPerAcceptedOutcome !== undefined)) {
+            errors.push(`${pathLabel} cost ratios require complete cost coverage`);
+        }
+        if (tokens?.status !== "complete" && (usage.tokensPerPass !== undefined || usage.tokensPerAcceptedOutcome !== undefined)) {
+            errors.push(`${pathLabel} token ratios require complete totalTokens coverage`);
+        }
+    }
+}
+function validateMetricCoverage(coverage, errors, pathLabel) {
+    if (coverage === undefined) {
+        return;
+    }
+    if (coverage.status !== "complete" && coverage.status !== "partial" && coverage.status !== "unknown" && coverage.status !== "unavailable") {
+        errors.push(`${pathLabel}.status must be complete, partial, unknown, or unavailable`);
+    }
+    for (const field of ["observedRuns", "completeRuns", "totalRuns"]) {
+        validateNonNegativeNumber(coverage, field, errors, `${pathLabel}.${field}`);
+    }
+    if (typeof coverage.observedRuns === "number" && typeof coverage.totalRuns === "number" && coverage.observedRuns > coverage.totalRuns) {
+        errors.push(`${pathLabel}.observedRuns must be <= totalRuns`);
+    }
+    if (typeof coverage.completeRuns === "number" && typeof coverage.observedRuns === "number" && coverage.completeRuns > coverage.observedRuns) {
+        errors.push(`${pathLabel}.completeRuns must be <= observedRuns`);
+    }
+    if (coverage.status === "complete" && coverage.completeRuns !== coverage.totalRuns) {
+        errors.push(`${pathLabel}.status complete requires completeRuns to equal totalRuns`);
+    }
+    if (coverage.status === "unknown" && coverage.completeRuns !== 0) {
+        errors.push(`${pathLabel}.status unknown requires completeRuns to equal 0`);
+    }
+    if (coverage.status === "unavailable" && coverage.completeRuns !== 0) {
+        errors.push(`${pathLabel}.status unavailable requires completeRuns to equal 0`);
     }
 }
 function validateClaimSource(source, errors) {
@@ -1335,12 +2136,18 @@ function copyAggregateUsage(usage) {
         runsWithUsage: usage.runsWithUsage,
         runsWithCost: usage.runsWithCost,
         runsWithTokens: usage.runsWithTokens,
+        coverage: {
+            cost: { ...usage.coverage.cost },
+            totalTokens: { ...usage.coverage.totalTokens },
+        },
         ...(usage.totalCostUsd === undefined ? {} : { totalCostUsd: usage.totalCostUsd }),
         ...(usage.meanCostUsd === undefined ? {} : { meanCostUsd: usage.meanCostUsd }),
         ...(usage.costPerPass === undefined ? {} : { costPerPass: usage.costPerPass }),
+        ...(usage.costPerAcceptedOutcome === undefined ? {} : { costPerAcceptedOutcome: usage.costPerAcceptedOutcome }),
         ...(usage.totalTokens === undefined ? {} : { totalTokens: usage.totalTokens }),
         ...(usage.meanTotalTokens === undefined ? {} : { meanTotalTokens: usage.meanTotalTokens }),
         ...(usage.tokensPerPass === undefined ? {} : { tokensPerPass: usage.tokensPerPass }),
+        ...(usage.tokensPerAcceptedOutcome === undefined ? {} : { tokensPerAcceptedOutcome: usage.tokensPerAcceptedOutcome }),
     };
 }
 function copyAggregateCohort(cohort) {
@@ -1349,6 +2156,7 @@ function copyAggregateCohort(cohort) {
         sampleSeeds: [...cohort.sampleSeeds],
         scenarioVersions: [...cohort.scenarioVersions],
         adapterVersions: [...cohort.adapterVersions],
+        executionAdapterIds: [...cohort.executionAdapterIds],
         benchmarkStreams: [...cohort.benchmarkStreams],
         benchmarkTargets: [...cohort.benchmarkTargets],
         harnesses: [...cohort.harnesses],
@@ -1361,28 +2169,43 @@ function copyAggregateCohort(cohort) {
         evaluatorInputSignatures: [...cohort.evaluatorInputSignatures],
         judgeIdentities: [...cohort.judgeIdentities],
         environmentFingerprints: [...cohort.environmentFingerprints],
+        effectiveBudgetHashes: [...cohort.effectiveBudgetHashes],
+        effectiveCapabilitiesHashes: [...cohort.effectiveCapabilitiesHashes],
         comparabilityWarnings: [...cohort.comparabilityWarnings],
     };
 }
 function aggregateGroupUsage(groups, passes) {
+    const totalRuns = groups.reduce((total, group) => total + group.runs, 0);
     const runsWithUsage = groups.reduce((total, group) => total + group.usage.runsWithUsage, 0);
     const runsWithCost = groups.reduce((total, group) => total + group.usage.runsWithCost, 0);
     const runsWithTokens = groups.reduce((total, group) => total + group.usage.runsWithTokens, 0);
+    const completeCostRuns = groups.reduce((total, group) => total + group.usage.coverage.cost.completeRuns, 0);
+    const completeTokenRuns = groups.reduce((total, group) => total + group.usage.coverage.totalTokens.completeRuns, 0);
     const totalCostUsd = sumOptional(groups.map((group) => group.usage.totalCostUsd));
     const totalTokens = sumOptional(groups.map((group) => group.usage.totalTokens));
+    const costCoverage = summarizeMetricCoverage(runsWithCost, completeCostRuns, totalRuns, groups.map((group) => group.usage.coverage.cost.status));
+    const tokenCoverage = summarizeMetricCoverage(runsWithTokens, completeTokenRuns, totalRuns, groups.map((group) => group.usage.coverage.totalTokens.status));
     return {
         runsWithUsage,
         runsWithCost,
         runsWithTokens,
+        coverage: {
+            cost: costCoverage,
+            totalTokens: tokenCoverage,
+        },
         ...(totalCostUsd === undefined ? {} : {
             totalCostUsd,
             meanCostUsd: runsWithCost === 0 ? 0 : totalCostUsd / runsWithCost,
-            ...(passes > 0 ? { costPerPass: totalCostUsd / passes } : {}),
+            ...(costCoverage.status === "complete" && passes > 0
+                ? { costPerPass: totalCostUsd / passes, costPerAcceptedOutcome: totalCostUsd / passes }
+                : {}),
         }),
         ...(totalTokens === undefined ? {} : {
             totalTokens,
             meanTotalTokens: runsWithTokens === 0 ? 0 : totalTokens / runsWithTokens,
-            ...(passes > 0 ? { tokensPerPass: totalTokens / passes } : {}),
+            ...(tokenCoverage.status === "complete" && passes > 0
+                ? { tokensPerPass: totalTokens / passes, tokensPerAcceptedOutcome: totalTokens / passes }
+                : {}),
         }),
     };
 }
@@ -1403,6 +2226,99 @@ export function readRunUsage(value) {
         }
     }
     return Object.keys(usage).length === 0 ? undefined : usage;
+}
+function readRunEconomicsEnvelope(run) {
+    const runRecord = run;
+    const candidates = [
+        run.runAgent.economics,
+        run.runManifest?.runAgent.economics,
+        run.runManifest?.economics,
+        runRecord.economics,
+    ];
+    return candidates.find((candidate) => isRecord(candidate) && candidate.version === "ruhroh_economics_envelope_v1");
+}
+function readRunUsageFromEconomicsEnvelope(envelope) {
+    if (envelope === undefined || !isRecord(envelope.totals)) {
+        return undefined;
+    }
+    const usageTotals = isRecord(envelope.totals.usage) ? envelope.totals.usage : undefined;
+    const totalTokens = readNonNegativeNumber(usageTotals?.totalTokens);
+    const inputTokens = readNonNegativeNumber(usageTotals?.inputTokens);
+    const outputTokens = readNonNegativeNumber(usageTotals?.outputTokens);
+    const costs = Array.isArray(envelope.totals.costs)
+        ? envelope.totals.costs.filter((cost) => isRecord(cost))
+        : [];
+    const costUsd = readClaimReadyCostUsd(envelope, costs);
+    const usage = {
+        ...(costUsd === undefined ? {} : { costUsd }),
+        ...(inputTokens === undefined ? {} : { inputTokens }),
+        ...(outputTokens === undefined ? {} : { outputTokens }),
+        ...(totalTokens === undefined ? {} : { totalTokens }),
+    };
+    return Object.keys(usage).length === 0 ? undefined : usage;
+}
+function readClaimReadyCostUsd(envelope, costs) {
+    if (envelope.legacy === true || costs.length === 0) {
+        return undefined;
+    }
+    const currencies = new Set(costs.map((cost) => cost.currency));
+    if (currencies.size !== 1 || !currencies.has("USD")) {
+        return undefined;
+    }
+    if (costs.some((cost) => cost.kind !== "billed" && cost.kind !== "metered")) {
+        return undefined;
+    }
+    const contributingObservations = Array.isArray(envelope.observations)
+        ? envelope.observations.filter((observation) => isRecord(observation)
+            && observation.accounting === "exclusive"
+            && isRecord(observation.cost))
+        : [];
+    if (contributingObservations.some((observation) => {
+        const cost = observation.cost;
+        const source = isRecord(observation.source) ? observation.source : undefined;
+        return (cost.kind !== "billed" && cost.kind !== "metered")
+            || source?.kind === "legacy"
+            || source?.quality === "estimated"
+            || source?.quality === "manual"
+            || source?.quality === "legacy";
+    })) {
+        return undefined;
+    }
+    const amounts = costs.map((cost) => readNonNegativeNumber(cost.amount));
+    return amounts.every((amount) => amount !== undefined)
+        ? amounts.reduce((total, amount) => total + amount, 0)
+        : undefined;
+}
+function readImplementationWallTimeMs(envelope) {
+    return isRecord(envelope?.runtime) ? readNonNegativeNumber(envelope.runtime.wallTimeMs) : undefined;
+}
+function mergeRunUsage(primary, fallback) {
+    if (primary === undefined && fallback === undefined) {
+        return undefined;
+    }
+    return {
+        ...fallback,
+        ...primary,
+    };
+}
+function readRunUsageCoverage(envelope, economicsUsage) {
+    const coverage = isRecord(envelope?.coverage) ? envelope.coverage : undefined;
+    return {
+        cost: readRunMetricCoverageStatus(coverage?.cost, economicsUsage?.costUsd !== undefined),
+        totalTokens: readRunMetricCoverageStatus(coverage?.totalTokens, economicsUsage?.totalTokens !== undefined),
+    };
+}
+function readRunMetricCoverageStatus(value, hasAuthoritativeValue) {
+    if (!isRecord(value)) {
+        return "unknown";
+    }
+    if (value.status === "complete") {
+        return hasAuthoritativeValue ? "complete" : "partial";
+    }
+    if (value.status === "partial" || value.status === "unavailable") {
+        return value.status;
+    }
+    return "unknown";
 }
 export function mapEvalResultToVerdict(evalResult) {
     if (evalResult.status === "passed") {
@@ -1641,6 +2557,7 @@ function reviewReasons(summary) {
         ...(summary.score === 0 ? [`non-passing run: ${summary.failureBucket}`] : []),
         ...summary.evalQualityWarnings,
         ...summary.artifactCompletenessWarnings,
+        ...summary.acceptedOutcomeInvariantWarnings,
         ...summary.unmetCriteria.map((criterion) => `unmet criterion: ${criterion}`),
     ];
     return [...new Set(reasons)];
@@ -1692,22 +2609,49 @@ function aggregateUsage(summaries, passes) {
     const tokens = usage
         .map((item) => item.totalTokens)
         .filter((value) => typeof value === "number");
+    const completeCostRuns = summaries.filter((summary) => summary.usage?.costUsd !== undefined && summary.usageCoverage.cost === "complete").length;
+    const completeTokenRuns = summaries.filter((summary) => summary.usage?.totalTokens !== undefined && summary.usageCoverage.totalTokens === "complete").length;
     const totalCostUsd = costs.length === 0 ? undefined : sum(costs);
     const totalTokens = tokens.length === 0 ? undefined : sum(tokens);
+    const costCoverage = summarizeMetricCoverage(costs.length, completeCostRuns, summaries.length, summaries.map((summary) => summary.usageCoverage.cost));
+    const tokenCoverage = summarizeMetricCoverage(tokens.length, completeTokenRuns, summaries.length, summaries.map((summary) => summary.usageCoverage.totalTokens));
     return {
         runsWithUsage: usage.length,
         runsWithCost: costs.length,
         runsWithTokens: tokens.length,
+        coverage: {
+            cost: costCoverage,
+            totalTokens: tokenCoverage,
+        },
         ...(totalCostUsd === undefined ? {} : {
             totalCostUsd,
             meanCostUsd: totalCostUsd / costs.length,
-            ...(passes > 0 ? { costPerPass: totalCostUsd / passes } : {}),
+            ...(costCoverage.status === "complete" && passes > 0
+                ? { costPerPass: totalCostUsd / passes, costPerAcceptedOutcome: totalCostUsd / passes }
+                : {}),
         }),
         ...(totalTokens === undefined ? {} : {
             totalTokens,
             meanTotalTokens: totalTokens / tokens.length,
-            ...(passes > 0 ? { tokensPerPass: totalTokens / passes } : {}),
+            ...(tokenCoverage.status === "complete" && passes > 0
+                ? { tokensPerPass: totalTokens / passes, tokensPerAcceptedOutcome: totalTokens / passes }
+                : {}),
         }),
+    };
+}
+function summarizeMetricCoverage(observedRuns, completeRuns, totalRuns, statuses) {
+    const status = completeRuns === totalRuns && totalRuns > 0
+        ? "complete"
+        : statuses.length > 0 && statuses.every((item) => item === "unavailable")
+            ? "unavailable"
+            : statuses.length > 0 && statuses.every((item) => item === "unknown")
+                ? "unknown"
+                : statuses.length === 0 ? "unknown" : "partial";
+    return {
+        status,
+        observedRuns,
+        completeRuns,
+        totalRuns,
     };
 }
 function aggregateCohort(summaries) {
@@ -1716,6 +2660,7 @@ function aggregateCohort(summaries) {
         sampleSeeds: uniqueSorted(summaries.map((summary) => summary.sample?.seed ?? "unknown")),
         scenarioVersions: uniqueSorted(summaries.map((summary) => summary.runManifest?.scenario.scenarioVersion ?? "unknown")),
         adapterVersions: uniqueSorted(summaries.map((summary) => summary.runManifest?.runAgent.adapterVersion ?? "unknown")),
+        executionAdapterIds: uniqueSorted(summaries.map((summary) => summary.executionAdapterId)),
         benchmarkStreams: uniqueSorted(summaries.map((summary) => formatBenchmarkTargetStream(summary.runManifest?.benchmarkTarget))),
         benchmarkTargets: uniqueSorted(summaries.map((summary) => formatBenchmarkTargetIdentity(summary.runManifest?.benchmarkTarget))),
         harnesses: uniqueSorted(summaries.map((summary) => formatHarnessIdentity(summary.runManifest?.benchmarkTarget))),
@@ -1728,6 +2673,8 @@ function aggregateCohort(summaries) {
         evaluatorInputSignatures: uniqueSorted(summaries.map((summary) => formatEvaluatorInputSignature(summary.runManifest?.evaluator?.inputSummary))),
         judgeIdentities: uniqueSorted(summaries.map((summary) => formatJudgeIdentity(summary.runManifest?.evaluator?.judge))),
         environmentFingerprints: uniqueSorted(summaries.map((summary) => formatEnvironmentFingerprint(summary.runManifest?.environment))),
+        effectiveBudgetHashes: uniqueSorted(summaries.map((summary) => formatEffectiveHash(summary.runManifest, "effectiveBudgetSha256"))),
+        effectiveCapabilitiesHashes: uniqueSorted(summaries.map((summary) => formatEffectiveHash(summary.runManifest, "effectiveCapabilitiesSha256"))),
         comparabilityWarnings: [],
     };
     cohort.comparabilityWarnings = comparabilityWarnings(cohort);
@@ -1751,6 +2698,8 @@ function comparabilityWarnings(cohort) {
         ["evaluatorInputSignatures", "mixed evaluator input setup in aggregate group", "missing evaluator input summary metadata in aggregate group"],
         ["judgeIdentities", "mixed eval judge identities in aggregate group", "missing eval judge metadata in aggregate group"],
         ["environmentFingerprints", "mixed environment fingerprints in aggregate group", "missing environment fingerprint metadata in aggregate group"],
+        ["effectiveBudgetHashes", "mixed effective budget hashes in aggregate group", "missing effective budget hash metadata in aggregate group"],
+        ["effectiveCapabilitiesHashes", "mixed effective capabilities hashes in aggregate group", "missing effective capabilities hash metadata in aggregate group"],
     ];
     return [
         ...targetChecks.flatMap(([key, mixedWarning, missingWarning]) => targetComparabilityWarnings(cohort[key], mixedWarning, missingWarning)),
@@ -1876,6 +2825,16 @@ function formatEnvironmentFingerprint(environment) {
     ].filter((value) => value !== undefined && value.trim().length > 0);
     return parts.length === 0 ? "unknown" : parts.join(" | ");
 }
+function formatEffectiveHash(manifest, field) {
+    if (manifest === undefined) {
+        return "unknown";
+    }
+    const direct = readStringField(manifest, field);
+    if (direct !== undefined) {
+        return direct;
+    }
+    return readStringField(manifest.runAgent, field) ?? "unknown";
+}
 function walkRunResultFiles(root) {
     const entries = readdirSync(root, { withFileTypes: true });
     const files = [];
@@ -1915,6 +2874,8 @@ function benchmarkClaimResultArtifact(artifact) {
         sha256: artifact.sha256,
         scenarioId: summary.scenarioId,
         adapter: summary.adapter,
+        ...(summary.benchmarkTargetId === undefined ? {} : { benchmarkTargetId: summary.benchmarkTargetId }),
+        executionAdapterId: summary.executionAdapterId,
         ...(summary.runId === undefined ? {} : { runId: summary.runId }),
         ...(summary.sample?.id === undefined ? {} : { sampleId: summary.sample.id }),
         ...(scenarioVersion === undefined ? {} : { scenarioVersion }),
@@ -1924,6 +2885,18 @@ function benchmarkClaimResultArtifact(artifact) {
 }
 function cloneJsonRecord(record) {
     return JSON.parse(JSON.stringify(record));
+}
+function cloneJsonValue(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+function stableJsonValue(value) {
+    if (Array.isArray(value)) {
+        return `[${value.map(stableJsonValue).join(",")}]`;
+    }
+    if (isRecord(value)) {
+        return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJsonValue(value[key])}`).join(",")}}`;
+    }
+    return JSON.stringify(value);
 }
 function isRuhrohLoopResult(value) {
     return isRecord(value)

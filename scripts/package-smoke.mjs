@@ -41,7 +41,7 @@ try {
     "-e",
     [
       "import('@kestrel-agents/ruhroh').then((m) => {",
-      "if (typeof m.discoverRuhrohSuites !== 'function' || typeof m.validateRuhrohBenchmarkSummary !== 'function' || typeof m.buildRuhrohPublishCheckReport !== 'function' || typeof m.validateRuhrohPublishBundle !== 'function' || typeof m.verifyRuhrohBenchmarkClaimSources !== 'function') process.exit(1);",
+      "if (typeof m.discoverRuhrohSuites !== 'function' || typeof m.validateRuhrohBenchmarkSummary !== 'function' || typeof m.buildRuhrohPublishCheckV2 !== 'function' || typeof m.validateRuhrohPublishBundle !== 'function' || typeof m.verifyRuhrohBenchmarkClaimSources !== 'function' || typeof m.buildRuhrohOutcomeFrontier !== 'function' || typeof m.runRuhrohEconomicsCommand !== 'function' || typeof m.analyzeRuhrohScaleExperiment !== 'function' || typeof m.buildRuhrohFindings !== 'function' || typeof m.compareRuhrohProviderBaseline !== 'function' || typeof m.buildRuhrohDecisionPacket !== 'function' || typeof m.buildRuhrohCostReconciliation !== 'function') process.exit(1);",
       "const report = m.buildRuhrohPublishCheckReport({ source: { resultsPath: 'results' }, compare: { claimReadiness: { advisories: ['sample advisory'] }, benchmarkClaim: { scope: 'ad_hoc_compare', publishable: false, readiness: { publishable: false, blockers: ['no suite selected; use compare --suite for publishable benchmark claims'] }, evidence: {}, adapterSummaries: [], scenarioResults: [], pairwiseComparisons: [] } } });",
       "if (report.version !== 'ruhroh_publish_check_v1' || report.remediation[0]?.code !== 'suite_required') process.exit(1);",
       "})",
@@ -53,6 +53,22 @@ try {
   ], { cwd: projectDir });
 
   const installedPackageRoot = path.join(projectDir, "node_modules", "@kestrel-agents", "ruhroh");
+  run(ruhrohBin, ["economics", "validate", path.join(installedPackageRoot, "examples", "economics", "workload-profile.json"), "--json"], {
+    cwd: projectDir,
+    expectStdout: '"contractVersion": "ruhroh_workload_profile_v1"',
+  });
+  run(process.execPath, [
+    "--input-type=module",
+    "-e",
+    [
+      "import { readFileSync } from 'node:fs';",
+      "import { createRequire } from 'node:module';",
+      "const require = createRequire(import.meta.url);",
+      `const pkg = JSON.parse(readFileSync(${JSON.stringify(path.join(installedPackageRoot, "package.json"))}, 'utf8'));`,
+      "for (const key of Object.keys(pkg.exports).filter((key) => key.startsWith('./schemas/'))) require.resolve('@kestrel-agents/ruhroh/' + key.slice(2));",
+      "for (const key of ['./artifacts','./billing','./decision','./drift','./economics','./economics-runtime','./economics-cli','./findings','./scale']) await import('@kestrel-agents/ruhroh/' + key.slice(2));",
+    ].join(" "),
+  ], { cwd: projectDir });
   for (const relativePath of [
     "docs/.vitepress",
     "docs/.vitepress/dist",
@@ -85,6 +101,7 @@ try {
     "docs/publish-claims.md",
     "docs/report-gallery.md",
     "docs/programmatic-api.md",
+    "docs/economics-evidence-stack.md",
     "docs/scenario-evolution.md",
     "docs/security.md",
     "examples/adapters/aider/run.sh",
@@ -97,8 +114,16 @@ try {
     "examples/ci/ruhroh-pack-registry.yml",
     "examples/ci/ruhroh-claim-publication.yml",
     "examples/ci/ruhroh-sharded-collection.yml",
+    "examples/economics/workload-profile.json",
+    "examples/economics/run-agent-result-v2.json",
     "schemas/benchmark-target-config-v1.schema.json",
     "schemas/claim-index-v1.schema.json",
+    "schemas/claim-index-v2.schema.json",
+    "schemas/compare-v2.schema.json",
+    "schemas/economics-envelope-v1.schema.json",
+    "schemas/economic-trace-span-v1.schema.json",
+    "schemas/decision-packet-v1.schema.json",
+    "schemas/cost-reconciliation-v1.schema.json",
     "schemas/eval-calibration-report-v1.schema.json",
     "schemas/publish-bundle-v1.schema.json",
     "schemas/publish-check-v1.schema.json",

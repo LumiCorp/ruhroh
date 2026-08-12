@@ -24,14 +24,16 @@ leaderboards, or long-lived publication archives.
 Ruhroh has three kinds of versioned contract:
 
 - scenario and suite authoring contracts, such as
-  `ruhroh_scenario_v2` and `ruhroh_suite_v1`;
+  `ruhroh_scenario_v2`, `ruhroh_suite_v1`, and economics-enabled
+  `ruhroh_suite_v2`;
 - run evidence contracts, such as `ruhroh_loop_result_v1`,
   `ruhroh_run_manifest_v1`, `ruhroh_eval_result_v1`,
   `ruhroh_run_plan_v1`, and `ruhroh_rerun_ledger_v1`;
 - publication and registry contracts, such as
-  `ruhroh_benchmark_claim_v1`, `ruhroh_benchmark_summary_v1`,
-  `ruhroh_publish_check_v1`, `ruhroh_publish_bundle_v1`, and
-  `ruhroh_claim_index_v1`.
+  `ruhroh_benchmark_claim_v2`, `ruhroh_benchmark_summary_v2`,
+  `ruhroh_publish_check_v2`, `ruhroh_publish_bundle_v2`, and
+  `ruhroh_claim_index_v2`. Their v1 predecessors remain readable as archived
+  evidence and are never upgraded into new economics claims.
 
 Scenario content versions and suite versions are benchmark-methodology
 versions. JSON `version` fields are data-contract versions. Keep those concerns

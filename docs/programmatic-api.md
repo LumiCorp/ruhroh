@@ -101,7 +101,7 @@ import { buildRuhrohRunResultsReport } from "@kestrel-agents/ruhroh";
 const report = buildRuhrohRunResultsReport({
   resultsPath: "results/ruhroh",
   aggregate: { minRuns: 5 },
-  tool: { name: "@kestrel-agents/ruhroh", version: "0.6.0-beta.0" },
+  tool: { name: "@kestrel-agents/ruhroh", version: "0.7.0-beta.0" },
 });
 
 for (const group of report.groups) {
@@ -138,13 +138,13 @@ const runs = loadRuhrohRunResults("results/ruhroh");
 
 ## Build A Publish Check Verdict
 
-Use `buildRuhrohPublishCheckReport()` when your integration already has compare
+Use `buildRuhrohPublishCheckV2()` when your integration already has compare v2
 output and needs the same versioned publication verdict and remediation codes
 that the CLI emits, without writing files or invoking a subprocess:
 
 ```ts
 import {
-  buildRuhrohPublishCheckReport,
+  buildRuhrohPublishCheckV2,
   verifyRuhrohBenchmarkClaimSources,
 } from "@kestrel-agents/ruhroh";
 
@@ -152,7 +152,7 @@ const sourceVerification = verifyRuhrohBenchmarkClaimSources(
   compare.benchmarkClaim,
   "benchmark-claim.json",
 );
-const publishCheck = buildRuhrohPublishCheckReport({
+const publishCheck = buildRuhrohPublishCheckV2({
   source: {
     resultsPath: "results/ruhroh",
     runPlanPath: ".generated/ruhroh/ruhroh-run-plan.json",
@@ -167,7 +167,7 @@ if (!publishCheck.publishable) {
 }
 ```
 
-The returned object is versioned as `ruhroh_publish_check_v1` and includes the
+The returned object is versioned as `ruhroh_publish_check_v2` and includes the
 same `blockers`, `advisories`, `remediation`, embedded compare output, and
 optional source-verification report used by `ruhroh publish-check --json`.
 This API is intentionally side-effect-free. Use the CLI when you need to write
@@ -245,6 +245,40 @@ validation messages used by the CLI. The validator returns `{ valid, errors,
 warnings, ledger }` for integrations that need to report all malformed entries
 without throwing. The JSON Schema is shipped at
 `schemas/rerun-ledger-v1.schema.json`.
+
+## Dispatch Economics Evidence Commands
+
+`runRuhrohEconomicsCommand()` is the shared, file-I/O-free boundary for
+economics validation and analysis. Give it one parsed JSON envelope and persist
+or render the returned JSON-compatible object:
+
+```ts
+import { readFileSync } from "node:fs";
+import { runRuhrohEconomicsCommand } from "@kestrel-agents/ruhroh";
+
+const envelope = JSON.parse(readFileSync("economics-command.json", "utf8"));
+const result = runRuhrohEconomicsCommand(envelope);
+
+if (!result.ok) {
+  throw new Error(result.errors.join("\n"));
+}
+
+console.log(result.output);
+```
+
+The envelope version is `ruhroh_economics_command_v1`. Supported commands are
+`validate`, `conformance`, `scale-analyze`, `findings`, `provider-drift`,
+`decision-packet`, and `billing-reconcile`. Use
+`validateRuhrohEconomicsContract()` directly when an integration only needs
+version dispatch and structured validation errors.
+
+Domain conclusions are not command failures. For example, a valid drift report
+may be `confounded`, and a valid decision packet may be `review_required`.
+`ok: false` means the input or calculation failed its contract checks.
+
+See [Economics Evidence Stack](./economics-evidence-stack.md) for truth-plane
+ownership, identity and coverage semantics, trace privacy, connector
+conformance, and billing boundaries.
 
 ## Common Recipes
 

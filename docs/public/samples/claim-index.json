@@ -1,6 +1,6 @@
 {
-  "$schema": "https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json",
-  "version": "ruhroh_claim_index_v1",
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json",
+  "version": "ruhroh_claim_index_v2",
   "generatedAt": "2026-07-08T12:00:00.000Z",
   "source": {
     "inputPath": "./ruhroh-publication",
@@ -8,15 +8,16 @@
   },
   "registryReady": false,
   "registryBlockers": [
-    "blocked claim ./ruhroh-publication: agent-a: suite minimum runs or scenario coverage not satisfied"
+    "blocked claim ./ruhroh-publication: run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/1-of-2: result=docs-fixture-native-stack plan=agent-a"
   ],
   "claimCount": 1,
   "publishableCount": 0,
   "blockedCount": 1,
   "invalidCount": 0,
   "suiteCount": 1,
-  "adapterCount": 1,
+  "targetCount": 1,
   "totalRuns": 2,
+  "totalAcceptedOutcomes": 1,
   "claims": [
     {
       "claimPath": "./ruhroh-publication/benchmark-claim.json",
@@ -30,45 +31,54 @@
         "title": "Ruhroh Sample Evidence Pack",
         "suiteVersion": "0.1.0"
       },
-      "adapters": [
-        "agent-a"
+      "targets": [
+        {
+          "benchmarkTargetId": "docs-fixture-native-stack",
+          "identityStatus": "declared",
+          "executionAdapterIds": [
+            "agent-a"
+          ],
+          "runs": 2,
+          "acceptedOutcomes": 1,
+          "qualityFloorStatus": "indeterminate",
+          "paretoStatus": "indeterminate",
+          "robustStatus": "indeterminate"
+        }
       ],
-      "benchmarkContext": {
-        "streams": [
-          "native-stack"
-        ],
-        "targets": [
-          "docs-fixture-native-stack"
-        ],
-        "harnesses": [
-          "fixture-newsletter@docs-sample-v1"
-        ],
-        "providerPaths": [
-          "docs/fixture-command"
-        ],
-        "canonicalModels": [
-          "docs/sample-agent@2026-07-08"
-        ],
-        "promptVersions": [
-          "docs-v1"
-        ],
-        "environmentFingerprints": [
-          "sha256:1111111111111111111111111111111111111111111111111111111111111111"
-        ]
-      },
       "summary": {
         "scenarioCount": 1,
-        "adapterCount": 1,
+        "targetCount": 1,
         "totalRuns": 2,
-        "totalPasses": 1,
+        "totalAcceptedOutcomes": 1,
         "runWeightedPassRate": 0.5,
-        "reviewRecommended": 1
+        "runWeightedPassRateCi95": {
+          "method": "wilson",
+          "confidenceLevel": 0.95,
+          "lower": 0.09453120573423071,
+          "upper": 0.9054687942657693
+        },
+        "reviewRequired": 0,
+        "reviewRecommended": 1,
+        "pairwiseComparisonCount": 0
+      },
+      "frontier": {
+        "status": "quality_only",
+        "objectives": [],
+        "paretoFrontierTargetIds": [],
+        "robustFrontierTargetIds": []
       },
       "evidence": {
         "runPlanPresent": true,
+        "runPlanWarnings": [
+          "result sample adapter mismatch for simple-newsletter/agent-a/1-of-2: result=docs-fixture-native-stack plan=agent-a",
+          "result sample adapter mismatch for simple-newsletter/agent-a/2-of-2: result=docs-fixture-native-stack plan=agent-a"
+        ],
         "artifactValidationErrors": 0,
+        "artifactValidationWarnings": 0,
         "artifactCompletenessWarnings": 0,
-        "requiredReviewItems": 0
+        "reviewQueueItems": 1,
+        "requiredReviewItems": 0,
+        "recommendedReviewItems": 1
       },
       "sourcePaths": {
         "resultsPath": "sources/results",
@@ -76,19 +86,20 @@
         "suitePath": "sources/suite/suite.json"
       },
       "blockers": [
-        "agent-a: suite minimum runs or scenario coverage not satisfied",
-        "simple-newsletter/agent-a: fewer than 5 runs; treat pass rate and pass@k as directional",
-        "simple-newsletter/agent-a: eval-quality warnings present",
-        "claim is not marked publishable",
-        "suite minimum runs or scenario coverage not satisfied",
-        "agent-a: simple-newsletter has 2/5 required runs",
-        "agent-a: scenario-level warnings present"
+        "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/1-of-2: result=docs-fixture-native-stack plan=agent-a",
+        "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/2-of-2: result=docs-fixture-native-stack plan=agent-a",
+        "docs-fixture-native-stack: suite minimum runs or scenario coverage not satisfied",
+        "simple-newsletter/docs-fixture-native-stack: fewer than 5 runs; treat pass rate and pass@k as directional",
+        "simple-newsletter/docs-fixture-native-stack: missing effective budget hash metadata in aggregate group",
+        "simple-newsletter/docs-fixture-native-stack: missing effective capabilities hash metadata in aggregate group",
+        "simple-newsletter/docs-fixture-native-stack: eval-quality warnings present",
+        "claim is not marked publishable"
       ],
       "advisories": [
-        "agent-a: simple-newsletter has 2/5 required runs",
-        "agent-a: scenario-level warnings present",
-        "simple-newsletter/agent-a: eval command evidence includes non-zero exit codes (1)",
-        "simple-newsletter/agent-a/sample-newsletter-agent-a-2: review recommended"
+        "docs-fixture-native-stack: simple-newsletter has 2/5 required runs",
+        "docs-fixture-native-stack: scenario-level warnings present",
+        "simple-newsletter/docs-fixture-native-stack: eval command evidence includes non-zero exit codes (1)",
+        "simple-newsletter/docs-fixture-native-stack/sample-newsletter-agent-a-2: review recommended"
       ],
       "validationErrors": [],
       "validationWarnings": []

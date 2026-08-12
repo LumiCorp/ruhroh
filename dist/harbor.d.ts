@@ -1,7 +1,7 @@
 import type { RuhrohScenario } from "./scenarios.js";
 export declare const DEFAULT_RUHROH_DATASET_PATH = ".generated/ruhroh/harbor";
 export declare const RUHROH_HARBOR_AGENT_IMPORT_PATH = "ruhroh.harbor_agent:RuhrohHarborAgent";
-export declare const RUHROH_ARTIFACTS: readonly ["/installed-agent/ruhroh-loop-result.json", "/installed-agent/ruhroh-run-manifest.json", "/installed-agent/ruhroh-loop-iterations.jsonl", "/installed-agent/ruhroh-loop-journey.json", "/installed-agent/ruhroh-loop-eval-input.json", "/installed-agent/ruhroh-loop-eval.json", "/installed-agent/ruhroh-loop-bridge.jsonl", "/installed-agent/ruhroh-workspace-summary.json", "/installed-agent/ruhroh-workspace.tar.gz", "/installed-agent/ruhroh-loop-events.tar.gz", "/installed-agent/ruhroh-loop-transcripts.tar.gz"];
+export declare const RUHROH_ARTIFACTS: readonly ["/installed-agent/ruhroh-loop-result.json", "/installed-agent/ruhroh-run-manifest.json", "/installed-agent/ruhroh-loop-iterations.jsonl", "/installed-agent/ruhroh-loop-journey.json", "/installed-agent/ruhroh-loop-eval-input.json", "/installed-agent/ruhroh-loop-eval.json", "/installed-agent/ruhroh-loop-bridge.jsonl", "/installed-agent/ruhroh-workspace-summary.json", "/installed-agent/ruhroh-workspace.tar.gz", "/installed-agent/ruhroh-loop-events.tar.gz", "/installed-agent/ruhroh-loop-transcripts.tar.gz", "/installed-agent/ruhroh-economic-trace.jsonl"];
 export interface BuildRuhrohHarborCommandInput {
     scenario: Pick<RuhrohScenario, "id" | "loop"> & Partial<Pick<RuhrohScenario, "evaluation" | "metadata" | "run">>;
     adapter: string;
