@@ -98,6 +98,7 @@ export default defineConfig({
           { text: "Human Review", link: "/adjudication" },
           { text: "Benchmark Methodology", link: "/benchmark-methodology" },
           { text: "Economics Evidence Stack", link: "/economics-evidence-stack" },
+          { text: "FOCUS 1.4 Import", link: "/focus-1-4" },
           { text: "Publish Claims", link: "/publish-claims" },
           { text: "Claim Registry", link: "/claim-registry" },
         ],

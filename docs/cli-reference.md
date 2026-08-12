@@ -672,11 +672,15 @@ pass rate, evidence coverage, packet links, and blockers. Add
 pnpm exec ruhroh economics validate ./economics-envelope.json --json
 pnpm exec ruhroh economics conformance ./adapter-conformance-input.json --json
 pnpm exec ruhroh economics scale-analyze ./scale-analysis-input.json --json
+pnpm exec ruhroh economics billing-reconcile-v2 ./billing-reconciliation-v2-input.json --json
+pnpm exec ruhroh economics focus-import ./focus-import-input.json --json
 ```
 
 `economics` reads one JSON input file and dispatches one of `validate`,
 `conformance`, `scale-analyze`, `findings`, `provider-drift`,
-`decision-packet`, or `billing-reconcile`. `--json` prints the complete
+`decision-packet`, `billing-reconcile`, `billing-reconcile-v2`,
+`focus-validate`, `focus-import`, `focus-check-update`, or
+`focus-propose-update`. `--json` prints the complete
 `ruhroh_economics_command_result_v1`; without it, a successful command prints
 only its output artifact. Invalid input or a failed calculation exits `1`.
 Evidence conclusions such as `confounded`, `inconclusive`, and
@@ -684,6 +688,8 @@ Evidence conclusions such as `confounded`, `inconclusive`, and
 
 See [Economics Evidence Stack](./economics-evidence-stack.md) for the input
 contracts, truth-plane boundaries, coverage rules, and connector gate.
+See [FOCUS 1.4 Import](./focus-1-4.md) for exact-decimal import, validator,
+privacy, and update-review behavior.
 
 ### `ruhroh explain`
 
