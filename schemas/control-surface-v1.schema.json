@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/control-surface-v1.schema.json",
+  "title": "Ruhroh Control Surface v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "kind", "observabilityCeiling"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/control-surface-v1.schema.json" },
+    "version": { "const": "ruhroh_control_surface_v1" },
+    "kind": {
+      "enum": ["direct_api", "desktop", "cloud_brokered", "agent_tooling", "pass_through_saas", "custom"]
+    },
+    "customKind": { "type": "string", "minLength": 1 },
+    "observabilityCeiling": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["usageGrain", "billingGrain", "identityGrain", "traceAccess", "enforcement"],
+      "properties": {
+        "usageGrain": { "enum": ["call", "run", "aggregate", "none"] },
+        "billingGrain": { "enum": ["request", "principal", "workload", "account", "none"] },
+        "identityGrain": { "enum": ["principal", "workload", "project", "none"] },
+        "traceAccess": { "enum": ["full", "partial", "opaque"] },
+        "enforcement": { "enum": ["hard", "cooperative", "none"] }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "kind": { "const": "custom" } }, "required": ["kind"] },
+      "then": { "required": ["customKind"] },
+      "else": { "not": { "required": ["customKind"] } }
+    }
+  ]
+}

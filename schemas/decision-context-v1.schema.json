@@ -1,0 +1,126 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/decision-context-v1.schema.json",
+  "title": "Ruhroh Decision Context v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "contextId", "authoredAt", "workloadBinding", "benchmarkClaimRef", "qualityEnvelope", "value", "observationWindow", "interventionPolicy", "stopRules", "owners", "privacy"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/decision-context-v1.schema.json" },
+    "version": { "const": "ruhroh_decision_context_v1" },
+    "contextId": { "$ref": "#/$defs/nonEmptyString" },
+    "authoredAt": { "type": "string", "format": "date-time" },
+    "workloadBinding": { "$ref": "#/$defs/workloadBinding" },
+    "benchmarkClaimRef": { "$ref": "#/$defs/hashedSourceRef" },
+    "qualityEnvelope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimumPassRateWilsonLower"],
+      "properties": {
+        "minimumPassRateWilsonLower": { "type": "number", "minimum": 0, "maximum": 1 },
+        "maximumP95ImplementationWallTimeMs": { "type": "number", "minimum": 0 }
+      }
+    },
+    "value": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "indicatorId", "unit", "hypothesis"],
+      "properties": {
+        "mode": { "enum": ["displaced_work", "net_new_value_or_risk"] },
+        "indicatorId": { "$ref": "#/$defs/nonEmptyString" },
+        "unit": { "$ref": "#/$defs/nonEmptyString" },
+        "baseline": { "type": "number" },
+        "hypothesis": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "mode": { "const": "displaced_work" } }, "required": ["mode"] },
+          "then": { "required": ["baseline"] }
+        }
+      ]
+    },
+    "observationWindow": { "$ref": "#/$defs/timeWindow" },
+    "interventionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["autonomy", "passiveObservationCountsAsIntervention", "reworkWindowDays"],
+      "properties": {
+        "autonomy": { "const": "strict_zero_touch" },
+        "passiveObservationCountsAsIntervention": { "const": false },
+        "reworkWindowDays": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "stopRules": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "condition", "action"],
+        "properties": {
+          "id": { "$ref": "#/$defs/nonEmptyString" },
+          "condition": { "$ref": "#/$defs/nonEmptyString" },
+          "action": { "enum": ["continue", "modify", "stop"] }
+        }
+      }
+    },
+    "owners": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["technical_owner", "product_workload_owner", "financial_owner", "governance_owner", "accountable_decision_owner"],
+      "properties": {
+        "technical_owner": { "$ref": "#/$defs/nonEmptyString" },
+        "product_workload_owner": { "$ref": "#/$defs/nonEmptyString" },
+        "financial_owner": { "$ref": "#/$defs/nonEmptyString" },
+        "governance_owner": { "$ref": "#/$defs/nonEmptyString" },
+        "accountable_decision_owner": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification", "publicReportingGrain"],
+      "properties": {
+        "classification": { "enum": ["public", "internal", "restricted"] },
+        "publicReportingGrain": { "enum": ["workload", "project"] },
+        "redactionPolicyRef": { "$ref": "#/$defs/hashedSourceRef" }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "hashedSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "workloadBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "experimentId", "workloadId", "projectId"],
+      "properties": {
+        "version": { "const": "ruhroh_workload_binding_v1" },
+        "experimentId": { "$ref": "#/$defs/nonEmptyString" },
+        "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+        "projectId": { "$ref": "#/$defs/nonEmptyString" },
+        "workflowInstanceId": { "$ref": "#/$defs/nonEmptyString" },
+        "hierarchyRef": { "$ref": "#/$defs/hashedSourceRef" }
+      }
+    },
+    "timeWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "endedAt"],
+      "properties": {
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

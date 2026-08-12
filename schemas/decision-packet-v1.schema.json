@@ -1,0 +1,222 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/decision-packet-v1.schema.json",
+  "title": "Ruhroh Decision Packet v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "packetId", "createdAt", "contextRef", "workloadBinding", "sourceRefs", "tiers", "humanWork", "technicalEvidence", "readiness", "unresolvedEvidence"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/decision-packet-v1.schema.json" },
+    "version": { "const": "ruhroh_decision_packet_v1" },
+    "packetId": { "$ref": "#/$defs/nonEmptyString" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "contextRef": { "$ref": "#/$defs/hashedSourceRef" },
+    "workloadBinding": { "$ref": "#/$defs/workloadBinding" },
+    "sourceRefs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmarkClaim"],
+      "properties": {
+        "benchmarkClaim": { "$ref": "#/$defs/hashedSourceRef" },
+        "interventionLedger": { "$ref": "#/$defs/hashedSourceRef" },
+        "costReconciliation": { "$ref": "#/$defs/hashedSourceRef" },
+        "economicsEnvelope": { "$ref": "#/$defs/hashedSourceRef" },
+        "budgetOutcome": { "$ref": "#/$defs/hashedSourceRef" },
+        "findings": { "$ref": "#/$defs/hashedSourceRef" }
+      }
+    },
+    "tiers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["technicalOutcome", "autonomousDeflection", "businessValue"],
+      "properties": {
+        "technicalOutcome": { "$ref": "#/$defs/decisionTier" },
+        "autonomousDeflection": { "$ref": "#/$defs/decisionTier" },
+        "businessValue": { "$ref": "#/$defs/decisionTier" }
+      }
+    },
+    "humanWork": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["coverageComplete", "observationWindowComplete", "disqualifyingInterventions", "passiveOversightEvents", "attributableReworkEvents", "attributableReworkMinutes", "reworkWindowDays"],
+      "properties": {
+        "coverageComplete": { "type": "boolean" },
+        "observationWindowComplete": { "type": "boolean" },
+        "disqualifyingInterventions": { "type": "integer", "minimum": 0 },
+        "passiveOversightEvents": { "type": "integer", "minimum": 0 },
+        "attributableReworkEvents": { "type": "integer", "minimum": 0 },
+        "attributableReworkMinutes": { "type": "number", "minimum": 0 },
+        "reworkWindowDays": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "technicalEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["unitEconomics", "containment", "traceFindings"],
+      "properties": {
+        "unitEconomics": { "$ref": "#/$defs/unitEconomics" },
+        "containment": { "$ref": "#/$defs/containmentEvidence" },
+        "traceFindings": { "$ref": "#/$defs/traceFindings" }
+      }
+    },
+    "readiness": { "enum": ["draft", "review_required", "decision_ready"] },
+    "unresolvedEvidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nonEmptyString" },
+      "uniqueItems": true
+    },
+    "decision": { "$ref": "#/$defs/signedDecision" }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "readiness": { "const": "decision_ready" } }, "required": ["readiness"] },
+      "then": {
+        "required": ["decision"],
+        "properties": { "unresolvedEvidence": { "maxItems": 0 } }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "tiers": {
+            "properties": {
+              "autonomousDeflection": {
+                "properties": { "conclusion": { "const": "supported" } },
+                "required": ["conclusion"]
+              }
+            },
+            "required": ["autonomousDeflection"]
+          }
+        },
+        "required": ["tiers"]
+      },
+      "then": {
+        "properties": {
+          "tiers": {
+            "properties": {
+              "technicalOutcome": {
+                "properties": { "conclusion": { "const": "supported" } },
+                "required": ["conclusion"]
+              }
+            }
+          },
+          "humanWork": {
+            "properties": {
+              "coverageComplete": { "const": true },
+              "observationWindowComplete": { "const": true },
+              "disqualifyingInterventions": { "const": 0 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "hashedSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "workloadBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "experimentId", "workloadId", "projectId"],
+      "properties": {
+        "version": { "const": "ruhroh_workload_binding_v1" },
+        "experimentId": { "$ref": "#/$defs/nonEmptyString" },
+        "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+        "projectId": { "$ref": "#/$defs/nonEmptyString" },
+        "workflowInstanceId": { "$ref": "#/$defs/nonEmptyString" },
+        "hierarchyRef": { "$ref": "#/$defs/hashedSourceRef" }
+      }
+    },
+    "decisionTier": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["conclusion", "evidenceLevel", "reasons", "evidenceRefs"],
+      "properties": {
+        "conclusion": { "enum": ["supported", "not_supported", "inconclusive", "not_assessed"] },
+        "evidenceLevel": { "enum": ["declared", "measured", "independently_verified"] },
+        "reasons": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "evidenceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/hashedSourceRef" },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "conclusion": { "const": "supported" } }, "required": ["conclusion"] },
+          "then": {
+            "properties": {
+              "evidenceLevel": { "enum": ["measured", "independently_verified"] },
+              "evidenceRefs": { "minItems": 1 }
+            }
+          }
+        }
+      ]
+    },
+    "unitEconomics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "coverage", "reasons"],
+      "properties": {
+        "status": { "enum": ["supported", "not_supported", "inconclusive", "not_assessed"] },
+        "coverage": { "enum": ["complete", "partial", "unknown", "unavailable"] },
+        "costPerAcceptedOutcome": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["amount", "currency"],
+          "properties": {
+            "amount": { "type": "number", "minimum": 0 },
+            "currency": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        },
+        "tokensPerAcceptedOutcome": { "type": "number", "minimum": 0 },
+        "reasons": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
+    "containmentEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["budgetStatus", "reasons"],
+      "properties": {
+        "budgetStatus": { "enum": ["within", "exhausted", "overrun", "unobservable", "not_assessed"] },
+        "reasons": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      }
+    },
+    "traceFindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirmed", "candidate", "notObservable"],
+      "properties": {
+        "confirmed": { "type": "integer", "minimum": 0 },
+        "candidate": { "type": "integer", "minimum": 0 },
+        "notObservable": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "signedDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action", "signerRole", "signedAt", "signatureRef", "rationale"],
+      "properties": {
+        "action": { "enum": ["continue", "modify", "stop"] },
+        "signerRole": { "const": "accountable_decision_owner" },
+        "signedAt": { "type": "string", "format": "date-time" },
+        "signatureRef": { "$ref": "#/$defs/hashedSourceRef" },
+        "rationale": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}

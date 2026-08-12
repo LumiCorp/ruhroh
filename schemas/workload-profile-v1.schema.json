@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/workload-profile-v1.schema.json",
+  "title": "Ruhroh Workload Profile v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "profileId", "taxonomy", "archetype", "unitOfWork"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/workload-profile-v1.schema.json" },
+    "version": { "const": "ruhroh_workload_profile_v1" },
+    "profileId": { "$ref": "#/$defs/nonEmptyString" },
+    "taxonomy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["namespace", "version"],
+      "properties": {
+        "namespace": { "type": "string", "pattern": "^.+:.+$" },
+        "version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "archetype": { "$ref": "#/$defs/classification" },
+    "businessCapability": { "$ref": "#/$defs/classification" },
+    "taskPurpose": { "$ref": "#/$defs/classification" },
+    "unitOfWork": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "label": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "denominatorCardRef": { "$ref": "#/$defs/nonEmptyString" }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "classification": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "label": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}
