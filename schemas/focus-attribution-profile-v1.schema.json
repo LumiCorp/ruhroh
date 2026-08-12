@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://lumicorp.github.io/ruhroh/schemas/focus-attribution-profile-v1.schema.json", "title": "Ruhroh FOCUS Attribution Profile v1",
+  "type": "object", "additionalProperties": false, "required": ["version", "profileId", "provider", "focusVersion", "sourceSelectors", "privacyClassification"],
+  "properties": { "version": { "const": "ruhroh_focus_attribution_profile_v1" }, "profileId": { "type": "string", "minLength": 1 }, "provider": { "type": "string", "minLength": 1 }, "focusVersion": { "const": "1.4" }, "sourceSelectors": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["sourceColumn", "destination", "transform"], "properties": { "sourceColumn": { "type": "string", "minLength": 1 }, "destination": { "enum": ["providerRequestId", "workloadId", "principalRef", "model"] }, "transform": { "enum": ["identity", "sha256", "tag_value"] } } } }, "privacyClassification": { "const": "restricted" } }
+}

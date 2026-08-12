@@ -1,0 +1,8 @@
+{
+  "version": "ruhroh_focus_conformance_profile_v1",
+  "profileId": "focus-1.4-strict",
+  "focusVersion": "1.4",
+  "modelSha256": "3dd2c0c6fcc2c3d1792060fcbebba4ae074cd4dade8cde72958bd37a9a8b183f",
+  "applicabilityCriteria": [],
+  "allowedSkips": []
+}

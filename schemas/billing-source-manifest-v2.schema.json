@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/billing-source-manifest-v2.schema.json",
+  "title": "Ruhroh Billing Source Manifest v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceId", "format", "externalSchemaVersion", "billingPeriod", "currencies", "rowCount", "sourceRef", "privacyClassification"],
+  "properties": {
+    "version": { "const": "ruhroh_billing_source_manifest_v2" },
+    "sourceId": { "type": "string", "minLength": 1 },
+    "format": { "enum": ["csv", "parquet", "records", "normalized_rows"] },
+    "externalSchemaVersion": { "type": "string", "minLength": 1 },
+    "billingPeriod": { "$ref": "#/$defs/period" },
+    "currencies": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z]{3}$" } },
+    "rowCount": { "type": "integer", "minimum": 0 },
+    "sourceRef": { "$ref": "#/$defs/ref" },
+    "privacyClassification": { "enum": ["internal", "restricted"] }
+  },
+  "$defs": {
+    "period": { "type": "object", "additionalProperties": false, "required": ["startedAt", "endedAt"], "properties": { "startedAt": { "type": "string", "format": "date-time" }, "endedAt": { "type": "string", "format": "date-time" } } },
+    "ref": { "type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } }
+  }
+}

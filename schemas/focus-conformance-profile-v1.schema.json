@@ -1,0 +1,6 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema", "$id": "https://lumicorp.github.io/ruhroh/schemas/focus-conformance-profile-v1.schema.json", "title": "Ruhroh FOCUS Conformance Profile v1",
+  "type": "object", "additionalProperties": false, "required": ["version", "profileId", "focusVersion", "modelSha256", "applicabilityCriteria", "allowedSkips"],
+  "properties": { "version": { "const": "ruhroh_focus_conformance_profile_v1" }, "profileId": { "type": "string", "minLength": 1 }, "focusVersion": { "const": "1.4" }, "modelSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }, "applicabilityCriteria": { "type": "array", "items": { "type": "string" } }, "allowedSkips": { "type": "array", "items": { "type": "object", "additionalProperties": false, "required": ["ruleId", "reason", "reviewRef"], "properties": { "ruleId": { "type": "string", "minLength": 1 }, "reason": { "type": "string", "minLength": 1 }, "reviewRef": { "$ref": "#/$defs/ref" } } } } },
+  "$defs": { "ref": { "type": "object", "additionalProperties": false, "required": ["path", "sha256"], "properties": { "path": { "type": "string", "minLength": 1 }, "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" } } } }
+}

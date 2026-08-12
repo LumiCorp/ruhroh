@@ -1,0 +1,1456 @@
+{
+  "version": "ruhroh_focus_mapping_pack_v1",
+  "mappingPackId": "focus-1.4-cost-and-usage-v1",
+  "focusVersion": "1.4",
+  "dataset": "CostAndUsage",
+  "specLockRef": {
+    "path": "examples/focus/spec-lock-1.4.json",
+    "sha256": "a810a2592d097645d0e472034845ba6fd3dd66467861955025ea92a2743472c4"
+  },
+  "catalogRef": {
+    "path": "examples/focus/catalog-1.4.json",
+    "sha256": "75049fe4d6c8293c7ff1dd025f11645f57165d828ac4381cb467c3faee51fe2d"
+  },
+  "mappings": [
+    {
+      "sourceColumn": "AllocatedMethodDetails",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-AllocatedMethodDetails-C-000-C",
+        "CAU-AllocatedMethodDetails-C-001-M",
+        "CAU-AllocatedMethodDetails-C-002-M",
+        "CAU-AllocatedMethodDetails-C-003-M",
+        "CAU-AllocatedMethodDetails-C-004-C",
+        "CAU-AllocatedMethodDetails-C-005-C",
+        "CAU-AllocatedMethodDetails-C-006-C",
+        "CAU-AllocatedMethodDetails-C-007-C",
+        "CAU-CostAndUsage-D-069-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-allocatedmethoddetails"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "AllocatedMethodId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-AllocatedMethodId-C-000-C",
+        "CAU-AllocatedMethodId-C-001-M",
+        "CAU-AllocatedMethodId-C-002-M",
+        "CAU-AllocatedMethodId-C-003-C",
+        "CAU-AllocatedMethodId-C-004-C",
+        "CAU-AllocatedMethodId-C-005-C",
+        "CAU-AllocatedMethodId-C-006-M",
+        "CAU-CostAndUsage-D-070-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-allocatedmethodid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "AllocatedResourceId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-AllocatedResourceId-C-000-C",
+        "CAU-AllocatedResourceId-C-001-M",
+        "CAU-AllocatedResourceId-C-002-M",
+        "CAU-AllocatedResourceId-C-003-C",
+        "CAU-AllocatedResourceId-C-004-C",
+        "CAU-AllocatedResourceId-C-005-C",
+        "CAU-AllocatedResourceId-C-006-C",
+        "CAU-AllocatedResourceId-C-007-C",
+        "CAU-AllocatedResourceId-C-008-O",
+        "CAU-AllocatedResourceId-C-009-O",
+        "CAU-CostAndUsage-D-071-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-allocatedresourceid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "AllocatedResourceName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-AllocatedResourceName-C-000-C",
+        "CAU-AllocatedResourceName-C-001-M",
+        "CAU-AllocatedResourceName-C-002-M",
+        "CAU-AllocatedResourceName-C-003-C",
+        "CAU-AllocatedResourceName-C-004-C",
+        "CAU-AllocatedResourceName-C-005-C",
+        "CAU-AllocatedResourceName-C-006-C",
+        "CAU-CostAndUsage-D-072-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-allocatedresourcename"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "AllocatedTags",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-AllocatedTags-C-000-C",
+        "CAU-AllocatedTags-C-001-M",
+        "CAU-AllocatedTags-C-002-M",
+        "CAU-AllocatedTags-C-003-C",
+        "CAU-AllocatedTags-C-004-O",
+        "CAU-AllocatedTags-C-005-C",
+        "CAU-AllocatedTags-C-006-M",
+        "CAU-AllocatedTags-C-007-M",
+        "CAU-AllocatedTags-C-008-M",
+        "CAU-AllocatedTags-C-009-C",
+        "CAU-AllocatedTags-C-010-M",
+        "CAU-AllocatedTags-C-011-M",
+        "CAU-AllocatedTags-C-012-O",
+        "CAU-AllocatedTags-C-013-C",
+        "CAU-AllocatedTags-C-014-C",
+        "CAU-AllocatedTags-C-015-M",
+        "CAU-AllocatedTags-C-016-M",
+        "CAU-AllocatedTags-C-017-C",
+        "CAU-CostAndUsage-D-073-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-allocatedtags"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "AvailabilityZone",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-AvailabilityZone-C-000-C",
+        "CAU-AvailabilityZone-C-001-M",
+        "CAU-AvailabilityZone-C-002-M",
+        "CAU-AvailabilityZone-C-003-C",
+        "CAU-CostAndUsage-D-003-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-availabilityzone"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "BilledCost",
+      "disposition": "mapped",
+      "destinationField": "amountDecimal",
+      "transform": "decimal_string",
+      "requirementIds": [
+        "CAU-BilledCost-C-000-M",
+        "CAU-BilledCost-C-001-M",
+        "CAU-BilledCost-C-002-M",
+        "CAU-BilledCost-C-003-M",
+        "CAU-BilledCost-C-004-M",
+        "CAU-BilledCost-C-005-C",
+        "CAU-BilledCost-C-006-M",
+        "CAU-BilledCost-C-007-C",
+        "CAU-BilledCost-C-008-C",
+        "CAU-BilledCost-C-009-M",
+        "CAU-BilledCost-C-010-M",
+        "CAU-BilledCost-C-011-M",
+        "CAU-BilledCost-C-012-M",
+        "CAU-CostAndUsage-D-006-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-billedcost"
+      ],
+      "economicallyMaterial": true
+    },
+    {
+      "sourceColumn": "BillingAccountId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-BillingAccountId-C-000-M",
+        "CAU-BillingAccountId-C-001-M",
+        "CAU-BillingAccountId-C-002-M",
+        "CAU-BillingAccountId-C-003-M",
+        "CAU-BillingAccountId-C-004-M",
+        "CAU-BillingAccountId-C-005-O",
+        "CAU-CostAndUsage-D-024-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-billingaccountid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "BillingAccountName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-BillingAccountName-C-000-M",
+        "CAU-BillingAccountName-C-001-M",
+        "CAU-BillingAccountName-C-002-M",
+        "CAU-BillingAccountName-C-003-C",
+        "CAU-CostAndUsage-D-005-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-billingaccountname"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "BillingAccountType",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-BillingAccountType-C-000-C",
+        "CAU-BillingAccountType-C-001-M",
+        "CAU-BillingAccountType-C-002-M",
+        "CAU-BillingAccountType-C-003-C",
+        "CAU-BillingAccountType-C-004-C",
+        "CAU-BillingAccountType-C-005-C",
+        "CAU-BillingAccountType-C-006-M",
+        "CAU-CostAndUsage-D-007-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-billingaccounttype"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "BillingCurrency",
+      "disposition": "mapped",
+      "destinationField": "currency",
+      "transform": "currency_code",
+      "requirementIds": [
+        "CAU-BillingCurrency-C-000-M",
+        "CAU-BillingCurrency-C-001-M",
+        "CAU-BillingCurrency-C-002-M",
+        "CAU-BillingCurrency-C-003-M",
+        "CAU-BillingCurrency-C-004-M",
+        "CAU-BillingCurrency-C-005-M",
+        "CAU-BillingCurrency-C-006-M",
+        "CAU-CostAndUsage-D-035-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-billingcurrency"
+      ],
+      "economicallyMaterial": true
+    },
+    {
+      "sourceColumn": "BillingPeriodEnd",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-BillingPeriodEnd-C-000-M",
+        "CAU-BillingPeriodEnd-C-001-M",
+        "CAU-BillingPeriodEnd-C-002-M",
+        "CAU-BillingPeriodEnd-C-003-M",
+        "CAU-BillingPeriodEnd-C-004-M",
+        "CAU-CostAndUsage-D-010-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-billingperiodend"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "BillingPeriodStart",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-BillingPeriodStart-C-000-M",
+        "CAU-BillingPeriodStart-C-001-M",
+        "CAU-BillingPeriodStart-C-002-M",
+        "CAU-BillingPeriodStart-C-003-M",
+        "CAU-BillingPeriodStart-C-004-M",
+        "CAU-CostAndUsage-D-009-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-billingperiodstart"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CapacityReservationId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CapacityReservationId-C-000-C",
+        "CAU-CapacityReservationId-C-001-M",
+        "CAU-CapacityReservationId-C-002-M",
+        "CAU-CapacityReservationId-C-003-C",
+        "CAU-CapacityReservationId-C-004-C",
+        "CAU-CapacityReservationId-C-005-C",
+        "CAU-CapacityReservationId-C-006-C",
+        "CAU-CapacityReservationId-C-007-C",
+        "CAU-CapacityReservationId-C-008-M",
+        "CAU-CapacityReservationId-C-009-O",
+        "CAU-CostAndUsage-D-065-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-capacityreservationid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CapacityReservationStatus",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CapacityReservationStatus-C-000-C",
+        "CAU-CapacityReservationStatus-C-001-M",
+        "CAU-CapacityReservationStatus-C-002-C",
+        "CAU-CapacityReservationStatus-C-003-C",
+        "CAU-CapacityReservationStatus-C-004-C",
+        "CAU-CapacityReservationStatus-C-005-C",
+        "CAU-CapacityReservationStatus-C-006-M",
+        "CAU-CapacityReservationStatus-C-007-C",
+        "CAU-CapacityReservationStatus-C-008-C",
+        "CAU-CostAndUsage-D-020-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-capacityreservationstatus"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ChargeCategory",
+      "disposition": "mapped",
+      "destinationField": "kind",
+      "transform": "charge_category_to_kind",
+      "requirementIds": [
+        "CAU-ChargeCategory-C-000-M",
+        "CAU-ChargeCategory-C-001-M",
+        "CAU-ChargeCategory-C-002-M",
+        "CAU-ChargeCategory-C-003-M",
+        "CAU-ChargeCategory-C-004-C",
+        "CAU-ChargeCategory-C-005-C",
+        "CAU-ChargeCategory-C-006-C",
+        "CAU-ChargeCategory-C-007-C",
+        "CAU-ChargeCategory-C-008-C",
+        "CAU-CostAndUsage-D-008-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-chargecategory"
+      ],
+      "economicallyMaterial": true
+    },
+    {
+      "sourceColumn": "ChargeClass",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ChargeClass-C-000-M",
+        "CAU-ChargeClass-C-001-M",
+        "CAU-ChargeClass-C-002-C",
+        "CAU-ChargeClass-C-003-C",
+        "CAU-ChargeClass-C-004-C",
+        "CAU-ChargeClass-C-005-C",
+        "CAU-CostAndUsage-D-026-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-chargeclass"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ChargeDescription",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ChargeDescription-C-000-M",
+        "CAU-ChargeDescription-C-001-M",
+        "CAU-ChargeDescription-C-002-M",
+        "CAU-ChargeDescription-C-003-O",
+        "CAU-ChargeDescription-C-004-O",
+        "CAU-CostAndUsage-D-025-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-chargedescription"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ChargeFrequency",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ChargeFrequency-C-000-O",
+        "CAU-ChargeFrequency-C-001-M",
+        "CAU-ChargeFrequency-C-002-M",
+        "CAU-ChargeFrequency-C-003-M",
+        "CAU-ChargeFrequency-C-004-C",
+        "CAU-CostAndUsage-D-027-O"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-chargefrequency"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ChargePeriodEnd",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ChargePeriodEnd-C-000-M",
+        "CAU-ChargePeriodEnd-C-001-M",
+        "CAU-ChargePeriodEnd-C-002-M",
+        "CAU-ChargePeriodEnd-C-003-M",
+        "CAU-ChargePeriodEnd-C-004-M",
+        "CAU-CostAndUsage-D-028-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-chargeperiodend"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ChargePeriodStart",
+      "disposition": "mapped",
+      "destinationField": "occurredAt",
+      "transform": "timestamp",
+      "requirementIds": [
+        "CAU-ChargePeriodStart-C-000-M",
+        "CAU-ChargePeriodStart-C-001-M",
+        "CAU-ChargePeriodStart-C-002-M",
+        "CAU-ChargePeriodStart-C-003-M",
+        "CAU-ChargePeriodStart-C-004-M",
+        "CAU-CostAndUsage-D-037-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-chargeperiodstart"
+      ],
+      "economicallyMaterial": false
+    },
+    {
+      "sourceColumn": "CommitmentDiscountCategory",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentDiscountCategory-C-000-C",
+        "CAU-CommitmentDiscountCategory-C-001-M",
+        "CAU-CommitmentDiscountCategory-C-002-C",
+        "CAU-CommitmentDiscountCategory-C-003-C",
+        "CAU-CommitmentDiscountCategory-C-004-C",
+        "CAU-CommitmentDiscountCategory-C-005-M",
+        "CAU-CostAndUsage-D-016-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentdiscountcategory"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CommitmentDiscountId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentDiscountId-C-000-C",
+        "CAU-CommitmentDiscountId-C-001-M",
+        "CAU-CommitmentDiscountId-C-002-M",
+        "CAU-CommitmentDiscountId-C-003-C",
+        "CAU-CommitmentDiscountId-C-004-C",
+        "CAU-CommitmentDiscountId-C-005-C",
+        "CAU-CommitmentDiscountId-C-006-C",
+        "CAU-CommitmentDiscountId-C-007-M",
+        "CAU-CommitmentDiscountId-C-008-O",
+        "CAU-CommitmentDiscountId-C-009-C",
+        "CAU-CommitmentDiscountId-C-010-C",
+        "CAU-CostAndUsage-D-013-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentdiscountid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CommitmentDiscountName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentDiscountName-C-000-C",
+        "CAU-CommitmentDiscountName-C-001-M",
+        "CAU-CommitmentDiscountName-C-002-M",
+        "CAU-CommitmentDiscountName-C-003-C",
+        "CAU-CommitmentDiscountName-C-004-C",
+        "CAU-CommitmentDiscountName-C-005-C",
+        "CAU-CommitmentDiscountName-C-006-C",
+        "CAU-CommitmentDiscountName-C-007-C",
+        "CAU-CostAndUsage-D-012-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentdiscountname"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CommitmentDiscountQuantity",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentDiscountQuantity-C-000-C",
+        "CAU-CommitmentDiscountQuantity-C-001-M",
+        "CAU-CommitmentDiscountQuantity-C-002-M",
+        "CAU-CommitmentDiscountQuantity-C-003-C",
+        "CAU-CommitmentDiscountQuantity-C-004-C",
+        "CAU-CommitmentDiscountQuantity-C-005-C",
+        "CAU-CommitmentDiscountQuantity-C-006-C",
+        "CAU-CommitmentDiscountQuantity-C-007-C",
+        "CAU-CommitmentDiscountQuantity-C-008-C",
+        "CAU-CommitmentDiscountQuantity-C-009-C",
+        "CAU-CommitmentDiscountQuantity-C-010-C",
+        "CAU-CommitmentDiscountQuantity-C-011-C",
+        "CAU-CommitmentDiscountQuantity-C-012-C",
+        "CAU-CommitmentDiscountQuantity-C-013-C",
+        "CAU-CommitmentDiscountQuantity-C-014-C",
+        "CAU-CommitmentDiscountQuantity-C-015-C",
+        "CAU-CommitmentDiscountQuantity-C-016-C",
+        "CAU-CostAndUsage-D-018-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentdiscountquantity"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CommitmentDiscountStatus",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentDiscountStatus-C-000-C",
+        "CAU-CommitmentDiscountStatus-C-001-M",
+        "CAU-CommitmentDiscountStatus-C-002-C",
+        "CAU-CommitmentDiscountStatus-C-003-C",
+        "CAU-CommitmentDiscountStatus-C-004-C",
+        "CAU-CommitmentDiscountStatus-C-005-M",
+        "CAU-CommitmentDiscountStatus-C-006-C",
+        "CAU-CommitmentDiscountStatus-C-007-C",
+        "CAU-CostAndUsage-D-017-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentdiscountstatus"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CommitmentDiscountType",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentDiscountType-C-000-C",
+        "CAU-CommitmentDiscountType-C-001-M",
+        "CAU-CommitmentDiscountType-C-002-M",
+        "CAU-CommitmentDiscountType-C-003-C",
+        "CAU-CommitmentDiscountType-C-004-C",
+        "CAU-CommitmentDiscountType-C-005-C",
+        "CAU-CostAndUsage-D-014-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentdiscounttype"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CommitmentDiscountUnit",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentDiscountUnit-C-000-C",
+        "CAU-CommitmentDiscountUnit-C-001-M",
+        "CAU-CommitmentDiscountUnit-C-002-M",
+        "CAU-CommitmentDiscountUnit-C-003-O",
+        "CAU-CommitmentDiscountUnit-C-004-C",
+        "CAU-CommitmentDiscountUnit-C-005-C",
+        "CAU-CommitmentDiscountUnit-C-006-C",
+        "CAU-CommitmentDiscountUnit-C-007-C",
+        "CAU-CommitmentDiscountUnit-C-008-M",
+        "CAU-CommitmentDiscountUnit-C-009-M",
+        "CAU-CommitmentDiscountUnit-C-010-C",
+        "CAU-CostAndUsage-D-015-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentdiscountunit"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "CommitmentProgramEligibilityDetails",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CommitmentProgramEligibilityDetails-C-000-C",
+        "CAU-CommitmentProgramEligibilityDetails-C-001-M",
+        "CAU-CommitmentProgramEligibilityDetails-C-002-M",
+        "CAU-CommitmentProgramEligibilityDetails-C-003-M",
+        "CAU-CommitmentProgramEligibilityDetails-C-004-C",
+        "CAU-CommitmentProgramEligibilityDetails-C-005-M",
+        "CAU-CommitmentProgramEligibilityDetails-C-006-M",
+        "CAU-CommitmentProgramEligibilityDetails-C-007-C",
+        "CAU-CommitmentProgramEligibilityDetails-C-008-M",
+        "CAU-CommitmentProgramEligibilityDetails-C-009-C",
+        "CAU-CostAndUsage-D-097-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-commitmentprogrameligibilitydetails"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ConsumedQuantity",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ConsumedQuantity-C-000-C",
+        "CAU-ConsumedQuantity-C-001-M",
+        "CAU-ConsumedQuantity-C-002-M",
+        "CAU-ConsumedQuantity-C-003-C",
+        "CAU-ConsumedQuantity-C-004-C",
+        "CAU-ConsumedQuantity-C-005-C",
+        "CAU-ConsumedQuantity-C-006-C",
+        "CAU-ConsumedQuantity-C-007-C",
+        "CAU-ConsumedQuantity-C-008-C",
+        "CAU-ConsumedQuantity-C-009-C",
+        "CAU-CostAndUsage-D-011-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-consumedquantity"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ConsumedUnit",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ConsumedUnit-C-000-C",
+        "CAU-ConsumedUnit-C-001-M",
+        "CAU-ConsumedUnit-C-002-M",
+        "CAU-ConsumedUnit-C-003-O",
+        "CAU-ConsumedUnit-C-004-C",
+        "CAU-ConsumedUnit-C-005-C",
+        "CAU-ConsumedUnit-C-006-C",
+        "CAU-CostAndUsage-D-066-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-consumedunit"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ContractApplied",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ContractApplied-C-000-C",
+        "CAU-ContractApplied-C-001-M",
+        "CAU-ContractApplied-C-002-C",
+        "CAU-ContractApplied-C-003-C",
+        "CAU-ContractApplied-C-004-M",
+        "CAU-ContractApplied-C-005-M",
+        "CAU-CostAndUsage-D-074-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-contractapplied"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ContractedCost",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ContractedCost-C-000-M",
+        "CAU-ContractedCost-C-001-M",
+        "CAU-ContractedCost-C-002-M",
+        "CAU-ContractedCost-C-003-M",
+        "CAU-ContractedCost-C-004-M",
+        "CAU-ContractedCost-C-005-M",
+        "CAU-ContractedCost-C-006-C",
+        "CAU-ContractedCost-C-007-M",
+        "CAU-ContractedCost-C-008-M",
+        "CAU-ContractedCost-C-009-C",
+        "CAU-ContractedCost-C-010-C",
+        "CAU-ContractedCost-C-011-C",
+        "CAU-CostAndUsage-D-030-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-contractedcost"
+      ],
+      "economicallyMaterial": true,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ContractedUnitPrice",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-ContractedUnitPrice-C-000-C",
+        "CAU-ContractedUnitPrice-C-001-M",
+        "CAU-ContractedUnitPrice-C-002-M",
+        "CAU-ContractedUnitPrice-C-003-M",
+        "CAU-ContractedUnitPrice-C-004-M",
+        "CAU-ContractedUnitPrice-C-005-C",
+        "CAU-ContractedUnitPrice-C-006-C",
+        "CAU-ContractedUnitPrice-C-007-O",
+        "CAU-ContractedUnitPrice-C-008-C",
+        "CAU-ContractedUnitPrice-C-009-M",
+        "CAU-ContractedUnitPrice-C-010-M",
+        "CAU-ContractedUnitPrice-C-011-C",
+        "CAU-ContractedUnitPrice-C-012-C",
+        "CAU-ContractedUnitPrice-C-013-C",
+        "CAU-ContractedUnitPrice-C-014-C",
+        "CAU-ContractedUnitPrice-C-015-C",
+        "CAU-CostAndUsage-D-034-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-contractedunitprice"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "EffectiveCost",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-031-M",
+        "CAU-EffectiveCost-C-000-M",
+        "CAU-EffectiveCost-C-001-M",
+        "CAU-EffectiveCost-C-002-M",
+        "CAU-EffectiveCost-C-003-M",
+        "CAU-EffectiveCost-C-004-M",
+        "CAU-EffectiveCost-C-005-C",
+        "CAU-EffectiveCost-C-006-M",
+        "CAU-EffectiveCost-C-007-O",
+        "CAU-EffectiveCost-C-008-C",
+        "CAU-EffectiveCost-C-009-M",
+        "CAU-EffectiveCost-C-010-M",
+        "CAU-EffectiveCost-C-011-C",
+        "CAU-EffectiveCost-C-012-C",
+        "CAU-EffectiveCost-C-013-C",
+        "CAU-EffectiveCost-C-014-M",
+        "CAU-EffectiveCost-C-015-C",
+        "CAU-EffectiveCost-C-016-C",
+        "CAU-EffectiveCost-C-017-C",
+        "CAU-EffectiveCost-C-018-C",
+        "CAU-EffectiveCost-C-019-M",
+        "CAU-EffectiveCost-C-020-C",
+        "CAU-EffectiveCost-C-021-C",
+        "CAU-EffectiveCost-C-022-C",
+        "CAU-EffectiveCost-C-023-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-effectivecost"
+      ],
+      "economicallyMaterial": true,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "HostProviderName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-075-M",
+        "CAU-HostProviderName-C-000-M",
+        "CAU-HostProviderName-C-001-M",
+        "CAU-HostProviderName-C-002-M",
+        "CAU-HostProviderName-C-003-M",
+        "CAU-HostProviderName-C-004-C",
+        "CAU-HostProviderName-C-005-C",
+        "CAU-HostProviderName-C-006-M",
+        "CAU-HostProviderName-C-007-C",
+        "CAU-HostProviderName-C-008-C",
+        "CAU-HostProviderName-C-009-C",
+        "CAU-HostProviderName-C-010-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-hostprovidername"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "InvoiceDetailId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-098-C",
+        "CAU-InvoiceDetailId-C-000-C",
+        "CAU-InvoiceDetailId-C-001-M",
+        "CAU-InvoiceDetailId-C-002-M",
+        "CAU-InvoiceDetailId-C-003-C",
+        "CAU-InvoiceDetailId-C-004-C",
+        "CAU-InvoiceDetailId-C-005-C",
+        "CAU-InvoiceDetailId-C-006-O",
+        "CAU-InvoiceDetailId-C-007-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-invoicedetailid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "InvoiceId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-033-C",
+        "CAU-InvoiceId-C-000-C",
+        "CAU-InvoiceId-C-001-M",
+        "CAU-InvoiceId-C-002-M",
+        "CAU-InvoiceId-C-003-C",
+        "CAU-InvoiceId-C-004-C",
+        "CAU-InvoiceId-C-005-C",
+        "CAU-InvoiceId-C-006-O",
+        "CAU-InvoiceId-C-007-C",
+        "CAU-InvoiceId-C-008-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-invoiceid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "InvoiceIssuerName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-023-M",
+        "CAU-InvoiceIssuerName-C-000-M",
+        "CAU-InvoiceIssuerName-C-001-M",
+        "CAU-InvoiceIssuerName-C-002-M",
+        "CAU-InvoiceIssuerName-C-003-M",
+        "CAU-InvoiceIssuerName-C-004-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-invoiceissuername"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ListCost",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-032-M",
+        "CAU-ListCost-C-000-M",
+        "CAU-ListCost-C-001-M",
+        "CAU-ListCost-C-002-M",
+        "CAU-ListCost-C-003-M",
+        "CAU-ListCost-C-004-M",
+        "CAU-ListCost-C-005-M",
+        "CAU-ListCost-C-006-C",
+        "CAU-ListCost-C-007-M",
+        "CAU-ListCost-C-008-M",
+        "CAU-ListCost-C-009-C",
+        "CAU-ListCost-C-010-C",
+        "CAU-ListCost-C-011-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-listcost"
+      ],
+      "economicallyMaterial": true,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ListUnitPrice",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-004-C",
+        "CAU-ListUnitPrice-C-000-C",
+        "CAU-ListUnitPrice-C-001-M",
+        "CAU-ListUnitPrice-C-002-M",
+        "CAU-ListUnitPrice-C-003-M",
+        "CAU-ListUnitPrice-C-004-C",
+        "CAU-ListUnitPrice-C-005-C",
+        "CAU-ListUnitPrice-C-006-O",
+        "CAU-ListUnitPrice-C-007-C",
+        "CAU-ListUnitPrice-C-008-M",
+        "CAU-ListUnitPrice-C-009-M",
+        "CAU-ListUnitPrice-C-010-C",
+        "CAU-ListUnitPrice-C-011-C",
+        "CAU-ListUnitPrice-C-012-C",
+        "CAU-ListUnitPrice-C-013-C",
+        "CAU-ListUnitPrice-C-014-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-listunitprice"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PricingCategory",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-022-C",
+        "CAU-PricingCategory-C-000-C",
+        "CAU-PricingCategory-C-001-M",
+        "CAU-PricingCategory-C-002-M",
+        "CAU-PricingCategory-C-003-C",
+        "CAU-PricingCategory-C-004-C",
+        "CAU-PricingCategory-C-005-O",
+        "CAU-PricingCategory-C-006-C",
+        "CAU-PricingCategory-C-007-M",
+        "CAU-PricingCategory-C-008-C",
+        "CAU-PricingCategory-C-009-C",
+        "CAU-PricingCategory-C-010-C",
+        "CAU-PricingCategory-C-011-C",
+        "CAU-PricingCategory-C-012-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-pricingcategory"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PricingCurrency",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-045-C",
+        "CAU-PricingCurrency-C-000-C",
+        "CAU-PricingCurrency-C-001-M",
+        "CAU-PricingCurrency-C-002-M",
+        "CAU-PricingCurrency-C-003-M",
+        "CAU-PricingCurrency-C-004-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-pricingcurrency"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PricingCurrencyContractedUnitPrice",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-046-C",
+        "CAU-CostAndUsage-D-047-C",
+        "CAU-CostAndUsage-D-048-C",
+        "CAU-CostAndUsage-D-049-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-000-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-001-M",
+        "CAU-PricingCurrencyContractedUnitPrice-C-002-M",
+        "CAU-PricingCurrencyContractedUnitPrice-C-003-M",
+        "CAU-PricingCurrencyContractedUnitPrice-C-004-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-005-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-006-O",
+        "CAU-PricingCurrencyContractedUnitPrice-C-007-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-008-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-009-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-010-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-011-C",
+        "CAU-PricingCurrencyContractedUnitPrice-C-012-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-pricingcurrencycontractedunitprice"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PricingCurrencyEffectiveCost",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-050-C",
+        "CAU-CostAndUsage-D-051-C",
+        "CAU-CostAndUsage-D-052-C",
+        "CAU-CostAndUsage-D-053-C",
+        "CAU-PricingCurrencyEffectiveCost-C-000-C",
+        "CAU-PricingCurrencyEffectiveCost-C-001-M",
+        "CAU-PricingCurrencyEffectiveCost-C-002-M",
+        "CAU-PricingCurrencyEffectiveCost-C-003-M",
+        "CAU-PricingCurrencyEffectiveCost-C-004-M",
+        "CAU-PricingCurrencyEffectiveCost-C-005-M",
+        "CAU-PricingCurrencyEffectiveCost-C-006-M",
+        "CAU-PricingCurrencyEffectiveCost-C-007-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-pricingcurrencyeffectivecost"
+      ],
+      "economicallyMaterial": true,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PricingCurrencyListUnitPrice",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-054-C",
+        "CAU-CostAndUsage-D-055-C",
+        "CAU-CostAndUsage-D-056-C",
+        "CAU-CostAndUsage-D-057-C",
+        "CAU-PricingCurrencyListUnitPrice-C-000-C",
+        "CAU-PricingCurrencyListUnitPrice-C-001-M",
+        "CAU-PricingCurrencyListUnitPrice-C-002-M",
+        "CAU-PricingCurrencyListUnitPrice-C-003-M",
+        "CAU-PricingCurrencyListUnitPrice-C-004-C",
+        "CAU-PricingCurrencyListUnitPrice-C-005-C",
+        "CAU-PricingCurrencyListUnitPrice-C-006-O",
+        "CAU-PricingCurrencyListUnitPrice-C-007-C",
+        "CAU-PricingCurrencyListUnitPrice-C-008-M",
+        "CAU-PricingCurrencyListUnitPrice-C-009-M",
+        "CAU-PricingCurrencyListUnitPrice-C-010-C",
+        "CAU-PricingCurrencyListUnitPrice-C-011-C",
+        "CAU-PricingCurrencyListUnitPrice-C-012-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-pricingcurrencylistunitprice"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PricingQuantity",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-036-M",
+        "CAU-PricingQuantity-C-000-M",
+        "CAU-PricingQuantity-C-001-M",
+        "CAU-PricingQuantity-C-002-M",
+        "CAU-PricingQuantity-C-003-M",
+        "CAU-PricingQuantity-C-004-C",
+        "CAU-PricingQuantity-C-005-C",
+        "CAU-PricingQuantity-C-006-O",
+        "CAU-PricingQuantity-C-007-C",
+        "CAU-PricingQuantity-C-008-M",
+        "CAU-PricingQuantity-C-009-C",
+        "CAU-PricingQuantity-C-010-C",
+        "CAU-PricingQuantity-C-011-C",
+        "CAU-PricingQuantity-C-012-C",
+        "CAU-PricingQuantity-C-013-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-pricingquantity"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PricingUnit",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-068-M",
+        "CAU-PricingUnit-C-000-M",
+        "CAU-PricingUnit-C-001-M",
+        "CAU-PricingUnit-C-002-M",
+        "CAU-PricingUnit-C-003-O",
+        "CAU-PricingUnit-C-004-C",
+        "CAU-PricingUnit-C-005-C",
+        "CAU-PricingUnit-C-006-C",
+        "CAU-PricingUnit-C-007-C",
+        "CAU-PricingUnit-C-008-M",
+        "CAU-PricingUnit-C-009-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-pricingunit"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ProviderName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-038-M",
+        "CAU-ProviderName-C-000-M",
+        "CAU-ProviderName-C-001-M",
+        "CAU-ProviderName-C-002-M",
+        "CAU-ProviderName-C-003-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-providername"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "PublisherName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-021-M",
+        "CAU-PublisherName-C-000-M",
+        "CAU-PublisherName-C-001-M",
+        "CAU-PublisherName-C-002-M",
+        "CAU-PublisherName-C-003-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-publishername"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "RegionId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-063-C",
+        "CAU-RegionId-C-000-C",
+        "CAU-RegionId-C-001-M",
+        "CAU-RegionId-C-002-M",
+        "CAU-RegionId-C-003-C",
+        "CAU-RegionId-C-004-C",
+        "CAU-RegionId-C-005-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-regionid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "RegionName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-062-C",
+        "CAU-RegionName-C-000-C",
+        "CAU-RegionName-C-001-M",
+        "CAU-RegionName-C-002-M",
+        "CAU-RegionName-C-003-C",
+        "CAU-RegionName-C-004-C",
+        "CAU-RegionName-C-005-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-regionname"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ResourceId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-043-C",
+        "CAU-ResourceId-C-000-C",
+        "CAU-ResourceId-C-001-M",
+        "CAU-ResourceId-C-002-M",
+        "CAU-ResourceId-C-003-C",
+        "CAU-ResourceId-C-004-C",
+        "CAU-ResourceId-C-005-C",
+        "CAU-ResourceId-C-006-C",
+        "CAU-ResourceId-C-007-M",
+        "CAU-ResourceId-C-008-O",
+        "CAU-ResourceId-C-009-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-resourceid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ResourceName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-044-C",
+        "CAU-ResourceName-C-000-C",
+        "CAU-ResourceName-C-001-M",
+        "CAU-ResourceName-C-002-M",
+        "CAU-ResourceName-C-003-C",
+        "CAU-ResourceName-C-004-C",
+        "CAU-ResourceName-C-005-C",
+        "CAU-ResourceName-C-006-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-resourcename"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ResourceType",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-039-C",
+        "CAU-ResourceType-C-000-C",
+        "CAU-ResourceType-C-001-M",
+        "CAU-ResourceType-C-002-M",
+        "CAU-ResourceType-C-003-C",
+        "CAU-ResourceType-C-004-C",
+        "CAU-ResourceType-C-005-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-resourcetype"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ServiceCategory",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-040-M",
+        "CAU-ServiceCategory-C-000-M",
+        "CAU-ServiceCategory-C-001-M",
+        "CAU-ServiceCategory-C-002-M",
+        "CAU-ServiceCategory-C-003-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-servicecategory"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ServiceName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-041-M",
+        "CAU-ServiceName-C-000-M",
+        "CAU-ServiceName-C-001-M",
+        "CAU-ServiceName-C-002-M",
+        "CAU-ServiceName-C-003-M",
+        "CAU-ServiceName-C-004-C",
+        "CAU-ServiceName-C-005-C",
+        "CAU-ServiceName-C-006-C",
+        "CAU-ServiceName-C-007-C",
+        "CAU-ServiceName-C-008-C",
+        "CAU-ServiceName-C-009-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-servicename"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ServiceProviderName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-076-M",
+        "CAU-ServiceProviderName-C-000-M",
+        "CAU-ServiceProviderName-C-001-M",
+        "CAU-ServiceProviderName-C-002-M",
+        "CAU-ServiceProviderName-C-003-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-serviceprovidername"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "ServiceSubcategory",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-042-O",
+        "CAU-ServiceSubcategory-C-000-O",
+        "CAU-ServiceSubcategory-C-001-M",
+        "CAU-ServiceSubcategory-C-002-M",
+        "CAU-ServiceSubcategory-C-003-M",
+        "CAU-ServiceSubcategory-C-004-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-servicesubcategory"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "SkuId",
+      "disposition": "mapped",
+      "destinationField": "sku",
+      "transform": "string",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-060-C",
+        "CAU-SkuId-C-000-C",
+        "CAU-SkuId-C-001-M",
+        "CAU-SkuId-C-002-M",
+        "CAU-SkuId-C-003-M",
+        "CAU-SkuId-C-004-C",
+        "CAU-SkuId-C-005-C",
+        "CAU-SkuId-C-006-O",
+        "CAU-SkuId-C-007-M",
+        "CAU-SkuId-C-008-M",
+        "CAU-SkuId-C-009-M",
+        "CAU-SkuId-C-010-M",
+        "CAU-SkuId-C-011-C",
+        "CAU-SkuId-C-012-O"
+      ],
+      "fixtureIds": [
+        "focus-1.4-skuid"
+      ],
+      "economicallyMaterial": false
+    },
+    {
+      "sourceColumn": "SkuMeter",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-059-C",
+        "CAU-SkuMeter-C-000-C",
+        "CAU-SkuMeter-C-001-M",
+        "CAU-SkuMeter-C-002-M",
+        "CAU-SkuMeter-C-003-C",
+        "CAU-SkuMeter-C-004-C",
+        "CAU-SkuMeter-C-005-C",
+        "CAU-SkuMeter-C-006-O"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-skumeter"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "SkuPriceDetails",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-061-C",
+        "CAU-SkuPriceDetails-C-000-C",
+        "CAU-SkuPriceDetails-C-001-M",
+        "CAU-SkuPriceDetails-C-002-O",
+        "CAU-SkuPriceDetails-C-003-C",
+        "CAU-SkuPriceDetails-C-004-C",
+        "CAU-SkuPriceDetails-C-005-C",
+        "CAU-SkuPriceDetails-C-006-C",
+        "CAU-SkuPriceDetails-C-007-M",
+        "CAU-SkuPriceDetails-C-008-M",
+        "CAU-SkuPriceDetails-C-009-O",
+        "CAU-SkuPriceDetails-C-010-C",
+        "CAU-SkuPriceDetails-C-011-O",
+        "CAU-SkuPriceDetails-C-012-M",
+        "CAU-SkuPriceDetails-C-013-O",
+        "CAU-SkuPriceDetails-C-014-O",
+        "CAU-SkuPriceDetails-C-015-O",
+        "CAU-SkuPriceDetails-C-016-O",
+        "CAU-SkuPriceDetails-C-017-C",
+        "CAU-SkuPriceDetails-C-018-C",
+        "CAU-SkuPriceDetails-C-019-M",
+        "CAU-SkuPriceDetails-C-020-M",
+        "CAU-SkuPriceDetails-C-021-M",
+        "CAU-SkuPriceDetails-C-022-C",
+        "CAU-SkuPriceDetails-C-023-C",
+        "CAU-SkuPriceDetails-C-024-M",
+        "CAU-SkuPriceDetails-C-025-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-skupricedetails"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "SkuPriceId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-058-C",
+        "CAU-SkuPriceId-C-000-C",
+        "CAU-SkuPriceId-C-001-M",
+        "CAU-SkuPriceId-C-002-M",
+        "CAU-SkuPriceId-C-003-M",
+        "CAU-SkuPriceId-C-004-C",
+        "CAU-SkuPriceId-C-005-C",
+        "CAU-SkuPriceId-C-006-O",
+        "CAU-SkuPriceId-C-007-C",
+        "CAU-SkuPriceId-C-008-M",
+        "CAU-SkuPriceId-C-009-M",
+        "CAU-SkuPriceId-C-010-M",
+        "CAU-SkuPriceId-C-011-O",
+        "CAU-SkuPriceId-C-012-C",
+        "CAU-SkuPriceId-C-013-M",
+        "CAU-SkuPriceId-C-014-C",
+        "CAU-SkuPriceId-C-015-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-skupriceid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "SubAccountId",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-019-C",
+        "CAU-SubAccountId-C-000-C",
+        "CAU-SubAccountId-C-001-M",
+        "CAU-SubAccountId-C-002-M",
+        "CAU-SubAccountId-C-003-C",
+        "CAU-SubAccountId-C-004-C",
+        "CAU-SubAccountId-C-005-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-subaccountid"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "SubAccountName",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-029-C",
+        "CAU-SubAccountName-C-000-C",
+        "CAU-SubAccountName-C-001-M",
+        "CAU-SubAccountName-C-002-M",
+        "CAU-SubAccountName-C-003-C",
+        "CAU-SubAccountName-C-004-C",
+        "CAU-SubAccountName-C-005-C"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-subaccountname"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "SubAccountType",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-067-C",
+        "CAU-SubAccountType-C-000-C",
+        "CAU-SubAccountType-C-001-M",
+        "CAU-SubAccountType-C-002-M",
+        "CAU-SubAccountType-C-003-C",
+        "CAU-SubAccountType-C-004-C",
+        "CAU-SubAccountType-C-005-C",
+        "CAU-SubAccountType-C-006-M"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-subaccounttype"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    },
+    {
+      "sourceColumn": "Tags",
+      "disposition": "preserved_only",
+      "requirementIds": [
+        "CAU-CostAndUsage-D-064-C",
+        "CAU-Tags-C-000-C",
+        "CAU-Tags-C-001-M",
+        "CAU-Tags-C-002-O",
+        "CAU-Tags-C-003-C",
+        "CAU-Tags-C-004-M",
+        "CAU-Tags-C-005-M",
+        "CAU-Tags-C-006-O",
+        "CAU-Tags-C-007-O",
+        "CAU-Tags-C-008-M",
+        "CAU-Tags-C-009-O",
+        "CAU-Tags-C-010-C",
+        "CAU-Tags-C-011-M",
+        "CAU-Tags-C-012-M",
+        "CAU-Tags-C-013-O",
+        "CAU-Tags-C-014-M",
+        "CAU-Tags-C-015-C",
+        "CAU-Tags-C-016-C",
+        "CAU-Tags-C-017-M",
+        "CAU-Tags-C-018-M",
+        "CAU-Tags-C-019-M",
+        "CAU-Tags-C-020-C",
+        "CAU-Tags-C-021-M",
+        "CAU-Tags-C-022-O",
+        "CAU-Tags-C-023-O"
+      ],
+      "fixtureIds": [
+        "focus-1.4-preserve-tags"
+      ],
+      "economicallyMaterial": false,
+      "reason": "Preserved as FOCUS-native restricted evidence; not projected into the neutral billed-cost row."
+    }
+  ],
+  "unsupportedConcepts": [
+    "foreign_exchange_conversion",
+    "automatic_refund_inference",
+    "automatic_commitment_inference",
+    "automatic_capacity_charge_inference",
+    "focus_export",
+    "focus_certification"
+  ]
+}

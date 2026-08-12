@@ -17,6 +17,12 @@ test("economics artifact roles bind contracts to truth planes and public policy"
   assert.equal(evidenceArtifactRoleDescriptor("cost-reconciliation").truthPlane, "billing");
   assert.equal(evidenceArtifactRoleDescriptor("decision-packet").truthPlane, "decision");
   assert.equal(RUHROH_EVIDENCE_ARTIFACT_ROLES["billing-source-manifest"].publicPolicy, "restricted");
+  assert.equal(RUHROH_EVIDENCE_ARTIFACT_ROLES["focus-dataset-bundle"].publicPolicy, "restricted");
+  assert.equal(RUHROH_EVIDENCE_ARTIFACT_ROLES["focus-attribution-profile"].publicPolicy, "restricted");
+  assert.equal(RUHROH_EVIDENCE_ARTIFACT_ROLES["focus-validator-output"].publicPolicy, "restricted");
+  assert.equal(RUHROH_EVIDENCE_ARTIFACT_ROLES["focus-source-dataset"].publicPolicy, "restricted");
+  assert.equal(RUHROH_EVIDENCE_ARTIFACT_ROLES["cost-reconciliation-v2"].publicPolicy, "allowed");
+  assert.equal(evidenceArtifactRoleDescriptor("focus-spec-lock").truthPlane, "billing");
 });
 
 test("public artifact inventories reject raw billing and review-only evidence", () => {

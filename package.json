@@ -41,6 +41,10 @@
       "types": "./dist/billing.d.ts",
       "import": "./dist/billing.js"
     },
+    "./billing-v2": {
+      "types": "./dist/billing-v2.d.ts",
+      "import": "./dist/billing-v2.js"
+    },
     "./decision": {
       "types": "./dist/decision.d.ts",
       "import": "./dist/decision.js"
@@ -65,6 +69,10 @@
       "types": "./dist/findings.d.ts",
       "import": "./dist/findings.js"
     },
+    "./focus": {
+      "types": "./dist/focus.d.ts",
+      "import": "./dist/focus.js"
+    },
     "./scale": {
       "types": "./dist/scale.d.ts",
       "import": "./dist/scale.js"
@@ -77,12 +85,15 @@
     "./schemas/benchmark-summary-v2.schema.json": "./schemas/benchmark-summary-v2.schema.json",
     "./schemas/benchmark-target-config-v1.schema.json": "./schemas/benchmark-target-config-v1.schema.json",
     "./schemas/billing-mapping-profile-v1.schema.json": "./schemas/billing-mapping-profile-v1.schema.json",
+    "./schemas/billing-mapping-profile-v2.schema.json": "./schemas/billing-mapping-profile-v2.schema.json",
     "./schemas/billing-source-manifest-v1.schema.json": "./schemas/billing-source-manifest-v1.schema.json",
+    "./schemas/billing-source-manifest-v2.schema.json": "./schemas/billing-source-manifest-v2.schema.json",
     "./schemas/claim-index-v1.schema.json": "./schemas/claim-index-v1.schema.json",
     "./schemas/claim-index-v2.schema.json": "./schemas/claim-index-v2.schema.json",
     "./schemas/compare-v2.schema.json": "./schemas/compare-v2.schema.json",
     "./schemas/control-surface-v1.schema.json": "./schemas/control-surface-v1.schema.json",
     "./schemas/cost-reconciliation-v1.schema.json": "./schemas/cost-reconciliation-v1.schema.json",
+    "./schemas/cost-reconciliation-v2.schema.json": "./schemas/cost-reconciliation-v2.schema.json",
     "./schemas/decision-context-v1.schema.json": "./schemas/decision-context-v1.schema.json",
     "./schemas/decision-packet-v1.schema.json": "./schemas/decision-packet-v1.schema.json",
     "./schemas/economic-trace-span-v1.schema.json": "./schemas/economic-trace-span-v1.schema.json",
@@ -92,9 +103,19 @@
     "./schemas/eval-calibration-report-v1.schema.json": "./schemas/eval-calibration-report-v1.schema.json",
     "./schemas/eval-result-v1.schema.json": "./schemas/eval-result-v1.schema.json",
     "./schemas/findings-v1.schema.json": "./schemas/findings-v1.schema.json",
+    "./schemas/focus-conformance-report-v1.schema.json": "./schemas/focus-conformance-report-v1.schema.json",
+    "./schemas/focus-conformance-profile-v1.schema.json": "./schemas/focus-conformance-profile-v1.schema.json",
+    "./schemas/focus-catalog-v1.schema.json": "./schemas/focus-catalog-v1.schema.json",
+    "./schemas/focus-dataset-bundle-v1.schema.json": "./schemas/focus-dataset-bundle-v1.schema.json",
+    "./schemas/focus-attribution-profile-v1.schema.json": "./schemas/focus-attribution-profile-v1.schema.json",
+    "./schemas/focus-import-report-v1.schema.json": "./schemas/focus-import-report-v1.schema.json",
+    "./schemas/focus-mapping-pack-v1.schema.json": "./schemas/focus-mapping-pack-v1.schema.json",
+    "./schemas/focus-spec-lock-v1.schema.json": "./schemas/focus-spec-lock-v1.schema.json",
+    "./schemas/focus-update-review-v1.schema.json": "./schemas/focus-update-review-v1.schema.json",
     "./schemas/intervention-ledger-v1.schema.json": "./schemas/intervention-ledger-v1.schema.json",
     "./schemas/loop-result-v1.schema.json": "./schemas/loop-result-v1.schema.json",
     "./schemas/normalized-billing-row-v1.schema.json": "./schemas/normalized-billing-row-v1.schema.json",
+    "./schemas/normalized-billing-row-v2.schema.json": "./schemas/normalized-billing-row-v2.schema.json",
     "./schemas/outcome-frontier-v1.schema.json": "./schemas/outcome-frontier-v1.schema.json",
     "./schemas/product-engineering-decision-view-v1.schema.json": "./schemas/product-engineering-decision-view-v1.schema.json",
     "./schemas/publication-v2.schema.json": "./schemas/publication-v2.schema.json",
@@ -154,6 +175,8 @@
     "smoke:package": "node scripts/package-smoke.mjs",
     "docs:samples": "node scripts/generate-docs-samples.mjs",
     "docs:samples:check": "node scripts/check-docs-samples.mjs",
+    "focus:catalog": "pnpm run build && node scripts/generate-focus-catalog.mjs",
+    "focus:update:propose": "pnpm run build && node scripts/propose-focus-update.mjs",
     "docs:dev": "vitepress dev docs",
     "docs:build": "vitepress build docs",
     "docs:preview": "vitepress preview docs",
@@ -166,5 +189,9 @@
     "typescript": "^5.8.2",
     "vitepress": "^1.6.4"
   },
-  "packageManager": "pnpm@9.12.3"
+  "packageManager": "pnpm@9.12.3",
+  "dependencies": {
+    "apache-arrow": "21.1.0",
+    "parquet-wasm": "0.7.2"
+  }
 }

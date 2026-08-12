@@ -1,5 +1,5 @@
 import { buildRuhrohCostReconciliation, type RuhrohNormalizedBillingRowV1 } from "./billing.js";
-export declare const RUHROH_ECONOMICS_COMMANDS: readonly ["validate", "conformance", "scale-analyze", "findings", "provider-drift", "decision-packet", "billing-reconcile"];
+export declare const RUHROH_ECONOMICS_COMMANDS: readonly ["validate", "conformance", "scale-analyze", "findings", "provider-drift", "decision-packet", "billing-reconcile", "billing-reconcile-v2", "focus-validate", "focus-import", "focus-check-update", "focus-propose-update"];
 export type RuhrohEconomicsCommand = typeof RUHROH_ECONOMICS_COMMANDS[number];
 export interface RuhrohEconomicsCommandEnvelopeV1 {
     version: "ruhroh_economics_command_v1";

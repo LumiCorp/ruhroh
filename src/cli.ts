@@ -10827,6 +10827,11 @@ Common commands:
   ruhroh economics provider-drift ./provider-drift-input.json --json
   ruhroh economics decision-packet ./decision-packet-input.json --json
   ruhroh economics billing-reconcile ./billing-reconciliation-input.json --json
+  ruhroh economics billing-reconcile-v2 ./billing-reconciliation-v2-input.json --json
+  ruhroh economics focus-validate ./focus-validation-input.json --json
+  ruhroh economics focus-import ./focus-import-input.json --json
+  ruhroh economics focus-check-update ./focus-update-input.json --json
+  ruhroh economics focus-propose-update ./focus-update-input.json --json
 
 Options:
   --list                    Legacy alias for list.

@@ -17,7 +17,10 @@
         "workload-profile", "control-surface", "workload-binding", "intervention-ledger",
         "decision-context", "decision-packet", "product-engineering-decision-view",
         "billing-source-manifest", "billing-mapping-profile", "normalized-billing-row",
-        "technical-economic-fact", "cost-reconciliation", "publish-check", "bundle-manifest",
+        "technical-economic-fact", "cost-reconciliation", "focus-spec-lock", "focus-mapping-pack",
+        "billing-source-manifest-v2", "billing-mapping-profile-v2", "normalized-billing-row-v2", "cost-reconciliation-v2",
+        "focus-catalog", "focus-conformance-profile", "focus-conformance-report", "focus-validator-output", "focus-source-dataset", "focus-dataset-bundle", "focus-attribution-profile",
+        "focus-import-report", "focus-update-review", "publish-check", "bundle-manifest",
         "claim-index", "publication"
       ]
     },
