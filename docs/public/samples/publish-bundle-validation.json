@@ -271,22 +271,22 @@
       "details": "bundle file is present"
     },
     {
-      "name": "manifest.$schema",
+      "name": "manifest.validation",
       "status": "ok",
       "path": "./ruhroh-publication/manifest.json",
-      "details": "$schema=https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json"
-    },
-    {
-      "name": "manifest.version",
-      "status": "ok",
-      "path": "./ruhroh-publication/manifest.json",
-      "details": "version=ruhroh_publish_bundle_v1"
+      "details": "bundle manifest validation passed"
     },
     {
       "name": "publish-check.version",
       "status": "ok",
       "path": "./ruhroh-publication/publish-check.json",
       "details": "version=ruhroh_publish_check_v1"
+    },
+    {
+      "name": "publish-check.compare.version",
+      "status": "ok",
+      "path": "./ruhroh-publication/publish-check.json",
+      "details": "version=ruhroh_compare_v1"
     },
     {
       "name": "benchmark-claim.version",
