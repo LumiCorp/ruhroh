@@ -1,0 +1,71 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/decision-context-v1.schema.json",
+  "version": "ruhroh_decision_context_v1",
+  "contextId": "context-experiment-2026-07",
+  "authoredAt": "2026-06-28T12:00:00.000Z",
+  "workloadBinding": {
+    "version": "ruhroh_workload_binding_v1",
+    "experimentId": "experiment-2026-07",
+    "workloadId": "workload-support-resolution",
+    "projectId": "project-synthetic",
+    "workflowInstanceId": "workflow-demo-001",
+    "hierarchyRef": {
+      "path": "./restricted/project-hierarchy.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version": "synthetic-hierarchy-v1"
+    }
+  },
+  "benchmarkClaimRef": {
+    "path": "./benchmark-claim-v2.json",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "version": "ruhroh_benchmark_claim_v2"
+  },
+  "qualityEnvelope": {
+    "minimumPassRateWilsonLower": 0.8,
+    "maximumP95ImplementationWallTimeMs": 120000
+  },
+  "value": {
+    "mode": "displaced_work",
+    "indicatorId": "median_completion_minutes",
+    "unit": "minutes_per_accepted_change",
+    "baseline": 18,
+    "hypothesis": "The evaluated workflow reduces median completion time while preserving the declared quality envelope."
+  },
+  "observationWindow": {
+    "startedAt": "2026-07-01T00:00:00.000Z",
+    "endedAt": "2026-07-08T00:00:00.000Z"
+  },
+  "interventionPolicy": {
+    "autonomy": "strict_zero_touch",
+    "passiveObservationCountsAsIntervention": false,
+    "reworkWindowDays": 7
+  },
+  "stopRules": [
+    {
+      "id": "quality-floor",
+      "condition": "Wilson lower bound for pass rate is below 0.8.",
+      "action": "stop"
+    },
+    {
+      "id": "latency-envelope",
+      "condition": "P95 implementation wall time exceeds 120000 milliseconds.",
+      "action": "modify"
+    }
+  ],
+  "owners": {
+    "technical_owner": "role:technical-owner",
+    "product_workload_owner": "role:product-owner",
+    "financial_owner": "role:financial-reviewer",
+    "governance_owner": "role:governance-reviewer",
+    "accountable_decision_owner": "role:decision-owner"
+  },
+  "privacy": {
+    "classification": "internal",
+    "publicReportingGrain": "workload",
+    "redactionPolicyRef": {
+      "path": "./policies/public-redaction.json",
+      "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+      "version": "synthetic-redaction-policy-v1"
+    }
+  }
+}

@@ -1,0 +1,110 @@
+{
+  "baseline": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/provider-baseline-v1.schema.json",
+    "version": "ruhroh_provider_baseline_v1",
+    "baselineId": "provider-baseline-synthetic-2026-07",
+    "createdAt": "2026-07-22T12:00:00.000Z",
+    "controls": {
+      "suiteId": "synthetic-change-suite",
+      "suiteVersion": "1.0.0",
+      "scenarioVersions": {
+        "synthetic-changes-1": "1.0.0",
+        "synthetic-changes-2": "1.0.0"
+      },
+      "benchmarkTargetId": "target-synthetic-agent",
+      "harnessId": "synthetic-harness",
+      "harnessVersion": "1.0.0",
+      "providerPath": "synthetic-provider/direct",
+      "promptHash": "6666666666666666666666666666666666666666666666666666666666666666",
+      "evaluatorSignature": "synthetic-change-evaluator@1",
+      "judgeIdentity": "synthetic-judge@1",
+      "environmentPolicyHash": "7777777777777777777777777777777777777777777777777777777777777777"
+    },
+    "margins": {
+      "qualityPassRateDelta": 0.05,
+      "latencyRatio": 1.2,
+      "consumptionRatio": 1.15,
+      "priceRatio": 1.1
+    },
+    "metrics": {
+      "passRate": 0.92,
+      "passRateCi95": {
+        "lower": 0.84,
+        "upper": 0.97
+      },
+      "p95ImplementationWallTimeMs": 98000,
+      "p95ImplementationWallTimeRatioCi95": {
+        "lower": 0.96,
+        "upper": 1.04
+      },
+      "tokensPerAcceptedOutcome": 4200,
+      "tokenRatioCi95": {
+        "lower": 0.97,
+        "upper": 1.05
+      },
+      "pricePerMillionTokens": 4.25,
+      "priceRatioCi95": {
+        "lower": 1,
+        "upper": 1
+      },
+      "observedModelFingerprint": "synthetic-model-build-001",
+      "sampleCount": 30,
+      "metricTestPValues": {
+        "quality": 0.72,
+        "latency": 0.64,
+        "consumption": 0.58,
+        "price": 1
+      }
+    },
+    "source": {
+      "path": "./benchmark-claim-v2.json",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  },
+  "currentControls": {
+    "suiteId": "synthetic-change-suite",
+    "suiteVersion": "1.0.0",
+    "scenarioVersions": {
+      "synthetic-changes-1": "1.0.0",
+      "synthetic-changes-2": "1.0.0"
+    },
+    "benchmarkTargetId": "target-synthetic-agent",
+    "harnessId": "synthetic-harness",
+    "harnessVersion": "1.0.0",
+    "providerPath": "synthetic-provider/direct",
+    "promptHash": "6666666666666666666666666666666666666666666666666666666666666666",
+    "evaluatorSignature": "synthetic-change-evaluator@1",
+    "judgeIdentity": "synthetic-judge@1",
+    "environmentPolicyHash": "7777777777777777777777777777777777777777777777777777777777777777"
+  },
+  "currentMetrics": {
+    "passRate": 0.92,
+    "passRateCi95": {
+      "lower": 0.84,
+      "upper": 0.97
+    },
+    "p95ImplementationWallTimeMs": 98000,
+    "p95ImplementationWallTimeRatioCi95": {
+      "lower": 0.96,
+      "upper": 1.04
+    },
+    "tokensPerAcceptedOutcome": 4200,
+    "tokenRatioCi95": {
+      "lower": 1.2,
+      "upper": 1.3
+    },
+    "pricePerMillionTokens": 4.25,
+    "priceRatioCi95": {
+      "lower": 1,
+      "upper": 1
+    },
+    "observedModelFingerprint": "synthetic-model-build-002",
+    "sampleCount": 30,
+    "metricTestPValues": {
+      "quality": 0.72,
+      "latency": 0.64,
+      "consumption": 0.58,
+      "price": 1
+    }
+  }
+}

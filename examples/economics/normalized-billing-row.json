@@ -1,0 +1,15 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/normalized-billing-row-v1.schema.json",
+  "version": "ruhroh_normalized_billing_row_v1",
+  "sourceRowId": "line-001",
+  "sourceRowSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+  "amount": 10,
+  "currency": "USD",
+  "kind": "charge",
+  "occurredAt": "2026-07-03T14:30:00.000Z",
+  "providerRequestId": "request-demo-001",
+  "principalRef": "tenant-example:principal-001",
+  "workloadId": "workload-support-resolution",
+  "model": "synthetic-model-001",
+  "sku": "synthetic-input-output-bundle"
+}

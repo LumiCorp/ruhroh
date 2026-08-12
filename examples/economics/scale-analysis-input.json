@@ -1,0 +1,322 @@
+{
+  "experiment": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/scale-experiment-v1.schema.json",
+    "version": "ruhroh_scale_experiment_v1",
+    "id": "scale-demo-ordered-changes",
+    "suite": {
+      "id": "synthetic-change-suite",
+      "suiteVersion": "1.0.0"
+    },
+    "variable": {
+      "symbol": "n",
+      "name": "ordered_change_requests",
+      "unit": "change_request"
+    },
+    "levels": [
+      {
+        "id": "n-1",
+        "n": 1,
+        "scenarioId": "synthetic-changes-1",
+        "scenarioVersion": "1.0.0",
+        "fixtureSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+        "requestIds": [
+          "change-01"
+        ]
+      },
+      {
+        "id": "n-2",
+        "n": 2,
+        "scenarioId": "synthetic-changes-2",
+        "scenarioVersion": "1.0.0",
+        "fixtureSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "requestIds": [
+          "change-01",
+          "change-02"
+        ]
+      },
+      {
+        "id": "n-4",
+        "n": 4,
+        "scenarioId": "synthetic-changes-4",
+        "scenarioVersion": "1.0.0",
+        "fixtureSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "requestIds": [
+          "change-01",
+          "change-02",
+          "change-03",
+          "change-04"
+        ]
+      },
+      {
+        "id": "n-8",
+        "n": 8,
+        "scenarioId": "synthetic-changes-8",
+        "scenarioVersion": "1.0.0",
+        "fixtureSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "requestIds": [
+          "change-01",
+          "change-02",
+          "change-03",
+          "change-04",
+          "change-05",
+          "change-06",
+          "change-07",
+          "change-08"
+        ]
+      },
+      {
+        "id": "n-16",
+        "n": 16,
+        "scenarioId": "synthetic-changes-16",
+        "scenarioVersion": "1.0.0",
+        "fixtureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+        "requestIds": [
+          "change-01",
+          "change-02",
+          "change-03",
+          "change-04",
+          "change-05",
+          "change-06",
+          "change-07",
+          "change-08",
+          "change-09",
+          "change-10",
+          "change-11",
+          "change-12",
+          "change-13",
+          "change-14",
+          "change-15",
+          "change-16"
+        ]
+      }
+    ],
+    "hypothesis": {
+      "expectedClass": "T(n)",
+      "rationale": "Each ordered change is expected to add a bounded amount of observable work."
+    },
+    "controls": {
+      "targetIds": [
+        "target-synthetic-agent"
+      ],
+      "frozenBaselineSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "promptTemplateSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+      "evaluatorSignature": "synthetic-change-evaluator@1",
+      "fixedRequestOrderSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+      "sessionPolicy": "fresh_per_sample",
+      "levelPolicy": "prefix_nested"
+    },
+    "qualityFloor": {
+      "perChangeCompletionRate": 0.95,
+      "zeroCriticalRegressions": true
+    },
+    "resourceMetric": "totalTokens",
+    "bootstrapSamples": 1000
+  },
+  "observations": [
+    {
+      "version": "ruhroh_scale_observation_v1",
+      "experimentId": "scale-demo-ordered-changes",
+      "targetId": "target-synthetic-agent",
+      "levelId": "n-1",
+      "n": 1,
+      "sampleId": "n-1-sample-001",
+      "changeResults": [
+        {
+          "requestId": "change-01",
+          "status": "passed"
+        }
+      ],
+      "totalTokens": 1000,
+      "modelCalls": 1,
+      "retryAttempts": 0,
+      "childAgentMaxDepth": 0,
+      "childAgentMaxFanout": 0,
+      "resourceBudgetStatus": "within"
+    },
+    {
+      "version": "ruhroh_scale_observation_v1",
+      "experimentId": "scale-demo-ordered-changes",
+      "targetId": "target-synthetic-agent",
+      "levelId": "n-2",
+      "n": 2,
+      "sampleId": "n-2-sample-001",
+      "changeResults": [
+        {
+          "requestId": "change-01",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-02",
+          "status": "passed"
+        }
+      ],
+      "totalTokens": 2000,
+      "modelCalls": 2,
+      "retryAttempts": 0,
+      "childAgentMaxDepth": 0,
+      "childAgentMaxFanout": 0,
+      "resourceBudgetStatus": "within"
+    },
+    {
+      "version": "ruhroh_scale_observation_v1",
+      "experimentId": "scale-demo-ordered-changes",
+      "targetId": "target-synthetic-agent",
+      "levelId": "n-4",
+      "n": 4,
+      "sampleId": "n-4-sample-001",
+      "changeResults": [
+        {
+          "requestId": "change-01",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-02",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-03",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-04",
+          "status": "passed"
+        }
+      ],
+      "totalTokens": 4000,
+      "modelCalls": 4,
+      "retryAttempts": 0,
+      "childAgentMaxDepth": 0,
+      "childAgentMaxFanout": 0,
+      "resourceBudgetStatus": "within"
+    },
+    {
+      "version": "ruhroh_scale_observation_v1",
+      "experimentId": "scale-demo-ordered-changes",
+      "targetId": "target-synthetic-agent",
+      "levelId": "n-8",
+      "n": 8,
+      "sampleId": "n-8-sample-001",
+      "changeResults": [
+        {
+          "requestId": "change-01",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-02",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-03",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-04",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-05",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-06",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-07",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-08",
+          "status": "passed"
+        }
+      ],
+      "totalTokens": 8000,
+      "modelCalls": 8,
+      "retryAttempts": 0,
+      "childAgentMaxDepth": 0,
+      "childAgentMaxFanout": 0,
+      "resourceBudgetStatus": "within"
+    },
+    {
+      "version": "ruhroh_scale_observation_v1",
+      "experimentId": "scale-demo-ordered-changes",
+      "targetId": "target-synthetic-agent",
+      "levelId": "n-16",
+      "n": 16,
+      "sampleId": "n-16-sample-001",
+      "changeResults": [
+        {
+          "requestId": "change-01",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-02",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-03",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-04",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-05",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-06",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-07",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-08",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-09",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-10",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-11",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-12",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-13",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-14",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-15",
+          "status": "passed"
+        },
+        {
+          "requestId": "change-16",
+          "status": "passed"
+        }
+      ],
+      "totalTokens": 16000,
+      "modelCalls": 16,
+      "retryAttempts": 0,
+      "childAgentMaxDepth": 0,
+      "childAgentMaxFanout": 0,
+      "resourceBudgetStatus": "within"
+    }
+  ],
+  "createdAt": "2026-08-12T12:00:00.000Z"
+}

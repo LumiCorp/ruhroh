@@ -1,0 +1,13 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/workload-binding-v1.schema.json",
+  "version": "ruhroh_workload_binding_v1",
+  "experimentId": "experiment-2026-07",
+  "workloadId": "workload-support-resolution",
+  "projectId": "project-synthetic",
+  "workflowInstanceId": "workflow-demo-001",
+  "hierarchyRef": {
+    "path": "./restricted/project-hierarchy.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "synthetic-hierarchy-v1"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/intervention-ledger-v1.schema.json",
+  "version": "ruhroh_intervention_ledger_v1",
+  "ledgerId": "ledger-workflow-demo-001",
+  "workloadBinding": {
+    "version": "ruhroh_workload_binding_v1",
+    "experimentId": "experiment-2026-07",
+    "workloadId": "workload-support-resolution",
+    "projectId": "project-synthetic",
+    "workflowInstanceId": "workflow-demo-001",
+    "hierarchyRef": {
+      "path": "./restricted/project-hierarchy.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version": "synthetic-hierarchy-v1"
+    }
+  },
+  "coverage": {
+    "startedAt": "2026-07-01T00:00:00.000Z",
+    "endedAt": "2026-07-15T00:00:00.000Z",
+    "complete": true,
+    "missingReasons": []
+  },
+  "verification": "measured",
+  "events": [
+    {
+      "version": "ruhroh_intervention_event_v1",
+      "eventId": "event-passive-review-001",
+      "kind": "passive_oversight",
+      "actorRole": "quality_observer",
+      "startedAt": "2026-07-03T15:00:00.000Z",
+      "endedAt": "2026-07-03T15:10:00.000Z",
+      "durationMinutes": 10,
+      "workflowInstanceId": "workflow-demo-001",
+      "runId": "run-demo-001",
+      "reason": "Observed the completed workflow without changing its execution.",
+      "evidenceRefs": [
+        {
+          "path": "./evidence/passive-review.json",
+          "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+          "version": "synthetic-observation-v1"
+        }
+      ]
+    }
+  ]
+}

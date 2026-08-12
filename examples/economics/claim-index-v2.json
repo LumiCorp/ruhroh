@@ -1,0 +1,109 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json",
+  "version": "ruhroh_claim_index_v2",
+  "generatedAt": "2026-08-12T12:00:00.000Z",
+  "source": {
+    "inputPath": "./publication"
+  },
+  "registryReady": false,
+  "registryBlockers": [
+    "blocked claim ./publication: artifact-completeness warnings present"
+  ],
+  "claimCount": 1,
+  "publishableCount": 0,
+  "blockedCount": 1,
+  "invalidCount": 0,
+  "suiteCount": 1,
+  "targetCount": 2,
+  "totalRuns": 20,
+  "totalAcceptedOutcomes": 20,
+  "claims": [
+    {
+      "claimPath": "./publication/benchmark-claim.json",
+      "bundlePath": "./publication",
+      "valid": true,
+      "publishable": false,
+      "scope": "suite",
+      "createdAt": "2026-08-12T12:00:00.000Z",
+      "suite": {
+        "id": "economics-smoke-example",
+        "title": "Experimental Economics Smoke Example",
+        "suiteVersion": "1.0.0"
+      },
+      "targets": [
+        {
+          "benchmarkTargetId": "baseline-target",
+          "identityStatus": "declared",
+          "executionAdapterIds": [
+            "fixture-agent"
+          ],
+          "runs": 10,
+          "acceptedOutcomes": 10,
+          "qualityFloorStatus": "passed",
+          "paretoStatus": "dominated",
+          "robustStatus": "dominated"
+        },
+        {
+          "benchmarkTargetId": "efficient-target",
+          "identityStatus": "declared",
+          "executionAdapterIds": [
+            "fixture-agent"
+          ],
+          "runs": 10,
+          "acceptedOutcomes": 10,
+          "qualityFloorStatus": "passed",
+          "paretoStatus": "pareto",
+          "robustStatus": "pareto"
+        }
+      ],
+      "summary": {
+        "scenarioCount": 1,
+        "targetCount": 2,
+        "totalRuns": 20,
+        "totalAcceptedOutcomes": 20,
+        "runWeightedPassRate": 1,
+        "runWeightedPassRateCi95": {
+          "method": "wilson",
+          "confidenceLevel": 0.95,
+          "lower": 0.8388748419471806,
+          "upper": 1
+        },
+        "reviewRequired": 0,
+        "reviewRecommended": 0,
+        "pairwiseComparisonCount": 1
+      },
+      "frontier": {
+        "status": "available",
+        "objectives": [
+          "tokens_per_accepted_outcome",
+          "p95_implementation_wall_time_ms"
+        ],
+        "paretoFrontierTargetIds": [
+          "efficient-target"
+        ],
+        "robustFrontierTargetIds": [
+          "efficient-target"
+        ]
+      },
+      "evidence": {
+        "runPlanPresent": true,
+        "runPlanWarnings": [],
+        "artifactValidationErrors": 0,
+        "artifactValidationWarnings": 0,
+        "artifactCompletenessWarnings": 180,
+        "reviewQueueItems": 0,
+        "requiredReviewItems": 0,
+        "recommendedReviewItems": 0
+      },
+      "sourcePaths": {},
+      "blockers": [
+        "artifact-completeness warnings present"
+      ],
+      "advisories": [
+        "Experimental economics fixture; live Kestrel conformance is not represented."
+      ],
+      "validationErrors": [],
+      "validationWarnings": []
+    }
+  ]
+}

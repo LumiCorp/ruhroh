@@ -1,0 +1,23 @@
+{
+  "version": "ruhroh_resource_budget_outcome_v1",
+  "scope": "implementation",
+  "status": "within",
+  "limits": [
+    {
+      "resource": "wallTimeMs",
+      "limit": 120000,
+      "observed": 3000,
+      "enforcement": "preemptive",
+      "coverage": "complete",
+      "status": "within"
+    },
+    {
+      "resource": "totalTokens",
+      "limit": 1000,
+      "observed": 350,
+      "enforcement": "boundary",
+      "coverage": "complete",
+      "status": "within"
+    }
+  ]
+}

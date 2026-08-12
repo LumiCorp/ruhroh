@@ -1,0 +1,87 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/product-engineering-decision-view-v1.schema.json",
+  "version": "ruhroh_product_engineering_decision_view_v1",
+  "packetId": "packet-experiment-2026-07",
+  "readiness": "decision_ready",
+  "workloadBinding": {
+    "version": "ruhroh_workload_binding_v1",
+    "experimentId": "experiment-2026-07",
+    "workloadId": "workload-support-resolution",
+    "projectId": "project-synthetic",
+    "workflowInstanceId": "workflow-demo-001",
+    "hierarchyRef": {
+      "path": "./restricted/project-hierarchy.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version": "synthetic-hierarchy-v1"
+    }
+  },
+  "qualityEligibility": {
+    "conclusion": "supported",
+    "evidenceLevel": "independently_verified",
+    "reasons": ["The repeated benchmark cohort met the predeclared quality and latency envelope."],
+    "evidenceRefs": [
+      {
+        "path": "./benchmark-claim-v2.json",
+        "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "version": "ruhroh_benchmark_claim_v2"
+      }
+    ]
+  },
+  "autonomy": {
+    "conclusion": "supported",
+    "evidenceLevel": "measured",
+    "reasons": ["Complete observation and rework coverage contained no disqualifying intervention."],
+    "evidenceRefs": [
+      {
+        "path": "./intervention-ledger.json",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "version": "ruhroh_intervention_ledger_v1"
+      }
+    ]
+  },
+  "businessValue": {
+    "conclusion": "supported",
+    "evidenceLevel": "measured",
+    "reasons": ["The measured completion-time indicator improved against its declared baseline."],
+    "evidenceRefs": [
+      {
+        "path": "./evidence/business-value.json",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+        "version": "synthetic-indicator-observation-v1"
+      }
+    ]
+  },
+  "unitEconomics": {
+    "status": "supported",
+    "coverage": "complete",
+    "costPerAcceptedOutcome": { "amount": 1.25, "currency": "USD" },
+    "tokensPerAcceptedOutcome": 3200,
+    "reasons": ["All included implementation runs had complete billed-cost and token coverage."]
+  },
+  "containment": {
+    "budgetStatus": "within",
+    "interventionCount": 0
+  },
+  "traceFindings": {
+    "confirmed": 1,
+    "candidate": 2,
+    "notObservable": 1
+  },
+  "rework": {
+    "coverageComplete": true,
+    "events": 0,
+    "minutes": 0
+  },
+  "unresolvedEvidence": [],
+  "decision": {
+    "action": "continue",
+    "signerRole": "accountable_decision_owner",
+    "signedAt": "2026-07-16T12:30:00.000Z",
+    "signatureRef": {
+      "path": "./restricted/decision-signature.json",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "version": "synthetic-signature-v1"
+    },
+    "rationale": "Continue the bounded pilot because all three evidence tiers are supported and the stop rules were not triggered."
+  }
+}

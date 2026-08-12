@@ -1,0 +1,42 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/billing-mapping-profile-v1.schema.json",
+  "version": "ruhroh_billing_mapping_profile_v1",
+  "profileId": "synthetic-provider-billing-v1",
+  "provider": "synthetic-provider",
+  "externalSchemaVersion": "synthetic-billing-v1",
+  "fields": {
+    "sourceRowId": "line_id",
+    "amount": "net_amount",
+    "currency": "currency_code",
+    "kind": "fact_kind",
+    "occurredAt": "observed_at",
+    "providerRequestId": "request_ref",
+    "principalRef": "principal_key",
+    "workloadId": "workload_key",
+    "model": "model_key",
+    "sku": "sku_key"
+  },
+  "kindValues": {
+    "charge": ["usage_charge"],
+    "credit": ["service_credit"],
+    "refund": ["refund"],
+    "commitment": ["commitment"],
+    "tax": ["tax"],
+    "prepaid": ["prepaid_drawdown"],
+    "capacity": ["reserved_capacity"]
+  },
+  "matching": {
+    "boundedWindowSeconds": 300,
+    "boundedFields": ["workloadId", "model", "sku"]
+  },
+  "allocations": [
+    {
+      "sourceRowId": "line-002",
+      "targets": [
+        { "workloadId": "workload-support-resolution", "weight": 0.5 },
+        { "workloadId": "workload-release-review", "weight": 0.5 }
+      ]
+    }
+  ],
+  "tolerance": 0.000001
+}

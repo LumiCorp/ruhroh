@@ -1,0 +1,26 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/workload-profile-v1.schema.json",
+  "version": "ruhroh_workload_profile_v1",
+  "profileId": "support-resolution-v1",
+  "taxonomy": {
+    "namespace": "example.invalid:workloads",
+    "version": "1.0.0"
+  },
+  "archetype": {
+    "id": "bounded-repository-change",
+    "label": "Bounded repository change"
+  },
+  "businessCapability": {
+    "id": "product-maintenance",
+    "label": "Product maintenance"
+  },
+  "taskPurpose": {
+    "id": "defect-resolution",
+    "label": "Defect resolution"
+  },
+  "unitOfWork": {
+    "id": "accepted-change-request",
+    "label": "Accepted change request"
+  },
+  "denominatorCardRef": "./denominator-cards/accepted-change-request.json"
+}

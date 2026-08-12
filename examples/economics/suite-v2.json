@@ -1,0 +1,75 @@
+{
+  "version": "ruhroh_suite_v2",
+  "id": "economics-smoke-example",
+  "title": "Experimental Economics Smoke Example",
+  "suiteVersion": "1.0.0",
+  "description": "A review fixture for outcome-constrained token and implementation-latency evidence.",
+  "scenarioIds": [
+    "simple-newsletter"
+  ],
+  "scenarioVersions": {
+    "simple-newsletter": "1.0.0"
+  },
+  "methodology": {
+    "minRuns": 10,
+    "aggregationUnit": "scenario_benchmark_target",
+    "reportPolicy": "pass_rate_ci_pass_at_k_outcome_frontier",
+    "confidenceLevel": 0.95,
+    "retryPolicy": "No automatic suite-level retries; failed work remains in resource numerators.",
+    "efficiency": {
+      "denominator": {
+        "id": "accepted_scenario_outcome",
+        "predicate": "score_1_and_eval_passed",
+        "failedWork": "included_in_resource_numerator"
+      },
+      "aggregation": {
+        "weighting": "run_plan",
+        "failedWork": "included_in_resource_numerator"
+      },
+      "suitableWorkloads": [
+        "Repeated coding-agent tasks with a stable independent evaluator."
+      ],
+      "requiredEvidence": [
+        "Declared benchmark target, run-plan weight, complete token coverage, and implementation wall time."
+      ],
+      "hiddenWork": [
+        "Provider-side processing that is not observable through the conformed adapter."
+      ],
+      "gamingRisks": [
+        "Reducing reported tokens by moving work outside the observable implementation boundary."
+      ],
+      "qualityFloor": {
+        "metric": "pass_rate",
+        "rule": "wilson_lower_bound_gte",
+        "threshold": 0.5,
+        "scope": "each_scenario"
+      },
+      "objectives": [
+        "tokens_per_accepted_outcome",
+        "p95_implementation_wall_time_ms"
+      ],
+      "bootstrap": {
+        "resamples": 1000,
+        "minValidResamples": 950,
+        "confidenceLevel": 0.95,
+        "stratification": "scenario"
+      }
+    }
+  },
+  "governance": {
+    "owner": "ruhroh-maintainers",
+    "createdAt": "2026-08-12T12:00:00.000Z",
+    "changelog": [
+      "Initial experimental economics fixture without cost telemetry."
+    ],
+    "acceptanceCriteria": [
+      "Each target has ten planned simple-newsletter runs and complete selected objective evidence."
+    ],
+    "contaminationReview": "Synthetic fixture reviewed; no hidden production data is present.",
+    "rewardHackingReview": "Review token-boundary and evaluator-gaming risks before use outside smoke validation.",
+    "reviewChecklist": [
+      "Verify target identity, coverage, accepted-outcome invariant, and failed-work inclusion."
+    ],
+    "deprecationPolicy": "Change the suite version whenever the efficiency methodology changes."
+  }
+}

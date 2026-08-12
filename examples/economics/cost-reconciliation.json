@@ -1,0 +1,105 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/cost-reconciliation-v1.schema.json",
+  "version": "ruhroh_cost_reconciliation_v1",
+  "reconciliationId": "reconciliation-synthetic-july-2026",
+  "createdAt": "2026-08-02T12:00:00.000Z",
+  "benchmarkClaimRef": {
+    "path": "./benchmark-claim-v2.json",
+    "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "version": "ruhroh_benchmark_claim_v2"
+  },
+  "billingSourceRef": {
+    "path": "./billing-source-manifest.json",
+    "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "version": "ruhroh_billing_source_manifest_v1"
+  },
+  "mappingProfileRef": {
+    "path": "./billing-mapping-profile.json",
+    "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    "version": "ruhroh_billing_mapping_profile_v1"
+  },
+  "source": {
+    "sourceId": "synthetic-billing-july-2026",
+    "billingPeriod": {
+      "startedAt": "2026-07-01T00:00:00.000Z",
+      "endedAt": "2026-08-01T00:00:00.000Z"
+    },
+    "rowCount": 2
+  },
+  "joins": [
+    {
+      "sourceRowSha256": "9999999999999999999999999999999999999999999999999999999999999999",
+      "matchClass": "exact",
+      "currency": "USD",
+      "kind": "charge",
+      "sourceAmount": 10,
+      "assignedAmount": 10,
+      "allocationWeight": 1,
+      "technicalFactIds": ["fact-run-demo-001"],
+      "workloadIds": ["workload-support-resolution"],
+      "reason": "Unique synthetic request identifier hash matched one technical fact."
+    },
+    {
+      "sourceRowSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "matchClass": "allocated",
+      "currency": "USD",
+      "kind": "charge",
+      "sourceAmount": 2,
+      "assignedAmount": 1,
+      "allocationWeight": 0.5,
+      "technicalFactIds": ["fact-run-demo-002"],
+      "workloadIds": ["workload-support-resolution"],
+      "reason": "Predeclared allocation policy."
+    },
+    {
+      "sourceRowSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "matchClass": "allocated",
+      "currency": "USD",
+      "kind": "charge",
+      "sourceAmount": 2,
+      "assignedAmount": 1,
+      "allocationWeight": 0.5,
+      "technicalFactIds": ["fact-run-demo-003"],
+      "workloadIds": ["workload-release-review"],
+      "reason": "Predeclared allocation policy."
+    }
+  ],
+  "currencies": [
+    {
+      "currency": "USD",
+      "sourceTotal": 12,
+      "assignedTotal": 12,
+      "difference": 0,
+      "byMatchClass": {
+        "exact": 10,
+        "bounded": 0,
+        "allocated": 2,
+        "ambiguous": 0,
+        "unmatched": 0
+      },
+      "byFactKind": {
+        "charge": 12,
+        "credit": 0,
+        "refund": 0,
+        "commitment": 0,
+        "tax": 0,
+        "prepaid": 0,
+        "capacity": 0
+      }
+    }
+  ],
+  "coverage": {
+    "exactRows": 1,
+    "boundedRows": 0,
+    "allocatedRows": 1,
+    "ambiguousRows": 0,
+    "unmatchedRows": 0
+  },
+  "ready": true,
+  "blockers": [],
+  "unsupportedConcepts": [
+    "foreign_exchange_conversion",
+    "cross_currency_blended_total",
+    "raw_billing_publication"
+  ]
+}

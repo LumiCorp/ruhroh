@@ -1,0 +1,75 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/scale-experiment-v1.schema.json",
+  "version": "ruhroh_scale_experiment_v1",
+  "id": "scale-demo-ordered-changes",
+  "suite": {
+    "id": "synthetic-change-suite",
+    "suiteVersion": "1.0.0"
+  },
+  "variable": {
+    "symbol": "n",
+    "name": "ordered_change_requests",
+    "unit": "change_request"
+  },
+  "levels": [
+    {
+      "id": "n-1",
+      "n": 1,
+      "scenarioId": "synthetic-changes-1",
+      "scenarioVersion": "1.0.0",
+      "fixtureSha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "requestIds": ["change-01"]
+    },
+    {
+      "id": "n-2",
+      "n": 2,
+      "scenarioId": "synthetic-changes-2",
+      "scenarioVersion": "1.0.0",
+      "fixtureSha256": "2222222222222222222222222222222222222222222222222222222222222222",
+      "requestIds": ["change-01", "change-02"]
+    },
+    {
+      "id": "n-4",
+      "n": 4,
+      "scenarioId": "synthetic-changes-4",
+      "scenarioVersion": "1.0.0",
+      "fixtureSha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "requestIds": ["change-01", "change-02", "change-03", "change-04"]
+    },
+    {
+      "id": "n-8",
+      "n": 8,
+      "scenarioId": "synthetic-changes-8",
+      "scenarioVersion": "1.0.0",
+      "fixtureSha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "requestIds": ["change-01", "change-02", "change-03", "change-04", "change-05", "change-06", "change-07", "change-08"]
+    },
+    {
+      "id": "n-16",
+      "n": 16,
+      "scenarioId": "synthetic-changes-16",
+      "scenarioVersion": "1.0.0",
+      "fixtureSha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "requestIds": ["change-01", "change-02", "change-03", "change-04", "change-05", "change-06", "change-07", "change-08", "change-09", "change-10", "change-11", "change-12", "change-13", "change-14", "change-15", "change-16"]
+    }
+  ],
+  "hypothesis": {
+    "expectedClass": "T(n)",
+    "rationale": "Each ordered change is expected to add a bounded amount of observable work."
+  },
+  "controls": {
+    "targetIds": ["target-synthetic-agent"],
+    "frozenBaselineSha256": "6666666666666666666666666666666666666666666666666666666666666666",
+    "promptTemplateSha256": "7777777777777777777777777777777777777777777777777777777777777777",
+    "evaluatorSignature": "synthetic-change-evaluator@1",
+    "fixedRequestOrderSha256": "8888888888888888888888888888888888888888888888888888888888888888",
+    "sessionPolicy": "fresh_per_sample",
+    "levelPolicy": "prefix_nested"
+  },
+  "qualityFloor": {
+    "perChangeCompletionRate": 0.95,
+    "zeroCriticalRegressions": true
+  },
+  "resourceMetric": "totalTokens",
+  "bootstrapSamples": 1000
+}

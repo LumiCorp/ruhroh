@@ -1,0 +1,133 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/decision-packet-v1.schema.json",
+  "version": "ruhroh_decision_packet_v1",
+  "packetId": "packet-experiment-2026-07",
+  "createdAt": "2026-07-16T12:00:00.000Z",
+  "contextRef": {
+    "path": "./decision-context.json",
+    "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    "version": "ruhroh_decision_context_v1"
+  },
+  "workloadBinding": {
+    "version": "ruhroh_workload_binding_v1",
+    "experimentId": "experiment-2026-07",
+    "workloadId": "workload-support-resolution",
+    "projectId": "project-synthetic",
+    "workflowInstanceId": "workflow-demo-001",
+    "hierarchyRef": {
+      "path": "./restricted/project-hierarchy.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version": "synthetic-hierarchy-v1"
+    }
+  },
+  "sourceRefs": {
+    "benchmarkClaim": {
+      "path": "./benchmark-claim-v2.json",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+      "version": "ruhroh_benchmark_claim_v2"
+    },
+    "interventionLedger": {
+      "path": "./intervention-ledger.json",
+      "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      "version": "ruhroh_intervention_ledger_v1"
+    },
+    "costReconciliation": {
+      "path": "./cost-reconciliation.json",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111",
+      "version": "ruhroh_cost_reconciliation_v1"
+    },
+    "economicsEnvelope": {
+      "path": "./economics-envelope.json",
+      "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+      "version": "ruhroh_economics_envelope_v1"
+    },
+    "budgetOutcome": {
+      "path": "./resource-budget-outcome.json",
+      "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+      "version": "ruhroh_resource_budget_outcome_v1"
+    },
+    "findings": {
+      "path": "./findings.json",
+      "sha256": "6666666666666666666666666666666666666666666666666666666666666666",
+      "version": "ruhroh_findings_v1"
+    }
+  },
+  "tiers": {
+    "technicalOutcome": {
+      "conclusion": "supported",
+      "evidenceLevel": "independently_verified",
+      "reasons": ["The repeated benchmark cohort met the predeclared quality and latency envelope."],
+      "evidenceRefs": [
+        {
+          "path": "./benchmark-claim-v2.json",
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "version": "ruhroh_benchmark_claim_v2"
+        }
+      ]
+    },
+    "autonomousDeflection": {
+      "conclusion": "supported",
+      "evidenceLevel": "measured",
+      "reasons": ["Complete observation and rework coverage contained no disqualifying intervention."],
+      "evidenceRefs": [
+        {
+          "path": "./intervention-ledger.json",
+          "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+          "version": "ruhroh_intervention_ledger_v1"
+        }
+      ]
+    },
+    "businessValue": {
+      "conclusion": "supported",
+      "evidenceLevel": "measured",
+      "reasons": ["The measured completion-time indicator improved against its declared baseline."],
+      "evidenceRefs": [
+        {
+          "path": "./evidence/business-value.json",
+          "sha256": "2222222222222222222222222222222222222222222222222222222222222222",
+          "version": "synthetic-indicator-observation-v1"
+        }
+      ]
+    }
+  },
+  "humanWork": {
+    "coverageComplete": true,
+    "observationWindowComplete": true,
+    "disqualifyingInterventions": 0,
+    "passiveOversightEvents": 1,
+    "attributableReworkEvents": 0,
+    "attributableReworkMinutes": 0,
+    "reworkWindowDays": 7
+  },
+  "technicalEvidence": {
+    "unitEconomics": {
+      "status": "supported",
+      "coverage": "complete",
+      "costPerAcceptedOutcome": { "amount": 1.25, "currency": "USD" },
+      "tokensPerAcceptedOutcome": 3200,
+      "reasons": ["All included implementation runs had complete billed-cost and token coverage."]
+    },
+    "containment": {
+      "budgetStatus": "within",
+      "reasons": ["All declared resource limits remained within their inclusive boundaries."]
+    },
+    "traceFindings": {
+      "confirmed": 1,
+      "candidate": 2,
+      "notObservable": 1
+    }
+  },
+  "readiness": "decision_ready",
+  "unresolvedEvidence": [],
+  "decision": {
+    "action": "continue",
+    "signerRole": "accountable_decision_owner",
+    "signedAt": "2026-07-16T12:30:00.000Z",
+    "signatureRef": {
+      "path": "./restricted/decision-signature.json",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+      "version": "synthetic-signature-v1"
+    },
+    "rationale": "Continue the bounded pilot because all three evidence tiers are supported and the stop rules were not triggered."
+  }
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/publication-v2.schema.json",
+  "version": "ruhroh_publication_v2",
+  "createdAt": "2026-08-12T12:00:00.000Z",
+  "publishable": false,
+  "artifacts": [
+    {
+      "role": "publish-check",
+      "path": "./publish-check.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contractVersion": "ruhroh_publish_check_v2"
+    },
+    {
+      "role": "bundle-manifest",
+      "path": "./bundle-manifest.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contractVersion": "ruhroh_publish_bundle_v2"
+    },
+    {
+      "role": "claim-index",
+      "path": "./claim-index.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contractVersion": "ruhroh_claim_index_v2"
+    },
+    {
+      "role": "compare",
+      "path": "./compare.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contractVersion": "ruhroh_compare_v2"
+    },
+    {
+      "role": "benchmark-claim",
+      "path": "./benchmark-claim.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contractVersion": "ruhroh_benchmark_claim_v2"
+    },
+    {
+      "role": "benchmark-summary",
+      "path": "./benchmark-summary.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contractVersion": "ruhroh_benchmark_summary_v2"
+    },
+    {
+      "role": "outcome-frontier",
+      "path": "./outcome-frontier.json",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "contractVersion": "ruhroh_outcome_frontier_v1"
+    }
+  ]
+}

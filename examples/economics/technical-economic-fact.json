@@ -1,0 +1,17 @@
+{
+  "version": "ruhroh_technical_economic_fact_v1",
+  "factId": "fact-exact-001",
+  "runId": "run-demo-001",
+  "benchmarkTargetId": "target-synthetic-agent",
+  "workloadId": "workload-support-resolution",
+  "occurredAt": "2026-07-03T14:30:00.000Z",
+  "providerRequestIdHash": "e2ff46f63f5e9712f04cd122811b0548a0cf6c5e1075b3a93e4a1f2235866184",
+  "principalRef": "tenant-example:principal-001",
+  "model": "synthetic-model-001",
+  "sku": "synthetic-input-output-bundle",
+  "evidenceRef": {
+    "path": "./evidence.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "synthetic-evidence-v1"
+  }
+}
