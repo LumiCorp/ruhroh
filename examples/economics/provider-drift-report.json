@@ -1,0 +1,26 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/provider-drift-report-v1.schema.json",
+  "version": "ruhroh_provider_drift_report_v1",
+  "baselineId": "provider-baseline-synthetic-2026-07",
+  "classification": "no_drift",
+  "classifications": ["no_drift"],
+  "confounders": [],
+  "evidence": ["No predeclared practical margin was crossed."],
+  "margins": {
+    "qualityPassRateDelta": 0.05,
+    "latencyRatio": 1.2,
+    "consumptionRatio": 1.15,
+    "priceRatio": 1.1
+  },
+  "multipleTesting": {
+    "method": "holm",
+    "familySize": 4,
+    "alpha": 0.05,
+    "results": [
+      { "metric": "consumption", "rawPValue": 0.58, "holmAdjustedPValue": 1, "significant": false },
+      { "metric": "latency", "rawPValue": 0.64, "holmAdjustedPValue": 1, "significant": false },
+      { "metric": "price", "rawPValue": 1, "holmAdjustedPValue": 1, "significant": false },
+      { "metric": "quality", "rawPValue": 0.72, "holmAdjustedPValue": 1, "significant": false }
+    ]
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "version": "ruhroh_adapter_conformance_v1",
+  "adapterId": "fixture-agent",
+  "adapterVersion": "1.0.0",
+  "manifestSha256": "f4e172023db3a62d09502d4a74e45d8112e4268848ce4303eaf2132c12319de9",
+  "passed": true,
+  "checks": [
+    {
+      "name": "manifest",
+      "status": "passed",
+      "details": "ok"
+    },
+    {
+      "name": "economics",
+      "status": "passed",
+      "details": "ok"
+    },
+    {
+      "name": "capabilities",
+      "status": "passed",
+      "details": "ok"
+    },
+    {
+      "name": "trace",
+      "status": "passed",
+      "details": "ok"
+    }
+  ]
+}

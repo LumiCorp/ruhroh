@@ -1,0 +1,51 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/findings-v1.schema.json",
+  "version": "ruhroh_findings_v1",
+  "createdAt": "2026-07-21T12:00:00.000Z",
+  "findings": [
+    {
+      "version": "ruhroh_finding_v1",
+      "id": "context_amplification:target-synthetic-agent:synthetic-change-suite",
+      "detectorId": "context_amplification",
+      "detectorVersion": "1.0.0",
+      "status": "confirmed",
+      "scope": {
+        "benchmarkTargetId": "target-synthetic-agent",
+        "scenarioId": "synthetic-change-suite",
+        "runIds": ["run-demo-001", "run-demo-002"]
+      },
+      "signature": "Turn input tokens rose monotonically and repeated input was observed.",
+      "measurements": {
+        "turnInputTokens": [1200, 1880, 2510],
+        "repeatedInputTokens": 930
+      },
+      "evidenceRefs": [
+        {
+          "artifact": "economic-trace",
+          "sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+          "pointer": "/spans/turn-3"
+        },
+        {
+          "artifact": "controlled-countercase",
+          "sha256": "5555555555555555555555555555555555555555555555555555555555555555",
+          "pointer": "/groups/0"
+        }
+      ],
+      "counterEvidence": [],
+      "confounders": [],
+      "confidence": "high",
+      "suggestedExperiment": "Repeat the frozen sample plan with compacted context and the same outcome floor.",
+      "confirmationChecks": {
+        "signatureObserved": true,
+        "controlledCountercase": true,
+        "equalQuality": true,
+        "relevantCoverageComplete": true
+      }
+    }
+  ],
+  "counts": {
+    "confirmed": 1,
+    "candidate": 0,
+    "not_observable": 0
+  }
+}

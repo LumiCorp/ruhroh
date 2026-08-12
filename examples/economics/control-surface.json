@@ -1,0 +1,12 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/control-surface-v1.schema.json",
+  "version": "ruhroh_control_surface_v1",
+  "kind": "agent_tooling",
+  "observabilityCeiling": {
+    "usageGrain": "call",
+    "billingGrain": "request",
+    "identityGrain": "workload",
+    "traceAccess": "partial",
+    "enforcement": "cooperative"
+  }
+}

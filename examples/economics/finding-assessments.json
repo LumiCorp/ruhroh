@@ -1,0 +1,37 @@
+{
+  "createdAt": "2026-08-12T12:00:00.000Z",
+  "assessments": [
+    {
+      "detectorId": "retry_loop_amplification",
+      "detectorVersion": "1.0.0",
+      "scope": {
+        "benchmarkTargetId": "target-synthetic-agent",
+        "scenarioId": "simple-newsletter",
+        "runIds": [
+          "run-demo-001"
+        ]
+      },
+      "measurements": {
+        "retryCount": 3,
+        "equivalentRetryCount": 2
+      },
+      "evidenceRefs": [
+        {
+          "artifact": "economic-trace",
+          "sha256": "26b67713b24148ea08a0dd5747450471322fd10e0728eb4766fa10bb8ce4ef8b"
+        }
+      ],
+      "controlledCountercase": {
+        "present": true,
+        "equalQuality": true,
+        "relevantCoverageComplete": true,
+        "evidenceRefs": [
+          {
+            "artifact": "controlled-countercase",
+            "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+          }
+        ]
+      }
+    }
+  ]
+}

@@ -42,6 +42,8 @@ job_output_path="$artifact_dir/job-output-${iteration}.json"
 event_log_path="$artifact_dir/events-${iteration}.jsonl"
 transcript_path="$artifact_dir/transcript-${iteration}.log"
 : > "$event_log_path"
+turn_started_at="$(node --input-type=module -e 'process.stdout.write(new Date().toISOString())')"
+turn_started_epoch_ms="$(node --input-type=module -e 'process.stdout.write(String(Date.now()))')"
 
 JOB_INPUT_PATH="$job_input_path" \
 WORKSPACE="$workspace" \
@@ -113,9 +115,20 @@ EVENT_LOG_PATH="$event_log_path" \
 TRANSCRIPT_PATH="$transcript_path" \
 ADAPTER_VERSION="$adapter_version" \
 KESTREL_EXIT_CODE="$kestrel_exit_code" \
+ITERATION="$iteration" \
+SCENARIO_ID="$scenario_id" \
+SESSION_HANDLE="$session_handle" \
+TURN_STARTED_AT="$turn_started_at" \
+TURN_STARTED_EPOCH_MS="$turn_started_epoch_ms" \
 node --input-type=module <<'NODE'
+import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+
+const sha256 = (value) => createHash("sha256").update(value).digest("hex");
+const fileEvidence = (artifact) => existsSync(artifact)
+  ? { artifact, sha256: sha256(readFileSync(artifact)) }
+  : undefined;
 
 const jobOutputPath = process.env.JOB_OUTPUT_PATH;
 let output;
@@ -159,8 +172,51 @@ const artifacts = {
   transcript: process.env.TRANSCRIPT_PATH,
 };
 const finalizedPayload = job?.result?.finalizedPayload;
+const resultProtocol = process.env.RUHROH_RUN_AGENT_RESULT_PROTOCOL;
+const emitV2 = resultProtocol === "ruhroh_run_agent_result_v2";
+const eventTypes = [];
+const eventLogPath = process.env.EVENT_LOG_PATH;
+if (eventLogPath && existsSync(eventLogPath)) {
+  for (const line of readFileSync(eventLogPath, "utf8").split(/\r?\n/u)) {
+    if (!line.trim()) continue;
+    try {
+      const event = JSON.parse(line);
+      if (typeof event?.type === "string" && /^[A-Za-z0-9._:-]{1,128}$/u.test(event.type) && !eventTypes.includes(event.type)) {
+        eventTypes.push(event.type);
+      }
+    } catch {
+      // Malformed event lines are not promoted into the economic trace.
+    }
+  }
+}
+const endedAt = new Date().toISOString();
+const startedEpochMs = Number.parseInt(process.env.TURN_STARTED_EPOCH_MS || "", 10);
+const traceId = sha256(`kestrel-trace:${process.env.SCENARIO_ID || "scenario"}:${process.env.SESSION_HANDLE || "session"}`);
+const spanId = sha256(`${traceId}:turn:${process.env.ITERATION || "1"}`);
+const evidenceRefs = [
+  jobOutputPath ? fileEvidence(jobOutputPath) : undefined,
+  eventLogPath ? fileEvidence(eventLogPath) : undefined,
+].filter(Boolean);
+const economicTraceSpans = emitV2 ? [{
+  version: "ruhroh_economic_trace_span_v1",
+  traceId,
+  spanId,
+  kind: "agent_turn",
+  status: status === "runtime_failure" ? "error" : status === "cancelled" ? "cancelled" : "ok",
+  startedAt: process.env.TURN_STARTED_AT || endedAt,
+  endedAt,
+  durationMs: Number.isFinite(startedEpochMs) ? Math.max(0, Date.now() - startedEpochMs) : undefined,
+  iteration: Number.parseInt(process.env.ITERATION || "1", 10),
+  agent: {
+    adapterId: "kestrel-cli",
+    agentIdHash: sha256(`kestrel-agent:${process.env.SESSION_HANDLE || "session"}`),
+    depth: 0,
+  },
+  evidenceRefs,
+  eventTypes,
+}] : undefined;
 const result = {
-  version: "ruhroh_run_agent_result_v1",
+  version: emitV2 ? "ruhroh_run_agent_result_v2" : "ruhroh_run_agent_result_v1",
   status,
   adapterVersion: process.env.ADAPTER_VERSION,
   model: {
@@ -181,6 +237,17 @@ const result = {
   waitFor: job?.waitFor,
   replay: job?.replay,
   artifacts,
+  ...(emitV2 ? {
+    economicTraceSpans,
+    adapterManifest: {
+      version: "ruhroh_adapter_manifest_v1",
+      adapterId: "kestrel-cli",
+      adapterVersion: process.env.ADAPTER_VERSION,
+      resultProtocol: "ruhroh_run_agent_result_v2",
+      traceProtocol: "ruhroh_economic_trace_span_v1",
+      resources: {},
+    },
+  } : {}),
 };
 const resultPath = process.env.RESULT_PATH;
 if (resultPath) {

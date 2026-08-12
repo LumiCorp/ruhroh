@@ -1,0 +1,17 @@
+{
+  "version": "ruhroh_resource_budgets_v1",
+  "scope": "implementation",
+  "onUnobservable": "fail",
+  "limits": [
+    {
+      "resource": "wallTimeMs",
+      "max": 120000,
+      "requiredEnforcement": "preemptive"
+    },
+    {
+      "resource": "totalTokens",
+      "max": 1000,
+      "requiredEnforcement": "boundary"
+    }
+  ]
+}

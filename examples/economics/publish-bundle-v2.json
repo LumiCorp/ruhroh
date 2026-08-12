@@ -1,0 +1,88 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v2.schema.json",
+  "version": "ruhroh_publish_bundle_v2",
+  "createdAt": "2026-08-12T12:00:00.000Z",
+  "source": {
+    "resultsPath": "./results",
+    "bundlePath": "./publication",
+    "suiteId": "economics-smoke-example",
+    "runPlanPath": "./ruhroh-run-plan.json"
+  },
+  "publishable": false,
+  "blockerCount": 1,
+  "advisoryCount": 1,
+  "contracts": {
+    "publishCheck": "ruhroh_publish_check_v2",
+    "compare": "ruhroh_compare_v2",
+    "benchmarkClaim": "ruhroh_benchmark_claim_v2",
+    "benchmarkSummary": "ruhroh_benchmark_summary_v2",
+    "outcomeFrontier": "ruhroh_outcome_frontier_v1"
+  },
+  "files": [
+    {
+      "role": "manifest",
+      "path": "manifest.json",
+      "description": "manifest review artifact"
+    },
+    {
+      "role": "publish-check",
+      "path": "publish-check.json",
+      "description": "publish-check review artifact"
+    },
+    {
+      "role": "compare",
+      "path": "compare.json",
+      "description": "compare review artifact"
+    },
+    {
+      "role": "compare-html",
+      "path": "compare-html.json",
+      "description": "compare-html review artifact"
+    },
+    {
+      "role": "benchmark-claim",
+      "path": "benchmark-claim.json",
+      "description": "benchmark-claim review artifact"
+    },
+    {
+      "role": "benchmark-summary",
+      "path": "benchmark-summary.json",
+      "description": "benchmark-summary review artifact"
+    },
+    {
+      "role": "outcome-frontier",
+      "path": "outcome-frontier.json",
+      "description": "outcome-frontier review artifact"
+    },
+    {
+      "role": "publication",
+      "path": "publication.json",
+      "description": "publication review artifact"
+    },
+    {
+      "role": "review-json",
+      "path": "review-json.json",
+      "description": "review-json review artifact"
+    },
+    {
+      "role": "review-html",
+      "path": "review-html.json",
+      "description": "review-html review artifact"
+    },
+    {
+      "role": "eval-quality",
+      "path": "eval-quality.json",
+      "description": "eval-quality review artifact"
+    },
+    {
+      "role": "eval-quality-html",
+      "path": "eval-quality-html.json",
+      "description": "eval-quality-html review artifact"
+    },
+    {
+      "role": "readme",
+      "path": "readme.json",
+      "description": "readme review artifact"
+    }
+  ]
+}

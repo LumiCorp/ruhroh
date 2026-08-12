@@ -1,0 +1,155 @@
+{
+  "reconciliationId": "reconciliation-review-example",
+  "createdAt": "2026-08-01T00:00:00.000Z",
+  "benchmarkClaimRef": {
+    "path": "./evidence.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "synthetic-evidence-v1"
+  },
+  "billingSource": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/billing-source-manifest-v1.schema.json",
+    "version": "ruhroh_billing_source_manifest_v1",
+    "sourceId": "synthetic-billing-july-2026",
+    "format": "csv",
+    "externalSchemaVersion": "synthetic-billing-v1",
+    "billingPeriod": {
+      "startedAt": "2026-07-01T00:00:00.000Z",
+      "endedAt": "2026-08-01T00:00:00.000Z"
+    },
+    "currencies": [
+      "USD"
+    ],
+    "rowCount": 2,
+    "sourceRef": {
+      "path": "./restricted/synthetic-billing.csv",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "version": "synthetic-billing-v1"
+    },
+    "privacyClassification": "restricted"
+  },
+  "billingSourceRef": {
+    "path": "./evidence.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "synthetic-evidence-v1"
+  },
+  "mappingProfile": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/billing-mapping-profile-v1.schema.json",
+    "version": "ruhroh_billing_mapping_profile_v1",
+    "profileId": "synthetic-provider-billing-v1",
+    "provider": "synthetic-provider",
+    "externalSchemaVersion": "synthetic-billing-v1",
+    "fields": {
+      "sourceRowId": "line_id",
+      "amount": "net_amount",
+      "currency": "currency_code",
+      "kind": "fact_kind",
+      "occurredAt": "observed_at",
+      "providerRequestId": "request_ref",
+      "principalRef": "principal_key",
+      "workloadId": "workload_key",
+      "model": "model_key",
+      "sku": "sku_key"
+    },
+    "kindValues": {
+      "charge": [
+        "usage_charge"
+      ],
+      "credit": [
+        "service_credit"
+      ],
+      "refund": [
+        "refund"
+      ],
+      "commitment": [
+        "commitment"
+      ],
+      "tax": [
+        "tax"
+      ],
+      "prepaid": [
+        "prepaid_drawdown"
+      ],
+      "capacity": [
+        "reserved_capacity"
+      ]
+    },
+    "matching": {
+      "boundedWindowSeconds": 300,
+      "boundedFields": [
+        "workloadId",
+        "model",
+        "sku"
+      ]
+    },
+    "allocations": [
+      {
+        "sourceRowId": "line-002",
+        "targets": [
+          {
+            "workloadId": "workload-support-resolution",
+            "weight": 0.5
+          },
+          {
+            "workloadId": "workload-release-review",
+            "weight": 0.5
+          }
+        ]
+      }
+    ],
+    "tolerance": 0.000001
+  },
+  "mappingProfileRef": {
+    "path": "./evidence.json",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "synthetic-evidence-v1"
+  },
+  "billing": {
+    "format": "csv",
+    "text": "line_id,net_amount,currency_code,fact_kind,observed_at,request_ref,principal_key,workload_key,model_key,sku_key\nline-001,10,USD,usage_charge,2026-07-03T14:30:00.000Z,request-demo-001,tenant-example:principal-001,workload-support-resolution,synthetic-model-001,synthetic-input-output-bundle\nline-002,-2,USD,service_credit,2026-07-04T14:30:00.000Z,,tenant-example:principal-001,,,\n"
+  },
+  "technicalFacts": [
+    {
+      "version": "ruhroh_technical_economic_fact_v1",
+      "factId": "fact-exact-001",
+      "runId": "run-demo-001",
+      "benchmarkTargetId": "target-synthetic-agent",
+      "workloadId": "workload-support-resolution",
+      "occurredAt": "2026-07-03T14:30:00.000Z",
+      "providerRequestIdHash": "e2ff46f63f5e9712f04cd122811b0548a0cf6c5e1075b3a93e4a1f2235866184",
+      "principalRef": "tenant-example:principal-001",
+      "model": "synthetic-model-001",
+      "sku": "synthetic-input-output-bundle",
+      "evidenceRef": {
+        "path": "./evidence.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "version": "synthetic-evidence-v1"
+      }
+    },
+    {
+      "version": "ruhroh_technical_economic_fact_v1",
+      "factId": "fact-allocation-a",
+      "runId": "run-demo-002",
+      "benchmarkTargetId": "target-synthetic-agent",
+      "workloadId": "workload-support-resolution",
+      "occurredAt": "2026-07-04T14:30:00.000Z",
+      "evidenceRef": {
+        "path": "./evidence.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "version": "synthetic-evidence-v1"
+      }
+    },
+    {
+      "version": "ruhroh_technical_economic_fact_v1",
+      "factId": "fact-allocation-b",
+      "runId": "run-demo-003",
+      "benchmarkTargetId": "target-synthetic-agent",
+      "workloadId": "workload-release-review",
+      "occurredAt": "2026-07-04T14:30:00.000Z",
+      "evidenceRef": {
+        "path": "./evidence.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "version": "synthetic-evidence-v1"
+      }
+    }
+  ]
+}

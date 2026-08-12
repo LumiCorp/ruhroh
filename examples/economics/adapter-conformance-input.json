@@ -1,0 +1,186 @@
+{
+  "manifest": {
+    "version": "ruhroh_adapter_manifest_v1",
+    "adapterId": "fixture-agent",
+    "adapterVersion": "1.0.0",
+    "resultProtocol": "ruhroh_run_agent_result_v2",
+    "traceProtocol": "ruhroh_economic_trace_span_v1",
+    "resources": {
+      "wallTimeMs": {
+        "observable": true,
+        "enforcement": "preemptive",
+        "source": "runtime"
+      },
+      "implementationIterations": {
+        "observable": true,
+        "enforcement": "preemptive",
+        "source": "runtime"
+      },
+      "modelCalls": {
+        "observable": true,
+        "enforcement": "boundary",
+        "source": "connector"
+      },
+      "inputTokens": {
+        "observable": true,
+        "enforcement": "boundary",
+        "source": "connector"
+      },
+      "outputTokens": {
+        "observable": true,
+        "enforcement": "boundary",
+        "source": "connector"
+      },
+      "totalTokens": {
+        "observable": true,
+        "enforcement": "boundary",
+        "source": "connector"
+      },
+      "cost": {
+        "observable": false,
+        "enforcement": "unsupported",
+        "source": "connector"
+      }
+    }
+  },
+  "observations": [
+    {
+      "version": "ruhroh_economics_observation_v1",
+      "observationId": "turn-0001-usage",
+      "seriesId": "fixture-turn-deltas",
+      "sequence": 1,
+      "scope": "turn",
+      "aggregation": "delta",
+      "accounting": "exclusive",
+      "coverage": {
+        "status": "complete"
+      },
+      "source": {
+        "kind": "adapter",
+        "name": "fixture-agent",
+        "quality": "reported",
+        "observedAt": "2026-08-12T12:00:01.000Z"
+      },
+      "usage": {
+        "modelCalls": 1,
+        "inputTokens": 100,
+        "outputTokens": 50,
+        "totalTokens": 150
+      }
+    },
+    {
+      "version": "ruhroh_economics_observation_v1",
+      "observationId": "turn-0002-usage",
+      "seriesId": "fixture-turn-deltas",
+      "sequence": 2,
+      "scope": "turn",
+      "aggregation": "delta",
+      "accounting": "exclusive",
+      "coverage": {
+        "status": "complete"
+      },
+      "source": {
+        "kind": "adapter",
+        "name": "fixture-agent",
+        "quality": "reported",
+        "observedAt": "2026-08-12T12:00:02.000Z"
+      },
+      "usage": {
+        "modelCalls": 1,
+        "inputTokens": 120,
+        "outputTokens": 80,
+        "totalTokens": 200
+      }
+    },
+    {
+      "version": "ruhroh_economics_observation_v1",
+      "observationId": "session-0001-checkpoint",
+      "seriesId": "fixture-session-checkpoints",
+      "sequence": 1,
+      "scope": "session",
+      "aggregation": "cumulative",
+      "accounting": "inclusive_checkpoint",
+      "coverage": {
+        "status": "complete"
+      },
+      "source": {
+        "kind": "adapter",
+        "name": "fixture-agent",
+        "quality": "reported",
+        "observedAt": "2026-08-12T12:00:03.000Z"
+      },
+      "usage": {
+        "modelCalls": 2,
+        "inputTokens": 220,
+        "outputTokens": 130,
+        "totalTokens": 350
+      }
+    }
+  ],
+  "spans": [
+    {
+      "version": "ruhroh_economic_trace_span_v1",
+      "traceId": "trace-example-0001",
+      "spanId": "turn-span-0001",
+      "kind": "agent_turn",
+      "status": "ok",
+      "startedAt": "2026-08-12T12:00:00.000Z",
+      "endedAt": "2026-08-12T12:00:01.000Z",
+      "durationMs": 1000,
+      "iteration": 1,
+      "agent": {
+        "adapterId": "fixture-agent",
+        "agentIdHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "depth": 0
+      },
+      "resourceObservationRefs": [
+        "turn-0001-usage"
+      ],
+      "evidenceRefs": [
+        {
+          "artifact": "workspace-summary",
+          "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        }
+      ],
+      "eventTypes": [
+        "turn.completed"
+      ]
+    },
+    {
+      "version": "ruhroh_economic_trace_span_v1",
+      "traceId": "trace-example-0001",
+      "spanId": "turn-span-0002",
+      "kind": "agent_turn",
+      "status": "ok",
+      "startedAt": "2026-08-12T12:00:01.000Z",
+      "endedAt": "2026-08-12T12:00:03.000Z",
+      "durationMs": 2000,
+      "iteration": 2,
+      "agent": {
+        "adapterId": "fixture-agent",
+        "agentIdHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "depth": 0
+      },
+      "inference": {
+        "provider": "fixture",
+        "model": "fixture-model",
+        "modelVersion": "2026-08-01",
+        "routeHash": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "resourceObservationRefs": [
+        "turn-0002-usage",
+        "session-0001-checkpoint"
+      ],
+      "evidenceRefs": [
+        {
+          "artifact": "workspace-summary",
+          "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+        }
+      ],
+      "eventTypes": [
+        "turn.completed",
+        "session.checkpoint"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "version": "ruhroh_economic_trace_span_v1",
+  "traceId": "trace-example-0001",
+  "spanId": "turn-span-0001",
+  "kind": "agent_turn",
+  "status": "ok",
+  "startedAt": "2026-08-12T12:00:00.000Z",
+  "endedAt": "2026-08-12T12:00:01.000Z",
+  "durationMs": 1000,
+  "iteration": 1,
+  "agent": {
+    "adapterId": "fixture-agent",
+    "agentIdHash": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "depth": 0
+  },
+  "resourceObservationRefs": [
+    "turn-0001-usage"
+  ],
+  "evidenceRefs": [
+    {
+      "artifact": "workspace-summary",
+      "sha256": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+    }
+  ],
+  "eventTypes": [
+    "turn.completed"
+  ]
+}

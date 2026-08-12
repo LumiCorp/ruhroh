@@ -1,0 +1,273 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/outcome-frontier-v1.schema.json",
+  "version": "ruhroh_outcome_frontier_v1",
+  "status": "available",
+  "reasonCodes": [],
+  "methodology": {
+    "suiteId": "economics-smoke-example",
+    "suiteVersion": "1.0.0",
+    "acceptedOutcome": {
+      "id": "accepted_scenario_outcome",
+      "predicate": "score_1_and_eval_passed",
+      "failedWork": "included_in_resource_numerator"
+    },
+    "aggregation": {
+      "weighting": "run_plan",
+      "failedWork": "included_in_resource_numerator"
+    },
+    "suitableWorkloads": [
+      "Repeated coding-agent tasks with a stable independent evaluator."
+    ],
+    "requiredEvidence": [
+      "Declared benchmark target, run-plan weight, complete token coverage, and implementation wall time."
+    ],
+    "hiddenWork": [
+      "Provider-side processing that is not observable through the conformed adapter."
+    ],
+    "gamingRisks": [
+      "Reducing reported tokens by moving work outside the observable implementation boundary."
+    ],
+    "qualityFloor": {
+      "metric": "pass_rate",
+      "rule": "wilson_lower_bound_gte",
+      "threshold": 0.5,
+      "scope": "each_scenario"
+    },
+    "objectives": [
+      "tokens_per_accepted_outcome",
+      "p95_implementation_wall_time_ms"
+    ],
+    "bootstrap": {
+      "resamples": 1000,
+      "minValidResamples": 950,
+      "confidenceLevel": 0.95,
+      "stratification": "scenario"
+    },
+    "dominance": "pareto_minimize_with_robust_ci_v1"
+  },
+  "coverage": {
+    "targetCount": 2,
+    "qualityEligibleTargetCount": 2,
+    "comparableTargetCount": 2,
+    "paretoFrontierTargetCount": 1,
+    "robustFrontierTargetCount": 1
+  },
+  "targets": [
+    {
+      "benchmarkTargetId": "baseline-target",
+      "executionAdapterIds": [
+        "fixture-agent"
+      ],
+      "identity": {
+        "targetId": "baseline-target",
+        "stream": "model-controlled",
+        "requestedModel": {
+          "provider": "fixture",
+          "model": "baseline-target"
+        },
+        "actualModel": {
+          "provider": "fixture",
+          "model": "baseline-target"
+        }
+      },
+      "runs": 10,
+      "acceptedOutcomes": 10,
+      "quality": {
+        "floorStatus": "passed",
+        "scenarioResults": [
+          {
+            "scenarioId": "simple-newsletter",
+            "runs": 10,
+            "acceptedOutcomes": 10,
+            "passRate": 1,
+            "passRateCi95": {
+              "method": "wilson",
+              "confidenceLevel": 0.95,
+              "lower": 0.7224672001371106,
+              "upper": 0.9999999999999999
+            },
+            "floorStatus": "passed",
+            "reasonCodes": []
+          }
+        ]
+      },
+      "objectives": [
+        {
+          "objective": "tokens_per_accepted_outcome",
+          "status": "available",
+          "unit": "tokens_per_accepted_outcome",
+          "acceptedOutcomes": 10,
+          "coverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "planWeightCoverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "value": 2045,
+          "totalConsumption": 20450,
+          "weightedAcceptedOutcomes": 10,
+          "ci95": {
+            "method": "bootstrap_percentile",
+            "confidenceLevel": 0.95,
+            "lower": 2028,
+            "upper": 2061.025
+          },
+          "validBootstrapSamples": 1000,
+          "reasonCodes": []
+        },
+        {
+          "objective": "p95_implementation_wall_time_ms",
+          "status": "available",
+          "unit": "milliseconds",
+          "acceptedOutcomes": 10,
+          "coverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "planWeightCoverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "value": 120900,
+          "weightedAcceptedOutcomes": 10,
+          "ci95": {
+            "method": "bootstrap_percentile",
+            "confidenceLevel": 0.95,
+            "lower": 120700,
+            "upper": 120900
+          },
+          "validBootstrapSamples": 1000,
+          "reasonCodes": []
+        }
+      ],
+      "paretoStatus": "dominated",
+      "paretoDominatedByTargetIds": [
+        "efficient-target"
+      ],
+      "robustStatus": "dominated",
+      "robustDominatedByTargetIds": [
+        "efficient-target"
+      ],
+      "reasonCodes": []
+    },
+    {
+      "benchmarkTargetId": "efficient-target",
+      "executionAdapterIds": [
+        "fixture-agent"
+      ],
+      "identity": {
+        "targetId": "efficient-target",
+        "stream": "model-controlled",
+        "requestedModel": {
+          "provider": "fixture",
+          "model": "efficient-target"
+        },
+        "actualModel": {
+          "provider": "fixture",
+          "model": "efficient-target"
+        }
+      },
+      "runs": 10,
+      "acceptedOutcomes": 10,
+      "quality": {
+        "floorStatus": "passed",
+        "scenarioResults": [
+          {
+            "scenarioId": "simple-newsletter",
+            "runs": 10,
+            "acceptedOutcomes": 10,
+            "passRate": 1,
+            "passRateCi95": {
+              "method": "wilson",
+              "confidenceLevel": 0.95,
+              "lower": 0.7224672001371106,
+              "upper": 0.9999999999999999
+            },
+            "floorStatus": "passed",
+            "reasonCodes": []
+          }
+        ]
+      },
+      "objectives": [
+        {
+          "objective": "tokens_per_accepted_outcome",
+          "status": "available",
+          "unit": "tokens_per_accepted_outcome",
+          "acceptedOutcomes": 10,
+          "coverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "planWeightCoverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "value": 1045,
+          "totalConsumption": 10450,
+          "weightedAcceptedOutcomes": 10,
+          "ci95": {
+            "method": "bootstrap_percentile",
+            "confidenceLevel": 0.95,
+            "lower": 1028,
+            "upper": 1062
+          },
+          "validBootstrapSamples": 1000,
+          "reasonCodes": []
+        },
+        {
+          "objective": "p95_implementation_wall_time_ms",
+          "status": "available",
+          "unit": "milliseconds",
+          "acceptedOutcomes": 10,
+          "coverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "planWeightCoverage": {
+            "status": "complete",
+            "observedRuns": 10,
+            "completeRuns": 10,
+            "totalRuns": 10
+          },
+          "value": 90900,
+          "weightedAcceptedOutcomes": 10,
+          "ci95": {
+            "method": "bootstrap_percentile",
+            "confidenceLevel": 0.95,
+            "lower": 90600,
+            "upper": 90900
+          },
+          "validBootstrapSamples": 1000,
+          "reasonCodes": []
+        }
+      ],
+      "paretoStatus": "pareto",
+      "paretoDominatedByTargetIds": [],
+      "robustStatus": "pareto",
+      "robustDominatedByTargetIds": [],
+      "reasonCodes": []
+    }
+  ],
+  "paretoFrontierTargetIds": [
+    "efficient-target"
+  ],
+  "robustFrontierTargetIds": [
+    "efficient-target"
+  ]
+}

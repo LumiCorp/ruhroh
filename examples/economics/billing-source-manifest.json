@@ -1,0 +1,19 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/billing-source-manifest-v1.schema.json",
+  "version": "ruhroh_billing_source_manifest_v1",
+  "sourceId": "synthetic-billing-july-2026",
+  "format": "csv",
+  "externalSchemaVersion": "synthetic-billing-v1",
+  "billingPeriod": {
+    "startedAt": "2026-07-01T00:00:00.000Z",
+    "endedAt": "2026-08-01T00:00:00.000Z"
+  },
+  "currencies": ["USD"],
+  "rowCount": 2,
+  "sourceRef": {
+    "path": "./restricted/synthetic-billing.csv",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "version": "synthetic-billing-v1"
+  },
+  "privacyClassification": "restricted"
+}

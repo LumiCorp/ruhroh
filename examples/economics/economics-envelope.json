@@ -1,0 +1,173 @@
+{
+  "version": "ruhroh_economics_envelope_v1",
+  "scope": "run",
+  "observations": [
+    {
+      "version": "ruhroh_economics_observation_v1",
+      "observationId": "turn-0001-usage",
+      "seriesId": "fixture-turn-deltas",
+      "sequence": 1,
+      "scope": "turn",
+      "aggregation": "delta",
+      "accounting": "exclusive",
+      "coverage": {
+        "status": "complete"
+      },
+      "source": {
+        "kind": "adapter",
+        "name": "fixture-agent",
+        "quality": "reported",
+        "observedAt": "2026-08-12T12:00:01.000Z"
+      },
+      "usage": {
+        "modelCalls": 1,
+        "inputTokens": 100,
+        "outputTokens": 50,
+        "totalTokens": 150
+      }
+    },
+    {
+      "version": "ruhroh_economics_observation_v1",
+      "observationId": "turn-0002-usage",
+      "seriesId": "fixture-turn-deltas",
+      "sequence": 2,
+      "scope": "turn",
+      "aggregation": "delta",
+      "accounting": "exclusive",
+      "coverage": {
+        "status": "complete"
+      },
+      "source": {
+        "kind": "adapter",
+        "name": "fixture-agent",
+        "quality": "reported",
+        "observedAt": "2026-08-12T12:00:02.000Z"
+      },
+      "usage": {
+        "modelCalls": 1,
+        "inputTokens": 120,
+        "outputTokens": 80,
+        "totalTokens": 200
+      }
+    },
+    {
+      "version": "ruhroh_economics_observation_v1",
+      "observationId": "session-0001-checkpoint",
+      "seriesId": "fixture-session-checkpoints",
+      "sequence": 1,
+      "scope": "session",
+      "aggregation": "cumulative",
+      "accounting": "inclusive_checkpoint",
+      "coverage": {
+        "status": "complete"
+      },
+      "source": {
+        "kind": "adapter",
+        "name": "fixture-agent",
+        "quality": "reported",
+        "observedAt": "2026-08-12T12:00:03.000Z"
+      },
+      "usage": {
+        "modelCalls": 2,
+        "inputTokens": 220,
+        "outputTokens": 130,
+        "totalTokens": 350
+      }
+    }
+  ],
+  "totals": {
+    "usage": {
+      "modelCalls": 2,
+      "inputTokens": 220,
+      "outputTokens": 130,
+      "totalTokens": 350
+    },
+    "costs": []
+  },
+  "coverage": {
+    "modelCalls": {
+      "status": "complete",
+      "observationCount": 3,
+      "completeObservationCount": 3
+    },
+    "failedModelCalls": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    },
+    "retryAttempts": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    },
+    "toolCalls": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    },
+    "inputTokens": {
+      "status": "complete",
+      "observationCount": 3,
+      "completeObservationCount": 3
+    },
+    "outputTokens": {
+      "status": "complete",
+      "observationCount": 3,
+      "completeObservationCount": 3
+    },
+    "cachedInputTokens": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    },
+    "reasoningTokens": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    },
+    "totalTokens": {
+      "status": "complete",
+      "observationCount": 3,
+      "completeObservationCount": 3
+    },
+    "childAgents": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    },
+    "agentDepth": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    },
+    "wallTimeMs": {
+      "status": "complete",
+      "observationCount": 1,
+      "completeObservationCount": 1
+    },
+    "implementationIterations": {
+      "status": "complete",
+      "observationCount": 1,
+      "completeObservationCount": 1
+    },
+    "cost": {
+      "status": "unavailable",
+      "observationCount": 0,
+      "completeObservationCount": 0
+    }
+  },
+  "legacy": false,
+  "warnings": [
+    "inclusive checkpoint observations were retained for reconciliation and excluded from additive totals"
+  ],
+  "runtime": {
+    "wallTimeMs": 3000,
+    "implementationIterations": 2
+  },
+  "traceRef": {
+    "artifact": "./economic-trace.jsonl",
+    "sha256": "26b67713b24148ea08a0dd5747450471322fd10e0728eb4766fa10bb8ce4ef8b",
+    "spanCount": 2,
+    "coverage": "complete"
+  }
+}
