@@ -18,9 +18,12 @@ Reviewer calibration report: sources/evaluator-calibration/ruhroh-evaluator-cali
 
 - manifest.json: Inventory for this publication packet.
 - publish-check.json: Publishability verdict, blockers, remediation, compare output, and optional source verification.
+- publication.json: Thin hash-linked index of the v2 publication contracts.
+- compare.json: Machine-readable v2 comparison output.
 - ruhroh-compare.html: Static aggregate report for human inspection.
 - benchmark-claim.json: Compact benchmark claim JSON for archival and downstream publication.
-- benchmark-summary.json: Row-oriented benchmark summary JSON for reports or leaderboard ingestion.
+- benchmark-summary.json: Target-oriented benchmark summary JSON for reports or registry ingestion.
+- outcome-frontier.json: Quality-gated efficiency frontier with coverage and uncertainty evidence.
 - ruhroh-review.json: Human review queue derived from the claim's saved results.
 - ruhroh-review.html: Static human review queue for audit before citation.
 - ruhroh-eval-quality.json: Reviewer evidence quality report for the claim's saved results.
@@ -70,9 +73,6 @@ Reviewer calibration report: sources/evaluator-calibration/ruhroh-evaluator-cali
 - simple-newsletter/docs-fixture-native-stack: missing effective capabilities hash metadata in aggregate group
 - simple-newsletter/docs-fixture-native-stack: eval-quality warnings present
 - claim is not marked publishable
-- suite minimum runs or scenario coverage not satisfied
-- docs-fixture-native-stack: simple-newsletter has 2/5 required runs
-- docs-fixture-native-stack: scenario-level warnings present
 
 ## Next Actions
 
@@ -84,9 +84,6 @@ Reviewer calibration report: sources/evaluator-calibration/ruhroh-evaluator-cali
 - claim_readiness_blocker: Inspect the blocker, fix the underlying evidence or methodology gap, and re-run publish-check.
 - claim_readiness_blocker: Inspect the blocker, fix the underlying evidence or methodology gap, and re-run publish-check.
 - claim_not_publishable: Resolve all readiness blockers, then regenerate the claim with compare or publish-check.
-- minimum_runs_not_met: Collect enough repeated samples for each scenario/adapter group to satisfy the suite methodology.
-- claim_readiness_blocker: Inspect the blocker, fix the underlying evidence or methodology gap, and re-run publish-check.
-- claim_readiness_blocker: Inspect the blocker, fix the underlying evidence or methodology gap, and re-run publish-check.
 
 ## Advisories
 

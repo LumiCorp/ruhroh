@@ -45,12 +45,12 @@ pnpm exec ruhroh claim-index published-claims --json
 pnpm exec ruhroh claim-index published-claims --html ruhroh-claims.html
 ```
 
-JSON output is versioned as `ruhroh_claim_index_v1` and includes a root
+For v2-only inputs, JSON output is versioned as `ruhroh_claim_index_v2` and includes a root
 `$schema` URL for
-`https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json`. The npm
+`https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json`. The npm
 package ships that schema at
-`node_modules/@kestrel-agents/ruhroh/schemas/claim-index-v1.schema.json`, and
-`ruhroh init` copies it into `ruhroh/schemas/` for registry importer tests.
+`node_modules/@kestrel-agents/ruhroh/schemas/claim-index-v2.schema.json`.
+Mixed or archived v1 claims remain readable through the v1 index contract.
 
 Use `--require-publishable` when the index is an ingestion gate:
 

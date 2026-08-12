@@ -25,6 +25,18 @@
       "details": "bundle file is present"
     },
     {
+      "name": "files.publication",
+      "status": "ok",
+      "path": "./ruhroh-publication/publication.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.compare",
+      "status": "ok",
+      "path": "./ruhroh-publication/compare.json",
+      "details": "bundle file is present"
+    },
+    {
       "name": "files.compare-html",
       "status": "ok",
       "path": "./ruhroh-publication/ruhroh-compare.html",
@@ -40,6 +52,12 @@
       "name": "files.benchmark-summary",
       "status": "ok",
       "path": "./ruhroh-publication/benchmark-summary.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "files.outcome-frontier",
+      "status": "ok",
+      "path": "./ruhroh-publication/outcome-frontier.json",
       "details": "bundle file is present"
     },
     {
@@ -280,19 +298,19 @@
       "name": "publish-check.version",
       "status": "ok",
       "path": "./ruhroh-publication/publish-check.json",
-      "details": "version=ruhroh_publish_check_v1"
+      "details": "version=ruhroh_publish_check_v2"
     },
     {
       "name": "publish-check.compare.version",
       "status": "ok",
       "path": "./ruhroh-publication/publish-check.json",
-      "details": "version=ruhroh_compare_v1"
+      "details": "version=ruhroh_compare_v2"
     },
     {
       "name": "benchmark-claim.version",
       "status": "ok",
       "path": "./ruhroh-publication/benchmark-claim.json",
-      "details": "version=ruhroh_benchmark_claim_v1"
+      "details": "version=ruhroh_benchmark_claim_v2"
     },
     {
       "name": "benchmark-claim.validation",
@@ -478,7 +496,7 @@
       "name": "benchmark-summary.version",
       "status": "ok",
       "path": "./ruhroh-publication/benchmark-summary.json",
-      "details": "version=ruhroh_benchmark_summary_v1"
+      "details": "version=ruhroh_benchmark_summary_v2"
     },
     {
       "name": "benchmark-summary.validation",
@@ -551,6 +569,78 @@
       "status": "ok",
       "path": "./ruhroh-publication/sources/evaluator-calibration/partial-signup-review/workspace",
       "details": "bundle directory is present"
+    },
+    {
+      "name": "publication.artifacts[0]",
+      "status": "ok",
+      "path": "./ruhroh-publication/publish-check.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "publication.artifacts[0].sha256",
+      "status": "ok",
+      "path": "./ruhroh-publication/publish-check.json",
+      "details": "sha256=45467837cdba2809eb7861fa0b044d0aa9e540055126171cf17565888a6398b1"
+    },
+    {
+      "name": "publication.artifacts[1]",
+      "status": "ok",
+      "path": "./ruhroh-publication/manifest.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "publication.artifacts[1].sha256",
+      "status": "ok",
+      "path": "./ruhroh-publication/manifest.json",
+      "details": "sha256=8a7bb9fde0f77e9c75cc89137838eed07121709aee4bf95e5914b29fca659397"
+    },
+    {
+      "name": "publication.artifacts[2]",
+      "status": "ok",
+      "path": "./ruhroh-publication/compare.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "publication.artifacts[2].sha256",
+      "status": "ok",
+      "path": "./ruhroh-publication/compare.json",
+      "details": "sha256=33f1d252456232a985a2c1cb2446b49e7566e2ee137292a99fd85473b2f66b70"
+    },
+    {
+      "name": "publication.artifacts[3]",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-claim.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "publication.artifacts[3].sha256",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-claim.json",
+      "details": "sha256=825d48da3a5fa7795948dc08593a5fbf39ad07d6f21ec398419fa641f5379db7"
+    },
+    {
+      "name": "publication.artifacts[4]",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-summary.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "publication.artifacts[4].sha256",
+      "status": "ok",
+      "path": "./ruhroh-publication/benchmark-summary.json",
+      "details": "sha256=3b4e5a539a801828673e1bae83f9c4b2a02813baf3213d7d54c55eb3c6030f33"
+    },
+    {
+      "name": "publication.artifacts[5]",
+      "status": "ok",
+      "path": "./ruhroh-publication/outcome-frontier.json",
+      "details": "bundle file is present"
+    },
+    {
+      "name": "publication.artifacts[5].sha256",
+      "status": "ok",
+      "path": "./ruhroh-publication/outcome-frontier.json",
+      "details": "sha256=02f04de7afc8071010fafd8c1882da991d4d0bd94ea9d8b2b33b8afc17ee34bc"
     },
     {
       "name": "benchmark-claim.cross-reference",

@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/normalized-billing-row-v1.schema.json",
+  "title": "Ruhroh Normalized Billing Row v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceRowId", "sourceRowSha256", "amount", "currency", "kind"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/normalized-billing-row-v1.schema.json" },
+    "version": { "const": "ruhroh_normalized_billing_row_v1" },
+    "sourceRowId": { "$ref": "#/$defs/nonEmptyString" },
+    "sourceRowSha256": { "$ref": "#/$defs/sha256" },
+    "amount": { "type": "number" },
+    "currency": { "$ref": "#/$defs/currency" },
+    "kind": { "$ref": "#/$defs/factKind" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "providerRequestId": { "$ref": "#/$defs/nonEmptyString" },
+    "principalRef": { "$ref": "#/$defs/nonEmptyString" },
+    "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+    "model": { "$ref": "#/$defs/nonEmptyString" },
+    "sku": { "$ref": "#/$defs/nonEmptyString" }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "factKind": { "enum": ["charge", "credit", "refund", "commitment", "tax", "prepaid", "capacity"] }
+  }
+}

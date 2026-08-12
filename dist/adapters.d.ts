@@ -1,8 +1,10 @@
+export * from "./economics-runtime.js";
+import type { RuhrohAdapterManifestV1, RuhrohEconomicTraceSpanV1, RuhrohEconomicsEnvelopeV1, RuhrohEconomicsObservationV1, RuhrohResourceBudgetOutcomeV1 } from "./economics-runtime.js";
 export type RuhrohContinuityLevel = "native_session" | "workspace_plus_transcript" | "workspace_only";
 export type RuhrohCompletionConfidence = "explicit" | "adapter_inferred";
 export type RuhrohCompletionDoneReason = "goal_satisfied";
 export type RuhrohCompletionNotDoneReason = "agent_requested_continue" | "missing_completion_signal" | "context_checkpoint" | "partial_progress";
-export type RuhrohCompletionTerminalFailureReason = "cannot_satisfy" | "policy_blocked" | "out_of_scope" | "runtime_failure" | "infra_failure";
+export type RuhrohCompletionTerminalFailureReason = "cannot_satisfy" | "policy_blocked" | "out_of_scope" | "runtime_failure" | "infra_failure" | "cancelled" | "resource_budget_exhausted" | "resource_budget_unobservable";
 export interface RuhrohEvidenceRef {
     kind: string;
     ref: string;
@@ -53,6 +55,10 @@ export interface RunTurnResult {
     transcriptPath?: string | undefined;
     eventLogPath?: string | undefined;
     artifactPaths: Record<string, string>;
+    economicsObservations?: RuhrohEconomicsObservationV1[] | undefined;
+    economicTraceSpans?: RuhrohEconomicTraceSpanV1[] | undefined;
+    adapterManifest?: RuhrohAdapterManifestV1 | undefined;
+    resourceBudgetOutcome?: RuhrohResourceBudgetOutcomeV1 | undefined;
     raw: unknown;
 }
 export interface DetectCompletionInput {
@@ -69,6 +75,10 @@ export interface RunAgentArtifactManifest {
     transcriptPaths: string[];
     eventLogPaths: string[];
     artifactPaths: Record<string, string>;
+    economics?: RuhrohEconomicsEnvelopeV1 | undefined;
+    economicTraceSpans?: RuhrohEconomicTraceSpanV1[] | undefined;
+    adapterManifest?: RuhrohAdapterManifestV1 | undefined;
+    resourceBudgetOutcome?: RuhrohResourceBudgetOutcomeV1 | undefined;
 }
 export interface CleanupInput {
     sessionHandle: string;
@@ -88,6 +98,7 @@ export interface RuhrohRunAgentAdapterCapabilities {
     continuity: RuhrohContinuityLevel;
     tools: string[];
     network: boolean;
+    economics?: RuhrohAdapterManifestV1 | undefined;
 }
 export declare function adapterSatisfiesRequirements(adapter: RuhrohRunAgentAdapterCapabilities, requirements: {
     continuity: RuhrohContinuityLevel;

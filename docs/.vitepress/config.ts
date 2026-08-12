@@ -97,6 +97,7 @@ export default defineConfig({
           { text: "Reviewer Command", link: "/eval-agent" },
           { text: "Human Review", link: "/adjudication" },
           { text: "Benchmark Methodology", link: "/benchmark-methodology" },
+          { text: "Economics Evidence Stack", link: "/economics-evidence-stack" },
           { text: "Publish Claims", link: "/publish-claims" },
           { text: "Claim Registry", link: "/claim-registry" },
         ],

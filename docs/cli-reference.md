@@ -599,7 +599,9 @@ Compare JSON includes a versioned `benchmarkClaim` containing suite identity,
 methodology, adapter summaries, scenario results, pairwise comparisons,
 readiness, and run-plan/review evidence. `--benchmark-claim` writes it as a
 standalone archive record. `--benchmark-summary` writes the row-oriented
-`ruhroh_benchmark_summary_v1` form for downstream tables.
+`ruhroh_benchmark_summary_v2` form for downstream tables. The v2 claim keeps
+benchmark-target and execution-adapter identity separate and carries the
+quality-gated outcome frontier. Archived v1 claims remain readable.
 
 `validate-claim --verify-sources` re-hashes suite manifests, run plans, result
 JSON, available run-artifact inventory, and the preserved evaluator calibration
@@ -657,10 +659,31 @@ pnpm exec ruhroh claim-index ruhroh-publication \
 ```
 
 `claim-index` scans one claim, one packet, or a directory of claims and emits
-`ruhroh_claim_index_v1`. HTML output shows status, suite, adapters, run counts,
+`ruhroh_claim_index_v2` when all discovered claims are v2. Mixed or archived
+v1 inputs remain readable through the v1 index path. HTML output shows status,
+suite, benchmark targets, execution adapters, run counts,
 pass rate, evidence coverage, packet links, and blockers. Add
 `--require-publishable` to make it a registry gate with the same `0`, `1`, and
 `2` exit meanings.
+
+### `ruhroh economics`
+
+```bash
+pnpm exec ruhroh economics validate ./economics-envelope.json --json
+pnpm exec ruhroh economics conformance ./adapter-conformance-input.json --json
+pnpm exec ruhroh economics scale-analyze ./scale-analysis-input.json --json
+```
+
+`economics` reads one JSON input file and dispatches one of `validate`,
+`conformance`, `scale-analyze`, `findings`, `provider-drift`,
+`decision-packet`, or `billing-reconcile`. `--json` prints the complete
+`ruhroh_economics_command_result_v1`; without it, a successful command prints
+only its output artifact. Invalid input or a failed calculation exits `1`.
+Evidence conclusions such as `confounded`, `inconclusive`, and
+`review_required` are valid outputs and do not themselves cause a nonzero exit.
+
+See [Economics Evidence Stack](./economics-evidence-stack.md) for the input
+contracts, truth-plane boundaries, coverage rules, and connector gate.
 
 ### `ruhroh explain`
 

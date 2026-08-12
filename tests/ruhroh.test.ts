@@ -13,6 +13,7 @@ import {
   assessRuhrohEvalQuality,
   buildAgentEnvArgs,
   buildRuhrohPublishCheckReport,
+  buildRuhrohPublishCheckV2,
   buildRuhrohRunResultsReport,
   buildRuhrohHarborCommand,
   deriveRuhrohVerdict,
@@ -672,14 +673,14 @@ test("published package contract ships benchmark authoring assets", () => {
   assert.equal(docsSampleCalibrationReport.caseCount, docsSampleNewsletter.evaluation.calibrationCases.length);
   assert.equal(docsSampleCalibrationReport.matchedCount, docsSampleNewsletter.evaluation.calibrationCases.length);
   assert.equal(docsSampleCalibrationReport.mismatchCount, 0);
-  assert.equal(docsSamplePublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
-  assert.equal(docsSamplePublishCheck.version, "ruhroh_publish_check_v1");
-  assert.equal(docsSamplePublishCheck.compare.version, "ruhroh_compare_v1");
+  assert.equal(docsSamplePublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json");
+  assert.equal(docsSamplePublishCheck.version, "ruhroh_publish_check_v2");
+  assert.equal(docsSamplePublishCheck.compare.version, "ruhroh_compare_v2");
   assert.equal(Array.isArray(docsSamplePublishCheck.remediation) && docsSamplePublishCheck.remediation.length > 0, true);
-  assert.equal(docsSamplePublishBundleManifest.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json");
-  assert.equal(docsSamplePublishBundleManifest.version, "ruhroh_publish_bundle_v1");
+  assert.equal(docsSamplePublishBundleManifest.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v2.schema.json");
+  assert.equal(docsSamplePublishBundleManifest.version, "ruhroh_publish_bundle_v2");
   assert.equal(docsSamplePublishBundleManifest.files.some((file: { role: string }) => file.role === "publish-check"), true);
-  assert.equal(docsSampleBundledPublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
+  assert.equal(docsSampleBundledPublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json");
   assert.equal(docsSampleBundledPublishCheck.source.resultsPath, "sources/results");
   assert.deepEqual(
     docsSampleCalibrationReport.results.map((item: { expectedStatus: string; actualStatus: string; matched: boolean }) => ({
@@ -5950,21 +5951,23 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(compare.claimReadiness.blockers.includes("no suite selected; use compare --suite for publishable benchmark claims"), true);
     assert.equal(compare.claimReadiness.blockers.some((item: string) => item.includes("artifact validation failed")), true);
     assert.equal(compare.claimReadiness.blockers.some((item: string) => item.includes("fewer than 5 runs")), true);
-    assert.equal(compare.benchmarkClaim.version, "ruhroh_benchmark_claim_v1");
+    assert.equal(compare.version, "ruhroh_compare_v2");
+    assert.equal(compare.benchmarkClaim.version, "ruhroh_benchmark_claim_v2");
     assert.equal(compare.benchmarkClaim.evidence.artifactValidationErrors, compare.artifactValidation.errors.length);
     assert.equal(compare.benchmarkClaim.evidence.artifactValidationWarnings, compare.artifactValidation.warnings.length);
     assert.equal(compare.benchmarkClaim.tool.name, "@kestrel-agents/ruhroh");
-    assert.equal(compare.benchmarkClaim.tool.version, "0.6.0-beta.0");
+    assert.equal(compare.benchmarkClaim.tool.version, "0.7.0-beta.0");
     assert.equal(compare.benchmarkClaim.scope, "ad_hoc_compare");
     assert.equal(compare.benchmarkClaim.publishable, false);
     assert.equal(compare.benchmarkClaim.summary.totalRuns, 2);
-    assert.equal(compare.benchmarkClaim.summary.totalPasses, 1);
+    assert.equal(compare.benchmarkClaim.summary.totalAcceptedOutcomes, 1);
     assert.equal(compare.benchmarkClaim.summary.runWeightedPassRate, 0.5);
-    assert.equal(compare.benchmarkClaim.adapterSummaries[0].usage.runsWithUsage, 1);
-    assert.equal(compare.benchmarkClaim.adapterSummaries[0].usage.costPerPass, undefined);
+    assert.equal(compare.benchmarkClaim.targetSummaries[0].identityStatus, "legacy_execution_adapter_fallback");
+    assert.equal(compare.benchmarkClaim.targetSummaries[0].usage.runsWithUsage, 1);
+    assert.equal(compare.benchmarkClaim.targetSummaries[0].usage.costPerAcceptedOutcome, undefined);
     assert.equal(compare.benchmarkClaim.scenarioResults[0].meanScoreCi95.method, "bootstrap_percentile");
     assert.equal(compare.benchmarkClaim.scenarioResults[0].usage.runsWithUsage, 1);
-    assert.equal(compare.benchmarkClaim.scenarioResults[0].usage.tokensPerPass, undefined);
+    assert.equal(compare.benchmarkClaim.scenarioResults[0].usage.tokensPerAcceptedOutcome, undefined);
     assert.equal(compare.benchmarkClaim.source.resultsPath, tmp);
     assert.equal(compare.benchmarkClaim.source.resultArtifacts.length, 2);
     assert.deepEqual(compare.benchmarkClaim.source.resultArtifacts.map((artifact: { path: string }) => artifact.path), [runOneResultPath, runTwoResultPath]);
@@ -5981,7 +5984,7 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(compare.benchmarkClaim.source.resultArtifacts[1].path, runTwoResultPath);
     assert.equal(compare.benchmarkClaim.source.resultArtifacts[1].artifactInventory[0].available, false);
     assert.equal(compare.benchmarkClaim.source.resultArtifacts[1].artifactInventory[0].error, "missing");
-    assert.equal(compare.benchmarkClaim.adapterSummaries[0].adapter, "agent-a");
+    assert.equal(compare.benchmarkClaim.targetSummaries[0].benchmarkTargetId, "legacy_execution_adapter:agent-a");
     assert.equal(compare.benchmarkClaim.scenarioResults[0].scenarioId, "simple-newsletter");
     assert.equal(compare.benchmarkClaim.evidence.runPlanPresent, false);
 
@@ -6012,13 +6015,13 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(compareRunPlan.claimReadiness.blockers.some((item: string) => item.includes("run plan warning")), true);
     assert.equal(compareRunPlan.benchmarkClaim.evidence.runPlanPresent, true);
     assert.equal(compareRunPlan.benchmarkClaim.evidence.runPlanWarnings.length, compareRunPlan.runPlanWarnings.length);
-    assert.equal(compareRunPlan.benchmarkSummary.version, "ruhroh_benchmark_summary_v1");
-    assert.equal(compareRunPlan.benchmarkSummary.claimVersion, "ruhroh_benchmark_claim_v1");
-    assert.equal(compareRunPlan.benchmarkSummary.rows.length, compareRunPlan.benchmarkClaim.scenarioResults.length);
-    assert.equal(compareRunPlan.benchmarkSummary.rows[0].scenarioId, "simple-newsletter");
-    assert.equal(compareRunPlan.benchmarkSummary.rows[0].adapter, "agent-a");
-    assert.equal(compareRunPlan.benchmarkSummary.rows[0].meanScoreCi95.method, "bootstrap_percentile");
-    assert.deepEqual(compareRunPlan.benchmarkSummary.rows[0].usage, compareRunPlan.benchmarkClaim.scenarioResults[0].usage);
+    assert.equal(compareRunPlan.benchmarkSummary.version, "ruhroh_benchmark_summary_v2");
+    assert.equal(compareRunPlan.benchmarkSummary.claimVersion, "ruhroh_benchmark_claim_v2");
+    assert.equal(compareRunPlan.benchmarkSummary.scenarioRows.length, compareRunPlan.benchmarkClaim.scenarioResults.length);
+    assert.equal(compareRunPlan.benchmarkSummary.scenarioRows[0].scenarioId, "simple-newsletter");
+    assert.equal(compareRunPlan.benchmarkSummary.scenarioRows[0].benchmarkTargetId, "legacy_execution_adapter:agent-a");
+    assert.equal(compareRunPlan.benchmarkSummary.scenarioRows[0].meanScoreCi95.method, "bootstrap_percentile");
+    assert.deepEqual(compareRunPlan.benchmarkSummary.scenarioRows[0].usage, compareRunPlan.benchmarkClaim.scenarioResults[0].usage);
     const exportedClaim = JSON.parse(readFileSync(benchmarkClaimPath, "utf8"));
     assert.deepEqual(exportedClaim, compareRunPlan.benchmarkClaim);
     const exportedSummary = JSON.parse(readFileSync(benchmarkSummaryPath, "utf8"));
@@ -6071,13 +6074,12 @@ test("public CLI reports and compares run artifacts", async () => {
     const invalidSummaryPath = path.join(tmp, "invalid-summary.json");
     const invalidSummary: Record<string, unknown> = {
       ...exportedSummary,
-      rows: [
+      scenarioRows: [
         {
-          ...exportedSummary.rows[0],
-          scope: "suite",
-          passes: exportedSummary.rows[0].runs + 1,
+          ...exportedSummary.scenarioRows[0],
+          acceptedOutcomes: exportedSummary.scenarioRows[0].runs + 1,
         },
-        ...exportedSummary.rows.slice(1),
+        ...exportedSummary.scenarioRows.slice(1),
       ],
     };
     writeFileSync(invalidSummaryPath, `${JSON.stringify(invalidSummary, null, 2)}\n`);
@@ -6091,8 +6093,8 @@ test("public CLI reports and compares run artifacts", async () => {
     });
     const invalidSummaryReport = JSON.parse(invalidSummaryStdout.join(""));
     assert.equal(invalidSummaryCode, 1);
-    assert.equal(invalidSummaryReport.validation.errors.includes("rows[0].scope must match summary scope"), true);
-    assert.equal(invalidSummaryReport.validation.errors.includes("rows[0].passes must be <= rows[0].runs"), true);
+    assert.equal(invalidSummaryReport.validation.errors.includes("scenarioRows[0].acceptedOutcomes must be <= runs"), true);
+    assert.equal(invalidSummaryReport.validation.errors.includes("scenarioRows[0].passRate must equal acceptedOutcomes / runs"), true);
 
     const validateClaimStdout: string[] = [];
     const validateClaimCode = await runRuhrohCli(["validate-claim", "benchmark-claim.json", "--json"], {
@@ -6224,8 +6226,8 @@ test("public CLI reports and compares run artifacts", async () => {
     });
     const publishCheck = JSON.parse(publishCheckStdout.join(""));
     assert.equal(publishCheckCode, 2);
-    assert.equal(publishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
-    assert.equal(publishCheck.version, "ruhroh_publish_check_v1");
+    assert.equal(publishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json");
+    assert.equal(publishCheck.version, "ruhroh_publish_check_v2");
     assert.equal(publishCheck.publishable, false);
     assert.equal(publishCheck.source.resultsPath, tmp);
     assert.equal(publishCheck.source.runPlanPath, runPlanPath);
@@ -6262,14 +6264,14 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(publishCheck.compare.benchmarkClaim.source.benchmarkClaimPath, publishCheckClaimPath);
     assert.equal(publishCheck.compare.benchmarkClaim.source.evaluatorCalibrationReportPath, calibrationReportPath);
     assert.equal(typeof publishCheck.compare.benchmarkClaim.source.evaluatorCalibrationReportSha256, "string");
-    assert.deepEqual(buildRuhrohPublishCheckReport({
+    assert.deepEqual(buildRuhrohPublishCheckV2({
       source: publishCheck.source,
       compare: publishCheck.compare,
       sourceVerification: publishCheck.sourceVerification,
     }), publishCheck);
     const publishBundleManifest = JSON.parse(readFileSync(path.join(publishBundlePath, "manifest.json"), "utf8"));
-    assert.equal(publishBundleManifest.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json");
-    assert.equal(publishBundleManifest.version, "ruhroh_publish_bundle_v1");
+    assert.equal(publishBundleManifest.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v2.schema.json");
+    assert.equal(publishBundleManifest.version, "ruhroh_publish_bundle_v2");
     assert.equal(publishBundleManifest.source.resultsPath, "sources/results");
     assert.equal(publishBundleManifest.source.bundlePath, ".");
     assert.equal(publishBundleManifest.publishable, false);
@@ -6288,8 +6290,8 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(existsSync(path.join(publishBundlePath, "sources", "evaluator-calibration", "clear-pass", "workspace", "CALIBRATION.md")), true);
     assert.equal(existsSync(path.join(publishBundlePath, "sources", "results", "run-1", "ruhroh-loop-result.json")), true);
     const bundledPublishCheck = JSON.parse(readFileSync(path.join(publishBundlePath, "publish-check.json"), "utf8"));
-    assert.equal(bundledPublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json");
-    assert.equal(bundledPublishCheck.version, "ruhroh_publish_check_v1");
+    assert.equal(bundledPublishCheck.$schema, "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json");
+    assert.equal(bundledPublishCheck.version, "ruhroh_publish_check_v2");
     assert.equal(bundledPublishCheck.source.bundlePath, ".");
     assert.equal(bundledPublishCheck.source.resultsPath, "sources/results");
     assert.equal(bundledPublishCheck.source.evaluatorCalibrationReportPath, "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json");
@@ -6423,8 +6425,8 @@ test("public CLI reports and compares run artifacts", async () => {
     const claimIndex = JSON.parse(claimIndexStdout.join(""));
     const claimIndexHtml = readFileSync(claimIndexHtmlPath, "utf8");
     assert.equal(claimIndexCode, 0);
-    assert.equal(claimIndex.$schema, "https://lumicorp.github.io/ruhroh/schemas/claim-index-v1.schema.json");
-    assert.equal(claimIndex.version, "ruhroh_claim_index_v1");
+    assert.equal(claimIndex.$schema, "https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json");
+    assert.equal(claimIndex.version, "ruhroh_claim_index_v2");
     assert.equal(claimIndex.registryReady, false);
     assert.equal(claimIndex.registryBlockers.some((blocker: string) => blocker.includes("blocked claim")), true);
     assert.equal(claimIndex.claimCount >= 3, true);
@@ -6541,10 +6543,13 @@ test("public CLI reports and compares run artifacts", async () => {
     const invalidClaimPath = path.join(tmp, "invalid-claim.json");
     const invalidClaim: Record<string, unknown> = { ...exportedClaim };
     invalidClaim.readiness = {
-      scope: "ad_hoc_compare",
-      publishable: true,
-      blockers: ["still blocked"],
-      advisories: [],
+      ...(exportedClaim.readiness as Record<string, unknown>),
+      publication: {
+        scope: "ad_hoc_compare",
+        publishable: true,
+        blockers: ["still blocked"],
+        advisories: [],
+      },
     };
     writeFileSync(invalidClaimPath, `${JSON.stringify(invalidClaim, null, 2)}\n`);
     const invalidClaimStdout: string[] = [];
@@ -6557,8 +6562,7 @@ test("public CLI reports and compares run artifacts", async () => {
     });
     const invalidClaimReport = JSON.parse(invalidClaimStdout.join(""));
     assert.equal(invalidClaimCode, 1);
-    assert.equal(invalidClaimReport.validation.errors.includes("readiness.publishable must match publishable"), true);
-    assert.equal(invalidClaimReport.validation.errors.includes("readiness.publishable cannot be true when blockers are present"), true);
+    assert.equal(invalidClaimReport.validation.errors.includes("readiness.publication.publishable must match publishable"), true);
 
     const forgedPublishableClaimPath = path.join(tmp, "forged-publishable-claim.json");
     const forgedPublishableClaim: Record<string, unknown> = {
@@ -6566,10 +6570,13 @@ test("public CLI reports and compares run artifacts", async () => {
       scope: "ad_hoc_compare",
       publishable: true,
       readiness: {
-        scope: "ad_hoc_compare",
-        publishable: true,
-        blockers: [],
-        advisories: [],
+        ...(exportedClaim.readiness as Record<string, unknown>),
+        publication: {
+          scope: "ad_hoc_compare",
+          publishable: true,
+          blockers: [],
+          advisories: [],
+        },
       },
     };
     writeFileSync(forgedPublishableClaimPath, `${JSON.stringify(forgedPublishableClaim, null, 2)}\n`);
@@ -6632,12 +6639,9 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(suiteCompare.benchmarkClaim.suite.minRuns, 3);
     assert.equal(suiteCompare.benchmarkClaim.source.suitePath, suitePath);
     assert.equal(suiteCompare.benchmarkClaim.source.suiteSha256, sha256File(suitePath));
-    assert.equal(suiteCompare.benchmarkClaim.adapterSummaries[0].minRunsSatisfied, false);
-    assert.equal(suiteCompare.benchmarkClaim.suiteCoverage.expectedScenarios, 2);
-    assert.equal(suiteCompare.benchmarkClaim.suiteCoverage.coveredScenarios, 1);
-    assert.deepEqual(suiteCompare.benchmarkClaim.suiteCoverage.missingScenarioIds, ["missing-scenario"]);
-    assert.equal(suiteCompare.benchmarkClaim.suiteCoverage.minRunsSatisfied, false);
-    assert.deepEqual(suiteCompare.benchmarkClaim.suiteCoverage.adapters[0].scenarioRuns, { "simple-newsletter": 2 });
+    assert.equal(suiteCompare.benchmarkClaim.version, "ruhroh_benchmark_claim_v2");
+    assert.equal(suiteCompare.benchmarkClaim.targetSummaries[0].identityStatus, "legacy_execution_adapter_fallback");
+    assert.equal(suiteCompare.benchmarkClaim.readiness.publication.publishable, false);
 
     const suiteHtmlPath = path.join(tmp, "suite-compare.html");
     const suiteHtmlStdout: string[] = [];
@@ -6929,9 +6933,9 @@ test("public CLI compare warns when result benchmark target contradicts run plan
     assert.equal(parsed.benchmarkClaim.source.resultArtifacts[0].benchmarkTarget.harness.version, "2.1.0");
     assert.equal(parsed.benchmarkClaim.source.resultArtifacts[0].benchmarkTarget.requestedModel.canonicalId, "openai/gpt-5.4");
     assert.equal(parsed.benchmarkClaim.source.resultArtifacts[0].benchmarkTarget.actualModel.model, "gpt-5.4");
-    assert.deepEqual(parsed.benchmarkSummary.rows[0].cohort.benchmarkStreams, ["harness-controlled"]);
-    assert.deepEqual(parsed.benchmarkSummary.rows[0].cohort.benchmarkTargets, ["codex-openai-gpt55"]);
-    assert.deepEqual(parsed.benchmarkSummary.rows[0].cohort.agentModels, ["unknown"]);
+    assert.deepEqual(parsed.benchmarkSummary.scenarioRows[0].cohort.benchmarkStreams, ["harness-controlled"]);
+    assert.deepEqual(parsed.benchmarkSummary.scenarioRows[0].cohort.benchmarkTargets, ["codex-openai-gpt55"]);
+    assert.deepEqual(parsed.benchmarkSummary.scenarioRows[0].cohort.agentModels, ["unknown"]);
 
     const compareHtmlPath = path.join(tmp, "compare.html");
     const htmlCode = await runRuhrohCli(["compare", ".", "--run-plan", "ruhroh-run-plan.json", "--html", compareHtmlPath], {
@@ -6966,16 +6970,11 @@ test("public CLI compare warns when result benchmark target contradicts run plan
     const claimIndex = JSON.parse(claimIndexStdout.join(""));
     const claimIndexHtml = readFileSync(claimIndexHtmlPath, "utf8");
     assert.equal(claimIndexCode, 0);
-    assert.deepEqual(claimIndex.claims[0].benchmarkContext.streams, ["harness-controlled"]);
-    assert.deepEqual(claimIndex.claims[0].benchmarkContext.targets, ["codex-openai-gpt55"]);
-    assert.deepEqual(claimIndex.claims[0].benchmarkContext.harnesses, ["codex@2.1.0"]);
-    assert.deepEqual(claimIndex.claims[0].benchmarkContext.providerPaths, ["openai/chat-completions"]);
-    assert.deepEqual(claimIndex.claims[0].benchmarkContext.canonicalModels, ["unknown"]);
+    assert.deepEqual(claimIndex.claims[0].targets.map((target: { benchmarkTargetId: string }) => target.benchmarkTargetId), ["codex-openai-gpt55"]);
     assert.match(claimIndexHtml, /Benchmark context/u);
-    assert.match(claimIndexHtml, /stream=harness-controlled/u);
     assert.match(claimIndexHtml, /target=codex-openai-gpt55/u);
-    assert.match(claimIndexHtml, /harness=codex@2\.1\.0/u);
-    assert.match(claimIndexHtml, /providerPath=openai\/chat-completions/u);
+    assert.match(claimIndexHtml, /harness=unknown/u);
+    assert.match(claimIndexHtml, /providerPath=unknown/u);
   } finally {
     rmSync(tmp, { recursive: true, force: true });
   }

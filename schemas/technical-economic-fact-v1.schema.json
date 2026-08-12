@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/technical-economic-fact-v1.schema.json",
+  "title": "Ruhroh Technical Economic Fact v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "factId", "runId", "benchmarkTargetId", "workloadId", "occurredAt", "evidenceRef"],
+  "properties": {
+    "version": { "const": "ruhroh_technical_economic_fact_v1" },
+    "factId": { "$ref": "#/$defs/nonEmptyString" },
+    "runId": { "$ref": "#/$defs/nonEmptyString" },
+    "benchmarkTargetId": { "$ref": "#/$defs/nonEmptyString" },
+    "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "providerRequestIdHash": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "principalRef": { "$ref": "#/$defs/nonEmptyString" },
+    "model": { "$ref": "#/$defs/nonEmptyString" },
+    "sku": { "$ref": "#/$defs/nonEmptyString" },
+    "evidenceRef": { "$ref": "#/$defs/hashedRef" }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "hashedRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    }
+  }
+}

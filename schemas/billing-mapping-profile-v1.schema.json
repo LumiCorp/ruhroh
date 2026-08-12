@@ -1,0 +1,93 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/billing-mapping-profile-v1.schema.json",
+  "title": "Ruhroh Billing Mapping Profile v1",
+  "$comment": "Allocation weights must be positive and sum to one within tolerance; the TypeScript validator enforces the cross-item sum.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "profileId", "provider", "externalSchemaVersion", "fields", "kindValues", "matching", "allocations", "tolerance"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/billing-mapping-profile-v1.schema.json" },
+    "version": { "const": "ruhroh_billing_mapping_profile_v1" },
+    "profileId": { "$ref": "#/$defs/nonEmptyString" },
+    "provider": { "$ref": "#/$defs/nonEmptyString" },
+    "externalSchemaVersion": { "$ref": "#/$defs/nonEmptyString" },
+    "fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRowId", "amount", "currency", "kind"],
+      "properties": {
+        "sourceRowId": { "$ref": "#/$defs/nonEmptyString" },
+        "amount": { "$ref": "#/$defs/nonEmptyString" },
+        "currency": { "$ref": "#/$defs/nonEmptyString" },
+        "kind": { "$ref": "#/$defs/nonEmptyString" },
+        "occurredAt": { "$ref": "#/$defs/nonEmptyString" },
+        "providerRequestId": { "$ref": "#/$defs/nonEmptyString" },
+        "principalRef": { "$ref": "#/$defs/nonEmptyString" },
+        "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+        "model": { "$ref": "#/$defs/nonEmptyString" },
+        "sku": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "kindValues": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "charge": { "$ref": "#/$defs/sourceValues" },
+        "credit": { "$ref": "#/$defs/sourceValues" },
+        "refund": { "$ref": "#/$defs/sourceValues" },
+        "commitment": { "$ref": "#/$defs/sourceValues" },
+        "tax": { "$ref": "#/$defs/sourceValues" },
+        "prepaid": { "$ref": "#/$defs/sourceValues" },
+        "capacity": { "$ref": "#/$defs/sourceValues" }
+      }
+    },
+    "matching": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["boundedWindowSeconds", "boundedFields"],
+      "properties": {
+        "boundedWindowSeconds": { "type": "number", "minimum": 0 },
+        "boundedFields": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["principalRef", "workloadId", "model", "sku"] }
+        }
+      }
+    },
+    "allocations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["sourceRowId", "targets"],
+        "properties": {
+          "sourceRowId": { "$ref": "#/$defs/nonEmptyString" },
+          "targets": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["workloadId", "weight"],
+              "properties": {
+                "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+                "weight": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "tolerance": { "type": "number", "minimum": 0 }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sourceValues": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/nonEmptyString" }
+    }
+  }
+}

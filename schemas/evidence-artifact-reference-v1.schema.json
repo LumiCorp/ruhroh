@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/evidence-artifact-reference-v1.schema.json",
+  "title": "Ruhroh Evidence Artifact Reference v1",
+  "$comment": "The TypeScript validator enforces the role-to-contract and public-bundle policy mappings.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "role", "contractVersion", "path", "sha256", "classification"],
+  "properties": {
+    "version": { "const": "ruhroh_evidence_artifact_reference_v1" },
+    "role": {
+      "enum": [
+        "run-agent-result", "adapter-manifest", "adapter-conformance", "economics-observation",
+        "economics-envelope", "economic-trace", "resource-budgets", "resource-budget-outcome",
+        "suite", "compare", "benchmark-claim", "benchmark-summary", "outcome-frontier",
+        "scale-experiment", "scale-analysis", "findings", "provider-baseline", "provider-drift",
+        "workload-profile", "control-surface", "workload-binding", "intervention-ledger",
+        "decision-context", "decision-packet", "product-engineering-decision-view",
+        "billing-source-manifest", "billing-mapping-profile", "normalized-billing-row",
+        "technical-economic-fact", "cost-reconciliation", "publish-check", "bundle-manifest",
+        "claim-index", "publication"
+      ]
+    },
+    "contractVersion": { "type": "string", "minLength": 1 },
+    "path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?![A-Za-z]:[/\\\\])(?!.*(?:^|[/\\\\])\\.\\.(?:[/\\\\]|$)).+$"
+    },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "classification": { "enum": ["public", "internal", "restricted"] }
+  }
+}

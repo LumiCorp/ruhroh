@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync, statSync } from "node:fs";
 import path from "node:path";
-import { validateRuhrohBenchmarkClaim, validateRuhrohBenchmarkSummary, } from "./results.js";
+import { validateRuhrohOutcomeFrontier } from "./economics.js";
+import { validateRuhrohBenchmarkClaim, validateRuhrohBenchmarkSummary, validateRuhrohCompareV2, } from "./results.js";
 const REQUIRED_PUBLISH_BUNDLE_ROLES = [
     "manifest",
     "publish-check",
@@ -14,8 +15,18 @@ const REQUIRED_PUBLISH_BUNDLE_ROLES = [
     "eval-quality-html",
     "readme",
 ];
+const REQUIRED_PUBLISH_BUNDLE_ROLES_V2 = [
+    ...REQUIRED_PUBLISH_BUNDLE_ROLES,
+    "publication",
+    "compare",
+    "outcome-frontier",
+];
 const PUBLISH_CHECK_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/publish-check-v1.schema.json";
 const PUBLISH_BUNDLE_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v1.schema.json";
+const PUBLISH_CHECK_V2_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json";
+const PUBLISH_BUNDLE_V2_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/publish-bundle-v2.schema.json";
+const CLAIM_INDEX_V2_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json";
+const PUBLICATION_V2_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/publication-v2.schema.json";
 export function buildRuhrohPublishCheckReport(input) {
     const benchmarkClaim = isRecord(input.compare.benchmarkClaim) ? input.compare.benchmarkClaim : undefined;
     if (benchmarkClaim === undefined) {
@@ -47,6 +58,98 @@ export function buildRuhrohPublishCheckReport(input) {
         ...(input.sourceVerification === undefined ? {} : { sourceVerification: input.sourceVerification }),
     };
 }
+export function buildRuhrohPublishCheckReportV2(input) {
+    const compareValidation = validateRuhrohCompareV2(input.compare);
+    if (compareValidation.errors.length > 0) {
+        throw new Error(`cannot build v2 publish check from invalid compare output: ${compareValidation.errors.join("; ")}`);
+    }
+    const sourceVerificationErrors = input.sourceVerification?.errors.map((error) => `source verification: ${error}`) ?? [];
+    const sourceVerificationWarnings = input.sourceVerification?.warnings.map((warning) => `source verification: ${warning}`) ?? [];
+    const publishabilityGate = benchmarkClaimPublishabilityGate(input.compare.benchmarkClaim);
+    const blockers = uniquePreserveOrder([
+        ...publishabilityGate.blockers,
+        ...sourceVerificationErrors,
+    ]);
+    const advisories = uniquePreserveOrder([
+        ...input.compare.benchmarkClaim.readiness.publication.advisories,
+        ...sourceVerificationWarnings,
+    ]);
+    return {
+        $schema: PUBLISH_CHECK_V2_SCHEMA_URL,
+        version: "ruhroh_publish_check_v2",
+        source: { ...input.source },
+        publishable: publishabilityGate.publishable && sourceVerificationErrors.length === 0,
+        blockerCount: blockers.length,
+        blockers,
+        remediation: blockers.map(ruhrohPublishCheckRemediationForBlocker),
+        advisoryCount: advisories.length,
+        advisories,
+        compare: input.compare,
+        ...(input.sourceVerification === undefined ? {} : { sourceVerification: input.sourceVerification }),
+    };
+}
+export const buildRuhrohPublishCheckV2 = buildRuhrohPublishCheckReportV2;
+export function validateRuhrohPublishCheckReport(input) {
+    if (isRecord(input) && input.version === "ruhroh_publish_check_v2") {
+        return validateRuhrohPublishCheckReportV2(input);
+    }
+    return validateRuhrohPublishCheckReportV1(input);
+}
+export function validateRuhrohPublishCheckReportV1(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_publish_check_validation_v1", errors: ["publish check must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_publish_check_v1")
+        errors.push("version must be ruhroh_publish_check_v1");
+    if (input.$schema !== undefined && input.$schema !== PUBLISH_CHECK_SCHEMA_URL)
+        warnings.push("$schema does not match the v1 publish-check schema URL");
+    validatePublishCheckCommon(input, errors);
+    const compare = isRecord(input.compare) ? input.compare : undefined;
+    if (compare === undefined) {
+        errors.push("compare must be an object");
+    }
+    else if (compare.version !== "ruhroh_compare_v1") {
+        errors.push("compare.version must be ruhroh_compare_v1");
+    }
+    return {
+        version: "ruhroh_publish_check_validation_v1",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export function validateRuhrohPublishCheckReportV2(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_publish_check_validation_v2", errors: ["publish check must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_publish_check_v2")
+        errors.push("version must be ruhroh_publish_check_v2");
+    if (input.$schema !== undefined && input.$schema !== PUBLISH_CHECK_V2_SCHEMA_URL)
+        warnings.push("$schema does not match the v2 publish-check schema URL");
+    validatePublishCheckCommon(input, errors);
+    const compare = isRecord(input.compare) ? input.compare : undefined;
+    if (compare === undefined) {
+        errors.push("compare must be an object");
+    }
+    else {
+        const validation = validateRuhrohCompareV2(compare);
+        errors.push(...validation.errors.map((error) => `compare: ${error}`));
+        warnings.push(...validation.warnings.map((warning) => `compare: ${warning}`));
+        const expectedPublishable = benchmarkClaimPublishabilityGate(isRecord(compare.benchmarkClaim) ? compare.benchmarkClaim : {}).publishable && !publishCheckHasSourceVerificationErrors(input);
+        if (input.publishable !== expectedPublishable) {
+            errors.push("publishable must match the embedded v2 benchmark claim and source verification gate");
+        }
+    }
+    return {
+        version: "ruhroh_publish_check_validation_v2",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export const validateRuhrohPublishCheckV2 = validateRuhrohPublishCheckReportV2;
 export function ruhrohPublishCheckRemediationCatalog() {
     return [
         ruhrohPublishCheckRemediationForBlocker("source verification: source file hash mismatch"),
@@ -173,6 +276,324 @@ export function ruhrohPublishCheckRemediationForBlocker(blocker) {
         docs: "publish-claims#common-blockers",
     };
 }
+const PUBLISH_BUNDLE_CONTRACTS_V2 = {
+    publishCheck: "ruhroh_publish_check_v2",
+    compare: "ruhroh_compare_v2",
+    benchmarkClaim: "ruhroh_benchmark_claim_v2",
+    benchmarkSummary: "ruhroh_benchmark_summary_v2",
+    outcomeFrontier: "ruhroh_outcome_frontier_v1",
+};
+const PUBLICATION_ARTIFACT_CONTRACTS_V2 = {
+    "publish-check": "ruhroh_publish_check_v2",
+    "bundle-manifest": "ruhroh_publish_bundle_v2",
+    "claim-index": "ruhroh_claim_index_v2",
+    compare: "ruhroh_compare_v2",
+    "benchmark-claim": "ruhroh_benchmark_claim_v2",
+    "benchmark-summary": "ruhroh_benchmark_summary_v2",
+    "outcome-frontier": "ruhroh_outcome_frontier_v1",
+    "economic-trace": "ruhroh_economic_trace_span_v1",
+    "intervention-ledger": "ruhroh_intervention_ledger_v1",
+    "cost-reconciliation": "ruhroh_cost_reconciliation_v1",
+    "decision-packet": "ruhroh_decision_packet_v1",
+};
+const REQUIRED_PUBLICATION_ARTIFACT_ROLES_V2 = [
+    "publish-check",
+    "bundle-manifest",
+    "compare",
+    "benchmark-claim",
+    "benchmark-summary",
+    "outcome-frontier",
+];
+export function buildRuhrohPublicationV2(input) {
+    const publication = {
+        $schema: PUBLICATION_V2_SCHEMA_URL,
+        version: "ruhroh_publication_v2",
+        createdAt: input.createdAt ?? new Date().toISOString(),
+        publishable: input.publishable,
+        artifacts: input.artifacts.map((artifact) => ({ ...artifact })),
+    };
+    const validation = validateRuhrohPublicationV2(publication);
+    if (validation.errors.length > 0) {
+        throw new Error(`cannot build invalid v2 publication: ${validation.errors.join("; ")}`);
+    }
+    return publication;
+}
+export function validateRuhrohPublicationV2(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_publication_validation_v2", errors: ["publication must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_publication_v2")
+        errors.push("version must be ruhroh_publication_v2");
+    if (input.$schema !== undefined && input.$schema !== PUBLICATION_V2_SCHEMA_URL)
+        warnings.push("$schema does not match the v2 publication schema URL");
+    requirePublicationString(input.createdAt, "createdAt", errors);
+    if (typeof input.publishable !== "boolean")
+        errors.push("publishable must be boolean");
+    const artifacts = Array.isArray(input.artifacts) ? input.artifacts : [];
+    if (!Array.isArray(input.artifacts))
+        errors.push("artifacts must be an array");
+    const roles = [];
+    for (const [index, rawArtifact] of artifacts.entries()) {
+        if (!isRecord(rawArtifact)) {
+            errors.push(`artifacts[${index}] must be an object`);
+            continue;
+        }
+        const role = stringField(rawArtifact, "role");
+        if (role === undefined || !(role in PUBLICATION_ARTIFACT_CONTRACTS_V2)) {
+            errors.push(`artifacts[${index}].role is invalid`);
+            continue;
+        }
+        roles.push(role);
+        requirePublicationString(rawArtifact.path, `artifacts[${index}].path`, errors);
+        if (typeof rawArtifact.sha256 !== "string" || !/^[a-f0-9]{64}$/u.test(rawArtifact.sha256)) {
+            errors.push(`artifacts[${index}].sha256 must be a lowercase SHA-256 digest`);
+        }
+        const expectedContract = PUBLICATION_ARTIFACT_CONTRACTS_V2[role];
+        if (rawArtifact.contractVersion !== expectedContract) {
+            errors.push(`artifacts[${index}].contractVersion must be ${expectedContract} for role ${role}`);
+        }
+    }
+    for (const role of REQUIRED_PUBLICATION_ARTIFACT_ROLES_V2) {
+        if (!roles.includes(role))
+            errors.push(`artifacts must include role ${role}`);
+    }
+    const singletonRoles = roles.filter((role) => role !== "economic-trace");
+    if (new Set(singletonRoles).size !== singletonRoles.length)
+        errors.push("publication artifact roles other than economic-trace must be unique");
+    return {
+        version: "ruhroh_publication_validation_v2",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export function buildRuhrohPublishBundleManifestV2(input) {
+    const manifest = {
+        $schema: PUBLISH_BUNDLE_V2_SCHEMA_URL,
+        version: "ruhroh_publish_bundle_v2",
+        createdAt: input.createdAt ?? new Date().toISOString(),
+        source: { ...input.source },
+        publishable: input.publishCheck.publishable,
+        blockerCount: input.publishCheck.blockerCount,
+        advisoryCount: input.publishCheck.advisoryCount,
+        contracts: { ...PUBLISH_BUNDLE_CONTRACTS_V2 },
+        files: input.files.map((file) => ({ ...file })),
+    };
+    const validation = validateRuhrohPublishBundleManifestV2(manifest);
+    if (validation.errors.length > 0) {
+        throw new Error(`cannot build invalid v2 publication bundle manifest: ${validation.errors.join("; ")}`);
+    }
+    return manifest;
+}
+export const buildRuhrohPublicationBundleV2 = buildRuhrohPublishBundleManifestV2;
+export function validateRuhrohPublishBundleManifest(input) {
+    if (isRecord(input) && input.version === "ruhroh_publish_bundle_v2") {
+        return validateRuhrohPublishBundleManifestV2(input);
+    }
+    return validateRuhrohPublishBundleManifestV1(input);
+}
+export function validateRuhrohPublishBundleManifestV1(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_publish_bundle_manifest_validation_v1", errors: ["bundle manifest must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_publish_bundle_v1")
+        errors.push("version must be ruhroh_publish_bundle_v1");
+    if (input.$schema !== undefined && input.$schema !== PUBLISH_BUNDLE_SCHEMA_URL)
+        warnings.push("$schema does not match the v1 publish-bundle schema URL");
+    validatePublishBundleManifestCommon(input, errors);
+    return {
+        version: "ruhroh_publish_bundle_manifest_validation_v1",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export function validateRuhrohPublishBundleManifestV2(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_publish_bundle_manifest_validation_v2", errors: ["bundle manifest must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_publish_bundle_v2")
+        errors.push("version must be ruhroh_publish_bundle_v2");
+    if (input.$schema !== undefined && input.$schema !== PUBLISH_BUNDLE_V2_SCHEMA_URL)
+        warnings.push("$schema does not match the v2 publish-bundle schema URL");
+    validatePublishBundleManifestCommon(input, errors);
+    const contracts = isRecord(input.contracts) ? input.contracts : undefined;
+    if (contracts === undefined) {
+        errors.push("contracts must be an object");
+    }
+    else {
+        for (const [field, expected] of Object.entries(PUBLISH_BUNDLE_CONTRACTS_V2)) {
+            if (contracts[field] !== expected)
+                errors.push(`contracts.${field} must be ${expected}`);
+        }
+    }
+    const roles = recordArrayField(input, "files").flatMap((file) => stringField(file, "role") ?? []);
+    for (const role of REQUIRED_PUBLISH_BUNDLE_ROLES_V2) {
+        if (!roles.includes(role))
+            errors.push(`files must include role ${role}`);
+    }
+    return {
+        version: "ruhroh_publish_bundle_manifest_validation_v2",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export const validateRuhrohPublicationBundleV2 = validateRuhrohPublishBundleManifestV2;
+export function buildRuhrohClaimIndexEntryV2(input) {
+    const validation = validateRuhrohBenchmarkClaim(input.claim);
+    const gate = validation.errors.length === 0
+        ? benchmarkClaimPublishabilityGate(input.claim)
+        : { publishable: false, blockers: validation.errors };
+    const source = input.claim.source;
+    const publicationReadiness = input.claim.readiness.publication;
+    return {
+        claimPath: input.claimPath,
+        ...(input.bundlePath === undefined ? {} : { bundlePath: input.bundlePath }),
+        valid: validation.errors.length === 0,
+        publishable: validation.errors.length === 0 && gate.publishable,
+        scope: input.claim.scope,
+        createdAt: input.claim.createdAt,
+        ...(input.claim.suite === undefined ? {} : {
+            suite: {
+                id: input.claim.suite.id,
+                title: input.claim.suite.title,
+                suiteVersion: input.claim.suite.suiteVersion,
+            },
+        }),
+        targets: input.claim.targetSummaries.map((target) => ({
+            benchmarkTargetId: target.benchmarkTargetId,
+            identityStatus: target.identityStatus,
+            executionAdapterIds: [...target.executionAdapterIds],
+            runs: target.runs,
+            acceptedOutcomes: target.acceptedOutcomes,
+            qualityFloorStatus: target.qualityFloorStatus,
+            paretoStatus: target.paretoStatus,
+            robustStatus: target.robustStatus,
+        })),
+        summary: clonePublicationValue(input.claim.summary),
+        frontier: {
+            status: input.claim.outcomeFrontier.status,
+            objectives: [...(input.claim.outcomeFrontier.methodology?.objectives ?? [])],
+            paretoFrontierTargetIds: [...input.claim.outcomeFrontier.paretoFrontierTargetIds],
+            robustFrontierTargetIds: [...input.claim.outcomeFrontier.robustFrontierTargetIds],
+        },
+        evidence: clonePublicationValue(input.claim.evidence),
+        sourcePaths: {
+            ...(source?.resultsPath === undefined ? {} : { resultsPath: source.resultsPath }),
+            ...(source?.runPlanPath === undefined ? {} : { runPlanPath: source.runPlanPath }),
+            ...(source?.rerunLedgerPath === undefined ? {} : { rerunLedgerPath: source.rerunLedgerPath }),
+            ...(source?.suitePath === undefined ? {} : { suitePath: source.suitePath }),
+        },
+        blockers: [...gate.blockers],
+        advisories: [...publicationReadiness.advisories],
+        validationErrors: [...validation.errors],
+        validationWarnings: [...validation.warnings],
+    };
+}
+export function buildRuhrohClaimIndexV2(input) {
+    const claims = input.claims.map(cloneClaimIndexEntryV2);
+    const invalidCount = claims.filter((claim) => !claim.valid).length;
+    const blockedCount = claims.filter((claim) => claim.valid && !claim.publishable).length;
+    const registryBlockers = claims.flatMap((claim) => {
+        const label = claim.bundlePath ?? claim.claimPath;
+        if (!claim.valid)
+            return [`invalid claim ${label}: ${claim.validationErrors[0] ?? "claim validation failed"}`];
+        if (!claim.publishable)
+            return [`blocked claim ${label}: ${claim.blockers[0] ?? "claim is not publishable"}`];
+        return [];
+    });
+    const report = {
+        $schema: CLAIM_INDEX_V2_SCHEMA_URL,
+        version: "ruhroh_claim_index_v2",
+        generatedAt: input.generatedAt ?? new Date().toISOString(),
+        source: { ...input.source },
+        registryReady: claims.length > 0 && invalidCount === 0 && blockedCount === 0,
+        registryBlockers,
+        claimCount: claims.length,
+        publishableCount: claims.filter((claim) => claim.publishable).length,
+        blockedCount,
+        invalidCount,
+        suiteCount: new Set(claims.flatMap((claim) => claim.suite === undefined ? [] : [claim.suite.id])).size,
+        targetCount: new Set(claims.flatMap((claim) => claim.targets.map((target) => target.benchmarkTargetId))).size,
+        totalRuns: claims.reduce((total, claim) => total + claim.summary.totalRuns, 0),
+        totalAcceptedOutcomes: claims.reduce((total, claim) => total + claim.summary.totalAcceptedOutcomes, 0),
+        claims,
+    };
+    const validation = validateRuhrohClaimIndexV2(report);
+    if (validation.errors.length > 0) {
+        throw new Error(`cannot build invalid v2 claim index: ${validation.errors.join("; ")}`);
+    }
+    return report;
+}
+export const buildRuhrohPublicationIndexV2 = buildRuhrohClaimIndexV2;
+export function validateRuhrohClaimIndex(input) {
+    if (isRecord(input) && input.version === "ruhroh_claim_index_v2")
+        return validateRuhrohClaimIndexV2(input);
+    return validateRuhrohClaimIndexV1(input);
+}
+export function validateRuhrohClaimIndexV1(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_claim_index_validation_v1", errors: ["claim index must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_claim_index_v1")
+        errors.push("version must be ruhroh_claim_index_v1");
+    validateClaimIndexCounts(input, false, errors);
+    return {
+        version: "ruhroh_claim_index_validation_v1",
+        errors: uniquePreserveOrder(errors),
+        warnings,
+    };
+}
+export function validateRuhrohClaimIndexV2(input) {
+    const errors = [];
+    const warnings = [];
+    if (!isRecord(input)) {
+        return { version: "ruhroh_claim_index_validation_v2", errors: ["claim index must be an object"], warnings };
+    }
+    if (input.version !== "ruhroh_claim_index_v2")
+        errors.push("version must be ruhroh_claim_index_v2");
+    if (input.$schema !== undefined && input.$schema !== CLAIM_INDEX_V2_SCHEMA_URL)
+        warnings.push("$schema does not match the v2 claim-index schema URL");
+    validateClaimIndexCounts(input, true, errors);
+    const claims = recordArrayField(input, "claims");
+    const claimPaths = claims.flatMap((claim) => stringField(claim, "claimPath") ?? []);
+    if (claimPaths.length !== claims.length)
+        errors.push("every claim must include claimPath");
+    if (new Set(claimPaths).size !== claimPaths.length)
+        errors.push("claim paths must be unique");
+    for (const [index, claim] of claims.entries())
+        validateClaimIndexEntryV2(claim, index, errors);
+    const actualInvalid = claims.filter((claim) => claim.valid === false).length;
+    const actualBlocked = claims.filter((claim) => claim.valid === true && claim.publishable === false).length;
+    const actualPublishable = claims.filter((claim) => claim.publishable === true).length;
+    const actualRuns = claims.reduce((total, claim) => total + numberField(claimSummary(claim), "totalRuns"), 0);
+    const actualAccepted = claims.reduce((total, claim) => total + numberField(claimSummary(claim), "totalAcceptedOutcomes"), 0);
+    if (input.invalidCount !== actualInvalid)
+        errors.push("invalidCount must match claims");
+    if (input.blockedCount !== actualBlocked)
+        errors.push("blockedCount must match claims");
+    if (input.publishableCount !== actualPublishable)
+        errors.push("publishableCount must match claims");
+    if (input.totalRuns !== actualRuns)
+        errors.push("totalRuns must match claims");
+    if (input.totalAcceptedOutcomes !== actualAccepted)
+        errors.push("totalAcceptedOutcomes must match claims");
+    if (input.registryReady !== (claims.length > 0 && actualInvalid === 0 && actualBlocked === 0)) {
+        errors.push("registryReady must match claim validity and publishability");
+    }
+    return {
+        version: "ruhroh_claim_index_validation_v2",
+        errors: uniquePreserveOrder(errors),
+        warnings: uniquePreserveOrder(warnings),
+    };
+}
+export const validateRuhrohPublicationIndexV2 = validateRuhrohClaimIndexV2;
 export function verifyRuhrohBenchmarkClaimSources(claim, claimPath) {
     const checks = [];
     const sourceBaseDir = path.dirname(path.resolve(claimPath));
@@ -257,7 +678,9 @@ export function validateRuhrohPublishBundle(inputPath) {
     const rolePaths = manifest === undefined
         ? new Map()
         : publishBundleRolePaths(manifest, bundlePath, checks);
-    for (const role of REQUIRED_PUBLISH_BUNDLE_ROLES) {
+    const bundleIsV2 = manifest?.version === "ruhroh_publish_bundle_v2";
+    const requiredRoles = bundleIsV2 ? REQUIRED_PUBLISH_BUNDLE_ROLES_V2 : REQUIRED_PUBLISH_BUNDLE_ROLES;
+    for (const role of requiredRoles) {
         if (!rolePaths.has(role)) {
             checks.push({
                 name: `files.${role}`,
@@ -269,12 +692,20 @@ export function validateRuhrohPublishBundle(inputPath) {
     const publishCheck = readPublishBundleJsonRole(checks, rolePaths, "publish-check");
     const benchmarkClaim = readPublishBundleJsonRole(checks, rolePaths, "benchmark-claim");
     const benchmarkSummary = readPublishBundleJsonRole(checks, rolePaths, "benchmark-summary");
+    const compare = isRecord(publishCheck?.compare) ? publishCheck.compare : undefined;
+    const compareDocument = bundleIsV2 ? readPublishBundleJsonRole(checks, rolePaths, "compare") : undefined;
+    const outcomeFrontier = bundleIsV2 ? readPublishBundleJsonRole(checks, rolePaths, "outcome-frontier") : undefined;
+    const publication = bundleIsV2 ? readPublishBundleJsonRole(checks, rolePaths, "publication") : undefined;
     readPublishBundleJsonRole(checks, rolePaths, "review-json");
     readPublishBundleJsonRole(checks, rolePaths, "eval-quality");
     const evaluatorCalibrationReport = readPublishBundleJsonRole(checks, rolePaths, "evaluator-calibration-report");
     if (manifest !== undefined) {
-        checks.push(publishBundleSchemaCheck("manifest.$schema", manifestPath, manifest, PUBLISH_BUNDLE_SCHEMA_URL));
-        checks.push(publishBundleVersionCheck("manifest.version", manifestPath, manifest, "ruhroh_publish_bundle_v1"));
+        const manifestValidation = validateRuhrohPublishBundleManifest(manifest);
+        checks.push(...manifestValidation.errors.map((error) => publishBundleValidationFailure("manifest.validation", manifestPath, error)));
+        checks.push(...manifestValidation.warnings.map((warning) => publishBundleValidationWarning("manifest.validation", manifestPath, warning)));
+        if (manifestValidation.errors.length === 0) {
+            checks.push({ name: "manifest.validation", status: "ok", path: manifestPath, details: "bundle manifest validation passed" });
+        }
         if (isRecord(manifest.source) && typeof manifest.source.bundlePath === "string" && resolveSourcePath(manifest.source.bundlePath, bundlePath) !== bundlePath) {
             checks.push({
                 name: "manifest.source.bundlePath",
@@ -285,11 +716,18 @@ export function validateRuhrohPublishBundle(inputPath) {
         }
     }
     if (publishCheck !== undefined) {
-        checks.push(publishBundleVersionCheck("publish-check.version", rolePaths.get("publish-check") ?? "", publishCheck, "ruhroh_publish_check_v1"));
+        const publishCheckPath = rolePaths.get("publish-check") ?? "";
+        checks.push(publishBundleVersionCheck("publish-check.version", publishCheckPath, publishCheck, bundleIsV2 ? "ruhroh_publish_check_v2" : "ruhroh_publish_check_v1"));
+        const publishCheckValidation = validateRuhrohPublishCheckReport(publishCheck);
+        checks.push(...publishCheckValidation.errors.map((error) => publishBundleValidationFailure("publish-check.validation", publishCheckPath, error)));
+        checks.push(...publishCheckValidation.warnings.map((warning) => publishBundleValidationWarning("publish-check.validation", publishCheckPath, warning)));
+        if (compare !== undefined) {
+            checks.push(publishBundleVersionCheck("publish-check.compare.version", publishCheckPath, compare, bundleIsV2 ? "ruhroh_compare_v2" : "ruhroh_compare_v1"));
+        }
     }
     if (benchmarkClaim !== undefined) {
         const claimPath = rolePaths.get("benchmark-claim") ?? "";
-        checks.push(publishBundleVersionCheck("benchmark-claim.version", claimPath, benchmarkClaim, "ruhroh_benchmark_claim_v1"));
+        checks.push(publishBundleVersionCheck("benchmark-claim.version", claimPath, benchmarkClaim, bundleIsV2 ? "ruhroh_benchmark_claim_v2" : "ruhroh_benchmark_claim_v1"));
         const claimValidation = validateRuhrohBenchmarkClaim(benchmarkClaim);
         checks.push(...claimValidation.errors.map((error) => publishBundleValidationFailure("benchmark-claim.validation", claimPath, error)));
         checks.push(...claimValidation.warnings.map((warning) => publishBundleValidationWarning("benchmark-claim.validation", claimPath, warning)));
@@ -313,7 +751,7 @@ export function validateRuhrohPublishBundle(inputPath) {
     }
     if (benchmarkSummary !== undefined) {
         const summaryPath = rolePaths.get("benchmark-summary") ?? "";
-        checks.push(publishBundleVersionCheck("benchmark-summary.version", summaryPath, benchmarkSummary, "ruhroh_benchmark_summary_v1"));
+        checks.push(publishBundleVersionCheck("benchmark-summary.version", summaryPath, benchmarkSummary, bundleIsV2 ? "ruhroh_benchmark_summary_v2" : "ruhroh_benchmark_summary_v1"));
         const summaryValidation = validateRuhrohBenchmarkSummary(benchmarkSummary);
         checks.push(...summaryValidation.errors.map((error) => publishBundleValidationFailure("benchmark-summary.validation", summaryPath, error)));
         checks.push(...summaryValidation.warnings.map((warning) => publishBundleValidationWarning("benchmark-summary.validation", summaryPath, warning)));
@@ -330,6 +768,34 @@ export function validateRuhrohPublishBundle(inputPath) {
         const calibrationReportPath = rolePaths.get("evaluator-calibration-report") ?? "";
         checks.push(publishBundleVersionCheck("evaluator-calibration-report.version", calibrationReportPath, evaluatorCalibrationReport, "ruhroh_eval_calibration_report_v1"));
         validateEvaluatorCalibrationReportEvidence(checks, evaluatorCalibrationReport, bundlePath, calibrationReportPath);
+    }
+    if (bundleIsV2 && compareDocument !== undefined) {
+        const comparePath = rolePaths.get("compare") ?? "";
+        const validation = validateRuhrohCompareV2(compareDocument);
+        checks.push(...validation.errors.map((error) => publishBundleValidationFailure("compare.validation", comparePath, error)));
+        checks.push(...validation.warnings.map((warning) => publishBundleValidationWarning("compare.validation", comparePath, warning)));
+        if (compare !== undefined && stableJsonStringify(compareDocument) !== stableJsonStringify(compare)) {
+            checks.push(publishBundleValidationFailure("compare.cross-reference", comparePath, "compare artifact must match publish-check.compare"));
+        }
+    }
+    if (bundleIsV2 && outcomeFrontier !== undefined) {
+        const frontierPath = rolePaths.get("outcome-frontier") ?? "";
+        const validation = validateRuhrohOutcomeFrontier(outcomeFrontier);
+        checks.push(...validation.errors.map((error) => publishBundleValidationFailure("outcome-frontier.validation", frontierPath, error)));
+        checks.push(...validation.warnings.map((warning) => publishBundleValidationWarning("outcome-frontier.validation", frontierPath, warning)));
+        if (compare !== undefined && stableJsonStringify(outcomeFrontier) !== stableJsonStringify(compare.outcomeFrontier)) {
+            checks.push(publishBundleValidationFailure("outcome-frontier.cross-reference", frontierPath, "outcome-frontier artifact must match publish-check.compare.outcomeFrontier"));
+        }
+    }
+    if (bundleIsV2 && publication !== undefined) {
+        const publicationPath = rolePaths.get("publication") ?? "";
+        const validation = validateRuhrohPublicationV2(publication);
+        checks.push(...validation.errors.map((error) => publishBundleValidationFailure("publication.validation", publicationPath, error)));
+        checks.push(...validation.warnings.map((warning) => publishBundleValidationWarning("publication.validation", publicationPath, warning)));
+        if (publishCheck !== undefined && publication.publishable !== publishCheck.publishable) {
+            checks.push(publishBundleValidationFailure("publication.publishable", publicationPath, "publication publishable must match publish-check publishable"));
+        }
+        validatePublicationArtifactReferences(checks, publication, bundlePath, publicationPath, rolePaths);
     }
     validatePublishBundleCrossReferences(checks, manifest, publishCheck, benchmarkClaim, benchmarkSummary, rolePaths);
     const errors = checks.filter((check) => check.status === "failed").map(formatPublishBundleValidationCheck);
@@ -577,8 +1043,63 @@ function validatePublishBundleCrossReferences(checks, manifest, publishCheck, be
         }
     }
 }
-function benchmarkClaimPublishabilityGate(claim) {
-    const readiness = isRecord(claim.readiness) ? claim.readiness : {};
+function validatePublicationArtifactReferences(checks, publication, bundlePath, publicationPath, rolePaths) {
+    const artifactBaseDir = path.dirname(publicationPath);
+    for (const [index, artifact] of recordArrayField(publication, "artifacts").entries()) {
+        const name = `publication.artifacts[${index}]`;
+        const artifactPath = stringField(artifact, "path");
+        if (artifactPath === undefined)
+            continue;
+        const resolvedPath = path.resolve(artifactBaseDir, artifactPath);
+        const relativeToBundle = path.relative(bundlePath, resolvedPath);
+        if (relativeToBundle.startsWith("..") || path.isAbsolute(relativeToBundle)) {
+            checks.push(publishBundleValidationFailure(name, publicationPath, `artifact path must stay inside the bundle: ${artifactPath}`));
+            continue;
+        }
+        const artifactRole = stringField(artifact, "role");
+        const manifestRole = artifactRole === "bundle-manifest" ? "manifest" : artifactRole;
+        const manifestRolePath = manifestRole === undefined ? undefined : rolePaths.get(manifestRole);
+        if (manifestRolePath !== undefined && path.resolve(manifestRolePath) !== resolvedPath) {
+            checks.push(publishBundleValidationFailure(name, publicationPath, `${artifactRole ?? "artifact"} reference must match the bundle manifest role path`));
+            continue;
+        }
+        const presence = publishBundleFilePresenceCheck(name, resolvedPath);
+        checks.push(presence);
+        if (presence.status !== "ok")
+            continue;
+        const expectedSha256 = stringField(artifact, "sha256");
+        const actualSha256 = sha256File(resolvedPath);
+        if (expectedSha256 !== actualSha256) {
+            checks.push(publishBundleValidationFailure(`${name}.sha256`, resolvedPath, `SHA-256 mismatch: expected ${expectedSha256 ?? "missing"}, found ${actualSha256}`));
+            continue;
+        }
+        checks.push({ name: `${name}.sha256`, status: "ok", path: resolvedPath, details: `sha256=${actualSha256}` });
+        try {
+            const expectedVersion = stringField(artifact, "contractVersion");
+            const referencedVersions = expectedVersion === "ruhroh_economic_trace_span_v1"
+                ? readEconomicTraceVersions(resolvedPath)
+                : [readJsonObject(resolvedPath).version];
+            if (referencedVersions.length === 0 || referencedVersions.some((version) => version !== expectedVersion)) {
+                checks.push(publishBundleValidationFailure(`${name}.contractVersion`, resolvedPath, `referenced artifact records must use version ${expectedVersion ?? "declared"}`));
+            }
+        }
+        catch (error) {
+            checks.push(publishBundleValidationFailure(`${name}.contractVersion`, resolvedPath, error instanceof Error ? error.message : String(error)));
+        }
+    }
+}
+function readEconomicTraceVersions(tracePath) {
+    const records = readFileSync(tracePath, "utf8")
+        .split(/\r?\n/u)
+        .filter((line) => line.trim().length > 0)
+        .map((line) => JSON.parse(line));
+    return records.map((record) => isRecord(record) ? record.version : undefined);
+}
+function benchmarkClaimPublishabilityGate(input) {
+    const claim = isRecord(input) ? input : {};
+    const rawReadiness = isRecord(claim.readiness) ? claim.readiness : {};
+    const isV2 = claim.version === "ruhroh_benchmark_claim_v2";
+    const readiness = isV2 && isRecord(rawReadiness.publication) ? rawReadiness.publication : rawReadiness;
     const evidence = isRecord(claim.evidence) ? claim.evidence : {};
     const suiteCoverage = isRecord(claim.suiteCoverage) ? claim.suiteCoverage : undefined;
     const blockers = [
@@ -590,9 +1111,9 @@ function benchmarkClaimPublishabilityGate(claim) {
         ...(numberField(evidence, "artifactCompletenessWarnings") > 0 ? ["artifact-completeness warnings present"] : []),
         ...(numberField(evidence, "requiredReviewItems") > 0 ? [`${numberField(evidence, "requiredReviewItems")} review item(s) required`] : []),
         ...suiteCoverageBlockers(suiteCoverage),
-        ...recordArrayField(claim, "adapterSummaries").flatMap(adapterSummaryPublishabilityBlockers),
-        ...recordArrayField(claim, "scenarioResults").flatMap(scenarioResultPublishabilityBlockers),
-        ...recordArrayField(claim, "pairwiseComparisons").flatMap(pairwisePublishabilityBlockers),
+        ...(isV2 ? [] : recordArrayField(claim, "adapterSummaries").flatMap(adapterSummaryPublishabilityBlockers)),
+        ...(isV2 ? [] : recordArrayField(claim, "scenarioResults").flatMap(scenarioResultPublishabilityBlockers)),
+        ...(isV2 ? [] : recordArrayField(claim, "pairwiseComparisons").flatMap(pairwisePublishabilityBlockers)),
     ];
     const uniqueBlockers = uniquePreserveOrder(blockers);
     return {
@@ -751,17 +1272,6 @@ function publishBundleVersionCheck(name, filePath, value, expectedVersion) {
         details: `version=${expectedVersion}`,
     };
 }
-function publishBundleSchemaCheck(name, filePath, value, expectedSchemaUrl) {
-    if (value.$schema !== expectedSchemaUrl) {
-        return publishBundleValidationWarning(name, filePath, `expected $schema ${expectedSchemaUrl}, found ${typeof value.$schema === "string" ? value.$schema : "missing"}`);
-    }
-    return {
-        name,
-        status: "ok",
-        path: filePath,
-        details: `$schema=${expectedSchemaUrl}`,
-    };
-}
 function publishBundleValidationFailure(name, filePath, details) {
     return {
         name,
@@ -810,6 +1320,207 @@ function stableJsonStringify(value) {
         return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${stableJsonStringify(value[key])}`).join(",")}}`;
     }
     return JSON.stringify(value);
+}
+function validatePublishCheckCommon(input, errors) {
+    const source = isRecord(input.source) ? input.source : undefined;
+    if (source === undefined) {
+        errors.push("source must be an object");
+    }
+    else {
+        requirePublicationString(source.resultsPath, "source.resultsPath", errors);
+    }
+    if (typeof input.publishable !== "boolean")
+        errors.push("publishable must be boolean");
+    validatePublicationNonNegativeInteger(input.blockerCount, "blockerCount", errors);
+    validatePublicationNonNegativeInteger(input.advisoryCount, "advisoryCount", errors);
+    const blockers = validatePublicationStringArray(input.blockers, "blockers", errors);
+    const advisories = validatePublicationStringArray(input.advisories, "advisories", errors);
+    const remediation = Array.isArray(input.remediation) ? input.remediation : [];
+    if (!Array.isArray(input.remediation))
+        errors.push("remediation must be an array");
+    if (typeof input.blockerCount === "number" && input.blockerCount !== blockers.length)
+        errors.push("blockerCount must match blockers.length");
+    if (typeof input.advisoryCount === "number" && input.advisoryCount !== advisories.length)
+        errors.push("advisoryCount must match advisories.length");
+    if (remediation.length !== blockers.length)
+        errors.push("remediation must include one entry per blocker");
+    for (const [index, item] of remediation.entries()) {
+        if (!isRecord(item)) {
+            errors.push(`remediation[${index}] must be an object`);
+            continue;
+        }
+        for (const field of ["code", "category", "severity", "blocker", "action", "docs"]) {
+            requirePublicationString(item[field], `remediation[${index}].${field}`, errors);
+        }
+        if (item.severity !== "blocker" && item.severity !== "advisory")
+            errors.push(`remediation[${index}].severity is invalid`);
+    }
+}
+function publishCheckHasSourceVerificationErrors(input) {
+    const sourceVerification = isRecord(input.sourceVerification) ? input.sourceVerification : undefined;
+    return sourceVerification !== undefined && stringArrayField(sourceVerification, "errors").length > 0;
+}
+function validatePublishBundleManifestCommon(input, errors) {
+    requirePublicationString(input.createdAt, "createdAt", errors);
+    if (typeof input.publishable !== "boolean")
+        errors.push("publishable must be boolean");
+    validatePublicationNonNegativeInteger(input.blockerCount, "blockerCount", errors);
+    validatePublicationNonNegativeInteger(input.advisoryCount, "advisoryCount", errors);
+    const source = isRecord(input.source) ? input.source : undefined;
+    if (source === undefined) {
+        errors.push("source must be an object");
+    }
+    else {
+        requirePublicationString(source.resultsPath, "source.resultsPath", errors);
+        requirePublicationString(source.bundlePath, "source.bundlePath", errors);
+    }
+    if (!Array.isArray(input.files)) {
+        errors.push("files must be an array");
+        return;
+    }
+    const roles = [];
+    for (const [index, file] of input.files.entries()) {
+        if (!isRecord(file)) {
+            errors.push(`files[${index}] must be an object`);
+            continue;
+        }
+        const role = stringField(file, "role");
+        if (role !== undefined)
+            roles.push(role);
+        requirePublicationString(file.role, `files[${index}].role`, errors);
+        requirePublicationString(file.path, `files[${index}].path`, errors);
+        requirePublicationString(file.description, `files[${index}].description`, errors);
+    }
+    if (new Set(roles).size !== roles.length)
+        errors.push("files roles must be unique");
+}
+function cloneClaimIndexEntryV2(entry) {
+    return clonePublicationValue(entry);
+}
+function clonePublicationValue(value) {
+    return JSON.parse(JSON.stringify(value));
+}
+function validateClaimIndexCounts(input, v2, errors) {
+    requirePublicationString(input.generatedAt, "generatedAt", errors);
+    const source = isRecord(input.source) ? input.source : undefined;
+    if (source === undefined)
+        errors.push("source must be an object");
+    else
+        requirePublicationString(source.inputPath, "source.inputPath", errors);
+    if (typeof input.registryReady !== "boolean")
+        errors.push("registryReady must be boolean");
+    validatePublicationStringArray(input.registryBlockers, "registryBlockers", errors);
+    for (const field of [
+        "claimCount",
+        "publishableCount",
+        "blockedCount",
+        "invalidCount",
+        "suiteCount",
+        v2 ? "targetCount" : "adapterCount",
+        "totalRuns",
+        ...(v2 ? ["totalAcceptedOutcomes"] : []),
+    ]) {
+        validatePublicationNonNegativeInteger(input[field], field, errors);
+    }
+    if (!Array.isArray(input.claims)) {
+        errors.push("claims must be an array");
+    }
+    else if (typeof input.claimCount === "number" && input.claimCount !== input.claims.length) {
+        errors.push("claimCount must match claims.length");
+    }
+}
+function validateClaimIndexEntryV2(claim, index, errors) {
+    const pathPrefix = `claims[${index}]`;
+    requirePublicationString(claim.claimPath, `${pathPrefix}.claimPath`, errors);
+    if (typeof claim.valid !== "boolean")
+        errors.push(`${pathPrefix}.valid must be boolean`);
+    if (typeof claim.publishable !== "boolean")
+        errors.push(`${pathPrefix}.publishable must be boolean`);
+    if (claim.publishable === true && claim.valid !== true)
+        errors.push(`${pathPrefix}.publishable cannot be true when valid is false`);
+    if (claim.scope !== "suite" && claim.scope !== "ad_hoc_compare")
+        errors.push(`${pathPrefix}.scope is invalid`);
+    requirePublicationString(claim.createdAt, `${pathPrefix}.createdAt`, errors);
+    const targets = recordArrayField(claim, "targets");
+    if (!Array.isArray(claim.targets))
+        errors.push(`${pathPrefix}.targets must be an array`);
+    const targetIds = [];
+    for (const [targetIndex, target] of targets.entries()) {
+        const targetPath = `${pathPrefix}.targets[${targetIndex}]`;
+        const targetId = stringField(target, "benchmarkTargetId");
+        if (targetId !== undefined)
+            targetIds.push(targetId);
+        requirePublicationString(target.benchmarkTargetId, `${targetPath}.benchmarkTargetId`, errors);
+        if (target.identityStatus !== "declared" && target.identityStatus !== "legacy_execution_adapter_fallback")
+            errors.push(`${targetPath}.identityStatus is invalid`);
+        const adapters = validatePublicationStringArray(target.executionAdapterIds, `${targetPath}.executionAdapterIds`, errors);
+        if (adapters.length === 0)
+            errors.push(`${targetPath}.executionAdapterIds must not be empty`);
+        validatePublicationNonNegativeInteger(target.runs, `${targetPath}.runs`, errors);
+        validatePublicationNonNegativeInteger(target.acceptedOutcomes, `${targetPath}.acceptedOutcomes`, errors);
+        if (typeof target.runs === "number" && typeof target.acceptedOutcomes === "number" && target.acceptedOutcomes > target.runs) {
+            errors.push(`${targetPath}.acceptedOutcomes cannot exceed runs`);
+        }
+        if (!new Set(["passed", "failed", "indeterminate"]).has(String(target.qualityFloorStatus)))
+            errors.push(`${targetPath}.qualityFloorStatus is invalid`);
+        if (!new Set(["pareto", "dominated", "ineligible", "indeterminate"]).has(String(target.paretoStatus)))
+            errors.push(`${targetPath}.paretoStatus is invalid`);
+        if (!new Set(["pareto", "dominated", "ineligible", "indeterminate"]).has(String(target.robustStatus)))
+            errors.push(`${targetPath}.robustStatus is invalid`);
+    }
+    if (new Set(targetIds).size !== targetIds.length)
+        errors.push(`${pathPrefix}.targets benchmarkTargetId values must be unique`);
+    if (claim.publishable === true && targets.some((target) => target.identityStatus === "legacy_execution_adapter_fallback")) {
+        errors.push(`${pathPrefix} cannot be publishable with legacy target identity fallback`);
+    }
+    const summary = claimSummary(claim);
+    if (!isRecord(claim.summary))
+        errors.push(`${pathPrefix}.summary must be an object`);
+    for (const field of ["scenarioCount", "targetCount", "totalRuns", "totalAcceptedOutcomes", "reviewRequired", "reviewRecommended", "pairwiseComparisonCount"]) {
+        validatePublicationNonNegativeInteger(summary[field], `${pathPrefix}.summary.${field}`, errors);
+    }
+    if (typeof summary.targetCount === "number" && summary.targetCount !== targetIds.length)
+        errors.push(`${pathPrefix}.summary.targetCount must match targets.length`);
+    const frontier = isRecord(claim.frontier) ? claim.frontier : undefined;
+    if (frontier === undefined) {
+        errors.push(`${pathPrefix}.frontier must be an object`);
+    }
+    else {
+        if (!new Set(["available", "unavailable", "quality_only"]).has(String(frontier.status)))
+            errors.push(`${pathPrefix}.frontier.status is invalid`);
+        validatePublicationStringArray(frontier.objectives, `${pathPrefix}.frontier.objectives`, errors);
+        for (const field of ["paretoFrontierTargetIds", "robustFrontierTargetIds"]) {
+            const ids = validatePublicationStringArray(frontier[field], `${pathPrefix}.frontier.${field}`, errors);
+            for (const id of ids)
+                if (!targetIds.includes(id))
+                    errors.push(`${pathPrefix}.frontier.${field} contains unknown target ${id}`);
+        }
+    }
+    validatePublicationStringArray(claim.blockers, `${pathPrefix}.blockers`, errors);
+    validatePublicationStringArray(claim.advisories, `${pathPrefix}.advisories`, errors);
+    validatePublicationStringArray(claim.validationErrors, `${pathPrefix}.validationErrors`, errors);
+    validatePublicationStringArray(claim.validationWarnings, `${pathPrefix}.validationWarnings`, errors);
+}
+function claimSummary(claim) {
+    return isRecord(claim.summary) ? claim.summary : {};
+}
+function requirePublicationString(value, pathLabel, errors) {
+    if (typeof value !== "string" || value.trim().length === 0)
+        errors.push(`${pathLabel} must be a non-empty string`);
+}
+function validatePublicationNonNegativeInteger(value, pathLabel, errors) {
+    if (typeof value !== "number" || !Number.isInteger(value) || value < 0)
+        errors.push(`${pathLabel} must be a non-negative integer`);
+}
+function validatePublicationStringArray(value, pathLabel, errors) {
+    if (!Array.isArray(value)) {
+        errors.push(`${pathLabel} must be an array`);
+        return [];
+    }
+    const strings = value.filter((item) => typeof item === "string" && item.trim().length > 0);
+    if (strings.length !== value.length)
+        errors.push(`${pathLabel} must contain only non-empty strings`);
+    return strings;
 }
 function stringField(record, field) {
     const value = record[field];

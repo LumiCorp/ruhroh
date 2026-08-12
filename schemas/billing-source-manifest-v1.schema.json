@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/billing-source-manifest-v1.schema.json",
+  "title": "Ruhroh Billing Source Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceId", "format", "externalSchemaVersion", "billingPeriod", "currencies", "rowCount", "sourceRef", "privacyClassification"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/billing-source-manifest-v1.schema.json" },
+    "version": { "const": "ruhroh_billing_source_manifest_v1" },
+    "sourceId": { "$ref": "#/$defs/nonEmptyString" },
+    "format": { "enum": ["csv", "ndjson", "records"] },
+    "externalSchemaVersion": { "$ref": "#/$defs/nonEmptyString" },
+    "billingPeriod": { "$ref": "#/$defs/timeWindow" },
+    "currencies": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/currency" }
+    },
+    "rowCount": { "type": "integer", "minimum": 0 },
+    "sourceRef": { "$ref": "#/$defs/hashedSourceRef" },
+    "privacyClassification": { "enum": ["internal", "restricted"] }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "hashedSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "timeWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "endedAt"],
+      "properties": {
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

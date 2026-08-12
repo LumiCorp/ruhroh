@@ -1,10 +1,10 @@
 {
-  "$schema": "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v1.schema.json",
-  "version": "ruhroh_benchmark_claim_v1",
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v2.schema.json",
+  "version": "ruhroh_benchmark_claim_v2",
   "createdAt": "2026-07-08T12:00:00.000Z",
   "tool": {
     "name": "@kestrel-agents/ruhroh",
-    "version": "0.6.0-beta.0"
+    "version": "0.7.0-beta.0"
   },
   "source": {
     "resultsPath": "./sample-results",
@@ -295,21 +295,30 @@
   },
   "methodology": {
     "confidenceLevel": 0.95,
+    "acceptedOutcome": "score_1_and_eval_passed",
+    "suitableWorkloads": [],
+    "requiredEvidence": [],
+    "hiddenWork": [],
+    "gamingRisks": [],
     "statisticalMethods": [
       "wilson_pass_rate_ci",
       "normal_approximation_pass_rate_delta_ci",
       "fisher_exact_two_sided",
       "pass_at_k",
-      "bootstrap_mean_score_ci"
+      "bootstrap_mean_score_ci",
+      "stratified_bootstrap_outcome_frontier_ci",
+      "pareto_minimize",
+      "robust_ci_dominance"
     ],
+    "objectives": [],
     "minRuns": 5,
     "retryPolicy": "Docs sample only; real claims should collect the full planned run set."
   },
   "summary": {
     "scenarioCount": 1,
-    "adapterCount": 1,
+    "targetCount": 1,
     "totalRuns": 2,
-    "totalPasses": 1,
+    "totalAcceptedOutcomes": 1,
     "runWeightedPassRate": 0.5,
     "runWeightedPassRateCi95": {
       "method": "wilson",
@@ -321,12 +330,16 @@
     "reviewRecommended": 1,
     "pairwiseComparisonCount": 0
   },
-  "adapterSummaries": [
+  "targetSummaries": [
     {
-      "adapter": "docs-fixture-native-stack",
+      "benchmarkTargetId": "docs-fixture-native-stack",
+      "identityStatus": "declared",
+      "executionAdapterIds": [
+        "agent-a"
+      ],
       "scenarioCount": 1,
       "runs": 2,
-      "passes": 1,
+      "acceptedOutcomes": 1,
       "runWeightedPassRate": 0.5,
       "runWeightedPassRateCi95": {
         "method": "wilson",
@@ -358,41 +371,27 @@
         "totalTokens": 1600,
         "meanTotalTokens": 800
       },
-      "minRunsSatisfied": false,
+      "qualityFloorStatus": "indeterminate",
+      "objectives": [],
+      "paretoStatus": "indeterminate",
+      "robustStatus": "indeterminate",
       "warnings": [
-        "simple-newsletter has 2/5 required runs",
-        "scenario-level warnings present"
+        "simple-newsletter: fewer than 5 runs; treat pass rate and pass@k as directional",
+        "simple-newsletter: missing effective budget hash metadata in aggregate group",
+        "simple-newsletter: missing effective capabilities hash metadata in aggregate group"
       ]
     }
   ],
-  "suiteCoverage": {
-    "expectedScenarios": 1,
-    "coveredScenarios": 1,
-    "missingScenarioIds": [],
-    "minRunsSatisfied": false,
-    "adapters": [
-      {
-        "adapter": "docs-fixture-native-stack",
-        "expectedScenarios": 1,
-        "coveredScenarios": 1,
-        "missingScenarioIds": [],
-        "scenarioRuns": {
-          "simple-newsletter": 2
-        },
-        "minRunsSatisfied": false,
-        "warnings": [
-          "simple-newsletter has 2/5 required runs",
-          "scenario-level warnings present"
-        ]
-      }
-    ]
-  },
   "scenarioResults": [
     {
       "scenarioId": "simple-newsletter",
-      "adapter": "docs-fixture-native-stack",
+      "benchmarkTargetId": "docs-fixture-native-stack",
+      "identityStatus": "declared",
+      "executionAdapterIds": [
+        "agent-a"
+      ],
       "runs": 2,
-      "passes": 1,
+      "acceptedOutcomes": 1,
       "passRate": 0.5,
       "passRateCi95": {
         "method": "wilson",
@@ -434,6 +433,7 @@
         "totalTokens": 1600,
         "meanTotalTokens": 800
       },
+      "qualityFloorStatus": "indeterminate",
       "reviewRequired": 0,
       "statisticalWarnings": [
         "fewer than 5 runs; treat pass rate and pass@k as directional",
@@ -508,24 +508,63 @@
     }
   ],
   "pairwiseComparisons": [],
-  "readiness": {
-    "scope": "suite",
-    "publishable": false,
-    "blockers": [
-      "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/1-of-2: result=docs-fixture-native-stack plan=agent-a",
-      "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/2-of-2: result=docs-fixture-native-stack plan=agent-a",
-      "docs-fixture-native-stack: suite minimum runs or scenario coverage not satisfied",
-      "simple-newsletter/docs-fixture-native-stack: fewer than 5 runs; treat pass rate and pass@k as directional",
-      "simple-newsletter/docs-fixture-native-stack: missing effective budget hash metadata in aggregate group",
-      "simple-newsletter/docs-fixture-native-stack: missing effective capabilities hash metadata in aggregate group",
-      "simple-newsletter/docs-fixture-native-stack: eval-quality warnings present"
+  "outcomeFrontier": {
+    "$schema": "https://lumicorp.github.io/ruhroh/schemas/outcome-frontier-v1.schema.json",
+    "version": "ruhroh_outcome_frontier_v1",
+    "status": "quality_only",
+    "reasonCodes": [
+      "suite_has_no_efficiency_contract"
     ],
-    "advisories": [
-      "docs-fixture-native-stack: simple-newsletter has 2/5 required runs",
-      "docs-fixture-native-stack: scenario-level warnings present",
-      "simple-newsletter/docs-fixture-native-stack: eval command evidence includes non-zero exit codes (1)",
-      "simple-newsletter/docs-fixture-native-stack/sample-newsletter-agent-a-2: review recommended"
-    ]
+    "coverage": {
+      "targetCount": 0,
+      "qualityEligibleTargetCount": 0,
+      "comparableTargetCount": 0,
+      "paretoFrontierTargetCount": 0,
+      "robustFrontierTargetCount": 0
+    },
+    "targets": [],
+    "paretoFrontierTargetIds": [],
+    "robustFrontierTargetIds": []
+  },
+  "readiness": {
+    "publication": {
+      "scope": "suite",
+      "publishable": false,
+      "blockers": [
+        "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/1-of-2: result=docs-fixture-native-stack plan=agent-a",
+        "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/2-of-2: result=docs-fixture-native-stack plan=agent-a",
+        "docs-fixture-native-stack: suite minimum runs or scenario coverage not satisfied",
+        "simple-newsletter/docs-fixture-native-stack: fewer than 5 runs; treat pass rate and pass@k as directional",
+        "simple-newsletter/docs-fixture-native-stack: missing effective budget hash metadata in aggregate group",
+        "simple-newsletter/docs-fixture-native-stack: missing effective capabilities hash metadata in aggregate group",
+        "simple-newsletter/docs-fixture-native-stack: eval-quality warnings present"
+      ],
+      "advisories": [
+        "docs-fixture-native-stack: simple-newsletter has 2/5 required runs",
+        "docs-fixture-native-stack: scenario-level warnings present",
+        "simple-newsletter/docs-fixture-native-stack: eval command evidence includes non-zero exit codes (1)",
+        "simple-newsletter/docs-fixture-native-stack/sample-newsletter-agent-a-2: review recommended"
+      ]
+    },
+    "outcomeComparison": {
+      "ready": true,
+      "blockers": [],
+      "advisories": []
+    },
+    "pairwiseSuperiority": {
+      "ready": false,
+      "blockers": [
+        "no pairwise target comparisons available"
+      ],
+      "advisories": []
+    },
+    "efficiencyFrontier": {
+      "ready": false,
+      "blockers": [
+        "suite_has_no_efficiency_contract"
+      ],
+      "advisories": []
+    }
   },
   "evidence": {
     "runPlanPresent": true,

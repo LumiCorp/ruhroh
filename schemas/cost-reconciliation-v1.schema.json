@@ -1,0 +1,144 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/cost-reconciliation-v1.schema.json",
+  "title": "Ruhroh Cost Reconciliation v1",
+  "$comment": "Assigned totals and per-source-row allocation weights are checked arithmetically by validateRuhrohCostReconciliation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "reconciliationId", "createdAt", "benchmarkClaimRef", "billingSourceRef", "mappingProfileRef", "source", "joins", "currencies", "coverage", "ready", "blockers", "unsupportedConcepts"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/cost-reconciliation-v1.schema.json" },
+    "version": { "const": "ruhroh_cost_reconciliation_v1" },
+    "reconciliationId": { "$ref": "#/$defs/nonEmptyString" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "benchmarkClaimRef": { "$ref": "#/$defs/hashedSourceRef" },
+    "billingSourceRef": { "$ref": "#/$defs/hashedSourceRef" },
+    "mappingProfileRef": { "$ref": "#/$defs/hashedSourceRef" },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceId", "billingPeriod", "rowCount"],
+      "properties": {
+        "sourceId": { "$ref": "#/$defs/nonEmptyString" },
+        "billingPeriod": { "$ref": "#/$defs/timeWindow" },
+        "rowCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "joins": { "type": "array", "items": { "$ref": "#/$defs/join" } },
+    "currencies": { "type": "array", "items": { "$ref": "#/$defs/currencySummary" } },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exactRows", "boundedRows", "allocatedRows", "ambiguousRows", "unmatchedRows"],
+      "properties": {
+        "exactRows": { "$ref": "#/$defs/nonNegativeInteger" },
+        "boundedRows": { "$ref": "#/$defs/nonNegativeInteger" },
+        "allocatedRows": { "$ref": "#/$defs/nonNegativeInteger" },
+        "ambiguousRows": { "$ref": "#/$defs/nonNegativeInteger" },
+        "unmatchedRows": { "$ref": "#/$defs/nonNegativeInteger" }
+      }
+    },
+    "ready": { "type": "boolean" },
+    "blockers": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true },
+    "unsupportedConcepts": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "ready": { "const": true } }, "required": ["ready"] },
+      "then": {
+        "properties": {
+          "blockers": { "maxItems": 0 },
+          "coverage": {
+            "properties": {
+              "ambiguousRows": { "const": 0 },
+              "unmatchedRows": { "const": 0 }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "factKind": { "enum": ["charge", "credit", "refund", "commitment", "tax", "prepaid", "capacity"] },
+    "matchClass": { "enum": ["exact", "bounded", "allocated", "ambiguous", "unmatched"] },
+    "hashedSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "timeWindow": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "endedAt"],
+      "properties": {
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "join": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sourceRowSha256", "matchClass", "currency", "kind", "sourceAmount", "assignedAmount", "allocationWeight", "technicalFactIds", "workloadIds", "reason"],
+      "properties": {
+        "sourceRowSha256": { "$ref": "#/$defs/sha256" },
+        "matchClass": { "$ref": "#/$defs/matchClass" },
+        "currency": { "$ref": "#/$defs/currency" },
+        "kind": { "$ref": "#/$defs/factKind" },
+        "sourceAmount": { "type": "number" },
+        "assignedAmount": { "type": "number" },
+        "allocationWeight": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "technicalFactIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "workloadIds": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "reason": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "matchTotals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["exact", "bounded", "allocated", "ambiguous", "unmatched"],
+      "properties": {
+        "exact": { "type": "number" },
+        "bounded": { "type": "number" },
+        "allocated": { "type": "number" },
+        "ambiguous": { "type": "number" },
+        "unmatched": { "type": "number" }
+      }
+    },
+    "factTotals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["charge", "credit", "refund", "commitment", "tax", "prepaid", "capacity"],
+      "properties": {
+        "charge": { "type": "number" },
+        "credit": { "type": "number" },
+        "refund": { "type": "number" },
+        "commitment": { "type": "number" },
+        "tax": { "type": "number" },
+        "prepaid": { "type": "number" },
+        "capacity": { "type": "number" }
+      }
+    },
+    "currencySummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["currency", "sourceTotal", "assignedTotal", "difference", "byMatchClass", "byFactKind"],
+      "properties": {
+        "currency": { "$ref": "#/$defs/currency" },
+        "sourceTotal": { "type": "number" },
+        "assignedTotal": { "type": "number" },
+        "difference": { "type": "number" },
+        "byMatchClass": { "$ref": "#/$defs/matchTotals" },
+        "byFactKind": { "$ref": "#/$defs/factTotals" }
+      }
+    }
+  }
+}

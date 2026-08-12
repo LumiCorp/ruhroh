@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.0-beta.0
+
+- Added benchmark-target identity distinct from execution-adapter identity and
+  made compare write claim, summary, publication, bundle, and index v2 evidence
+  by default while retaining archived v1 readers.
+- Added coverage-safe economics envelopes, causal traces, adapter conformance,
+  inclusive resource budgets, process-group containment, and a capability-gated
+  Kestrel reference adapter.
+- Added quality-gated outcome frontiers with deterministic stratified bootstrap,
+  Pareto and confidence-bound-robust dominance, and implementation-wall-time
+  objectives.
+- Added the Agent Complexity and Containment Lab, evidence-gated finding
+  detectors, provider baseline/drift analysis, workload and control-surface
+  contracts, intervention ledgers, and tiered decision packets.
+- Added provider-neutral CSV, NDJSON, and iterable billing reconciliation with
+  native-currency accounting and public-bundle privacy controls.
+- Added schemas, package exports, generated examples, ADRs, and the Economics
+  Evidence Stack review guide. FOCUS adapters remain deliberately deferred.
+
 ## 0.6.0-beta.0
 
 - Added `ruhroh validate`, `ruhroh report`, and `ruhroh compare`.

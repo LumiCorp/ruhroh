@@ -1,4 +1,5 @@
 import type { RuhrohEvidenceRef, RunAgentArtifactManifest } from "./adapters.js";
+import { type RuhrohDominanceStatus, type RuhrohFrontierObjectiveEstimate, type RuhrohOutcomeFrontier, type RuhrohQualityFloorStatus } from "./economics.js";
 export type RuhrohEvalStatus = "passed" | "failed" | "review" | "infra_failed";
 export type RuhrohEvalConfidence = "low" | "medium" | "high";
 export type RuhrohEvalCriterionStatus = "passed" | "failed" | "partial" | "not_applicable";
@@ -96,6 +97,9 @@ export interface RuhrohRunManifest {
         runIds: string[];
         model?: Record<string, unknown> | undefined;
         usage?: Record<string, unknown> | undefined;
+        economics?: Record<string, unknown> | undefined;
+        adapterManifest?: Record<string, unknown> | undefined;
+        resourceBudgetOutcome?: Record<string, unknown> | undefined;
         command?: Record<string, unknown> | undefined;
     };
     evaluator?: {
@@ -108,9 +112,18 @@ export interface RuhrohRunManifest {
     environment?: RuhrohRunEnvironment | undefined;
     env?: Record<string, unknown> | undefined;
     usage?: Record<string, unknown> | undefined;
+    economics?: Record<string, unknown> | undefined;
+    resourceBudgetOutcome?: Record<string, unknown> | undefined;
+    workloadBinding?: Record<string, unknown> | undefined;
+    workloadProfile?: Record<string, unknown> | undefined;
+    adapterManifest?: Record<string, unknown> | undefined;
+    adapterManifestSha256?: string | undefined;
+    resourceBudgets?: Record<string, unknown> | undefined;
     benchmarkTarget?: Record<string, unknown> | undefined;
     artifactPaths?: Record<string, string> | undefined;
     failureDetails?: Record<string, unknown> | undefined;
+    effectiveBudgetSha256?: string | undefined;
+    effectiveCapabilitiesSha256?: string | undefined;
 }
 export interface RuhrohRunEnvironment {
     fingerprint?: {
@@ -125,6 +138,8 @@ export interface RuhrohRunSample {
     index?: number | undefined;
     count?: number | undefined;
     seed?: string | undefined;
+    weight?: number | undefined;
+    planWeight?: number | undefined;
 }
 export interface RuhrohLoopResult {
     version: "ruhroh_loop_result_v1";
@@ -161,6 +176,8 @@ export interface RuhrohVerdict {
 export interface RuhrohRunSummary {
     scenarioId: string;
     runId?: string | undefined;
+    benchmarkTargetId?: string | undefined;
+    executionAdapterId: string;
     adapter: string;
     status: RuhrohLoopResult["status"];
     evalStatus: RuhrohEvalStatus;
@@ -168,6 +185,7 @@ export interface RuhrohRunSummary {
     score: number;
     iterationsUsed: number;
     durationMs: number;
+    implementationWallTimeMs?: number | undefined;
     finalSummary: string;
     implementationTimeline: RuhrohImplementationStepSummary[];
     unmetCriteria: string[];
@@ -182,8 +200,14 @@ export interface RuhrohRunSummary {
     artifactInventory: RuhrohRunArtifactInventoryItem[];
     artifactCompletenessWarnings: string[];
     usage?: RuhrohRunUsage | undefined;
+    usageCoverage: {
+        cost: RuhrohRunMetricCoverageStatus;
+        totalTokens: RuhrohRunMetricCoverageStatus;
+    };
     sample?: RuhrohRunSample | undefined;
     evalQualityWarnings: string[];
+    acceptedOutcome: boolean;
+    acceptedOutcomeInvariantWarnings: string[];
     humanReviewRequired: boolean;
     runManifest?: RuhrohRunManifest | undefined;
 }
@@ -201,6 +225,7 @@ export interface RuhrohRunUsage {
     outputTokens?: number | undefined;
     totalTokens?: number | undefined;
 }
+export type RuhrohRunMetricCoverageStatus = "complete" | "partial" | "unknown" | "unavailable";
 export interface RuhrohReviewQueueItem {
     scenarioId: string;
     adapter: string;
@@ -299,6 +324,8 @@ export interface RuhrohBenchmarkClaimResultArtifact {
     sha256: string;
     scenarioId: string;
     adapter: string;
+    benchmarkTargetId?: string | undefined;
+    executionAdapterId?: string | undefined;
     runId?: string | undefined;
     sampleId?: string | undefined;
     scenarioVersion?: string | undefined;
@@ -389,13 +416,142 @@ export interface RuhrohBenchmarkSummaryRow {
     statisticalWarnings: string[];
     cohort: RuhrohAggregateCohort;
 }
+export interface RuhrohComparisonReadinessV2Section {
+    ready: boolean;
+    blockers: string[];
+    advisories: string[];
+}
+export interface RuhrohComparisonReadinessV2 {
+    publication: RuhrohBenchmarkClaimReadiness;
+    outcomeComparison: RuhrohComparisonReadinessV2Section;
+    pairwiseSuperiority: RuhrohComparisonReadinessV2Section;
+    efficiencyFrontier: RuhrohComparisonReadinessV2Section;
+}
+export interface RuhrohBenchmarkClaimTargetSummaryV2 {
+    benchmarkTargetId: string;
+    identityStatus: "declared" | "legacy_execution_adapter_fallback";
+    executionAdapterIds: string[];
+    scenarioCount: number;
+    runs: number;
+    acceptedOutcomes: number;
+    runWeightedPassRate: number;
+    runWeightedPassRateCi95: RuhrohConfidenceInterval;
+    meanScenarioPassRate: number;
+    usage: RuhrohAggregateUsage;
+    qualityFloorStatus: RuhrohQualityFloorStatus;
+    objectives: RuhrohFrontierObjectiveEstimate[];
+    paretoStatus: RuhrohDominanceStatus;
+    robustStatus: RuhrohDominanceStatus;
+    warnings: string[];
+}
+export interface RuhrohBenchmarkClaimScenarioResultV2 {
+    scenarioId: string;
+    benchmarkTargetId: string;
+    identityStatus: "declared" | "legacy_execution_adapter_fallback";
+    executionAdapterIds: string[];
+    runs: number;
+    acceptedOutcomes: number;
+    passRate: number;
+    passRateCi95: RuhrohConfidenceInterval;
+    passAtK: Record<string, number>;
+    meanScore: number;
+    meanScoreCi95: RuhrohConfidenceInterval;
+    usage: RuhrohAggregateUsage;
+    qualityFloorStatus: RuhrohQualityFloorStatus;
+    reviewRequired: number;
+    statisticalWarnings: string[];
+    cohort: RuhrohAggregateCohort;
+}
+export interface RuhrohPairwiseTargetComparisonV2 extends RuhrohPairwiseAdapterComparison {
+    baselineBenchmarkTargetId: string;
+    contenderBenchmarkTargetId: string;
+}
+export interface RuhrohBenchmarkClaimExportV2 {
+    $schema: "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v2.schema.json";
+    version: "ruhroh_benchmark_claim_v2";
+    createdAt: string;
+    tool: RuhrohBenchmarkClaimToolSummary;
+    source?: RuhrohBenchmarkClaimSource | undefined;
+    scope: RuhrohBenchmarkClaimReadiness["scope"];
+    publishable: boolean;
+    suite?: RuhrohBenchmarkClaimSuiteSummary | undefined;
+    methodology: {
+        confidenceLevel: 0.95;
+        acceptedOutcome: "score_1_and_eval_passed";
+        aggregation?: Record<string, unknown> | undefined;
+        suitableWorkloads: string[];
+        requiredEvidence: string[];
+        hiddenWork: string[];
+        gamingRisks: string[];
+        statisticalMethods: Array<"wilson_pass_rate_ci" | "normal_approximation_pass_rate_delta_ci" | "fisher_exact_two_sided" | "pass_at_k" | "bootstrap_mean_score_ci" | "stratified_bootstrap_outcome_frontier_ci" | "pareto_minimize" | "robust_ci_dominance">;
+        qualityFloor?: Record<string, unknown> | undefined;
+        objectives: string[];
+        minRuns?: number | undefined;
+        retryPolicy?: string | undefined;
+    };
+    summary: {
+        scenarioCount: number;
+        targetCount: number;
+        totalRuns: number;
+        totalAcceptedOutcomes: number;
+        runWeightedPassRate: number;
+        runWeightedPassRateCi95: RuhrohConfidenceInterval;
+        reviewRequired: number;
+        reviewRecommended: number;
+        pairwiseComparisonCount: number;
+    };
+    targetSummaries: RuhrohBenchmarkClaimTargetSummaryV2[];
+    scenarioResults: RuhrohBenchmarkClaimScenarioResultV2[];
+    pairwiseComparisons: RuhrohPairwiseTargetComparisonV2[];
+    outcomeFrontier: RuhrohOutcomeFrontier;
+    readiness: RuhrohComparisonReadinessV2;
+    evidence: RuhrohBenchmarkClaimExport["evidence"];
+}
+export interface RuhrohBenchmarkSummaryExportV2 {
+    $schema: "https://lumicorp.github.io/ruhroh/schemas/benchmark-summary-v2.schema.json";
+    version: "ruhroh_benchmark_summary_v2";
+    createdAt: string;
+    claimVersion: "ruhroh_benchmark_claim_v2";
+    tool: RuhrohBenchmarkClaimToolSummary;
+    source?: RuhrohBenchmarkClaimSource | undefined;
+    scope: RuhrohBenchmarkClaimReadiness["scope"];
+    publishable: boolean;
+    suite?: RuhrohBenchmarkClaimSuiteSummary | undefined;
+    summary: RuhrohBenchmarkClaimExportV2["summary"];
+    readiness: RuhrohComparisonReadinessV2;
+    evidence: RuhrohBenchmarkClaimExport["evidence"];
+    outcomeFrontier: RuhrohOutcomeFrontier;
+    scenarioRows: RuhrohBenchmarkClaimScenarioResultV2[];
+    targetRows: RuhrohBenchmarkClaimTargetSummaryV2[];
+}
+export interface RuhrohCompareV2 {
+    $schema: "https://lumicorp.github.io/ruhroh/schemas/compare-v2.schema.json";
+    version: "ruhroh_compare_v2";
+    createdAt: string;
+    groups: RuhrohAggregateRunGroup[];
+    pairwiseComparisons: RuhrohPairwiseTargetComparisonV2[];
+    claimReadiness: RuhrohBenchmarkClaimReadiness;
+    outcomeFrontier: RuhrohOutcomeFrontier;
+    benchmarkClaim: RuhrohBenchmarkClaimExportV2;
+    benchmarkSummary: RuhrohBenchmarkSummaryExportV2;
+}
+export interface BuildRuhrohCompareV2Input extends Omit<SummarizeRuhrohBenchmarkClaimOptions, "pairwiseComparisons"> {
+    groups: RuhrohAggregateRunGroup[];
+    outcomeFrontier: RuhrohOutcomeFrontier;
+    pairwiseComparisons?: readonly RuhrohPairwiseAdapterComparison[] | undefined;
+}
 export interface RuhrohBenchmarkClaimValidationResult {
-    version: "ruhroh_benchmark_claim_validation_v1";
+    version: "ruhroh_benchmark_claim_validation_v1" | "ruhroh_benchmark_claim_validation_v2";
     errors: string[];
     warnings: string[];
 }
 export interface RuhrohBenchmarkSummaryValidationResult {
-    version: "ruhroh_benchmark_summary_validation_v1";
+    version: "ruhroh_benchmark_summary_validation_v1" | "ruhroh_benchmark_summary_validation_v2";
+    errors: string[];
+    warnings: string[];
+}
+export interface RuhrohCompareV2ValidationResult {
+    version: "ruhroh_compare_validation_v2";
     errors: string[];
     warnings: string[];
 }
@@ -483,6 +639,8 @@ export interface RuhrohPairwiseSignificance {
 }
 export interface RuhrohAggregateRunGroup {
     scenarioId: string;
+    benchmarkTargetId?: string | undefined;
+    executionAdapterIds: string[];
     adapter: string;
     cohort: RuhrohAggregateCohort;
     runs: number;
@@ -499,6 +657,7 @@ export interface RuhrohAggregateRunGroup {
     reviewRequired: number;
     evalQualityWarnings: Record<string, number>;
     artifactCompletenessWarnings: Record<string, number>;
+    acceptedOutcomeInvariantWarnings: Record<string, number>;
     usage: RuhrohAggregateUsage;
     statisticalWarnings: string[];
 }
@@ -563,6 +722,7 @@ export interface RuhrohAggregateCohort {
     sampleSeeds: string[];
     scenarioVersions: string[];
     adapterVersions: string[];
+    executionAdapterIds: string[];
     benchmarkStreams: string[];
     benchmarkTargets: string[];
     harnesses: string[];
@@ -575,18 +735,32 @@ export interface RuhrohAggregateCohort {
     evaluatorInputSignatures: string[];
     judgeIdentities: string[];
     environmentFingerprints: string[];
+    effectiveBudgetHashes: string[];
+    effectiveCapabilitiesHashes: string[];
     comparabilityWarnings: string[];
 }
 export interface RuhrohAggregateUsage {
     runsWithUsage: number;
     runsWithCost: number;
     runsWithTokens: number;
+    coverage: {
+        cost: RuhrohMetricCoverage;
+        totalTokens: RuhrohMetricCoverage;
+    };
     totalCostUsd?: number | undefined;
     meanCostUsd?: number | undefined;
     costPerPass?: number | undefined;
+    costPerAcceptedOutcome?: number | undefined;
     totalTokens?: number | undefined;
     meanTotalTokens?: number | undefined;
     tokensPerPass?: number | undefined;
+    tokensPerAcceptedOutcome?: number | undefined;
+}
+export interface RuhrohMetricCoverage {
+    status: "complete" | "partial" | "unknown" | "unavailable";
+    observedRuns: number;
+    completeRuns: number;
+    totalRuns: number;
 }
 export declare function scoreForEvalStatus(status: RuhrohEvalStatus): number;
 export declare function discoverRuhrohRunResultPaths(inputPath: string): string[];
@@ -598,6 +772,7 @@ export declare function assessRuhrohEvalQuality(evalResult: RuhrohEvalResult): s
 export declare function assessRuhrohArtifactCompleteness(run: RuhrohLoopResult): string[];
 export declare function inventoryRuhrohArtifacts(artifactPaths: Record<string, string>): RuhrohRunArtifactInventoryItem[];
 export declare function summarizeRuhrohRun(run: RuhrohLoopResult): RuhrohRunSummary;
+export declare function isAcceptedRuhrohOutcome(score: number, evalStatus: RuhrohEvalStatus): boolean;
 export declare function readImplementationTimeline(runs: Array<Record<string, unknown>>): RuhrohImplementationStepSummary[];
 export declare function aggregateRuhrohRuns(runs: RuhrohLoopResult[], options?: AggregateRuhrohRunsOptions): RuhrohAggregateRunGroup[];
 export declare function summarizeRuhrohPairwiseAdapterComparisons(groups: RuhrohAggregateRunGroup[], options?: {
@@ -608,8 +783,18 @@ export declare function summarizeRuhrohReviewQueue(summaries: RuhrohRunSummary[]
 export declare function summarizeRuhrohBenchmarkClaimReadiness(groups: RuhrohAggregateRunGroup[], options?: SummarizeRuhrohClaimReadinessOptions): RuhrohBenchmarkClaimReadiness;
 export declare function summarizeRuhrohBenchmarkClaim(groups: RuhrohAggregateRunGroup[], options: SummarizeRuhrohBenchmarkClaimOptions): RuhrohBenchmarkClaimExport;
 export declare function summarizeRuhrohBenchmarkSummary(claim: RuhrohBenchmarkClaimExport): RuhrohBenchmarkSummaryExport;
+export declare function summarizeRuhrohBenchmarkClaimV2(groups: RuhrohAggregateRunGroup[], options: SummarizeRuhrohBenchmarkClaimOptions & {
+    outcomeFrontier: RuhrohOutcomeFrontier;
+}): RuhrohBenchmarkClaimExportV2;
+export declare const buildRuhrohBenchmarkClaimV2: typeof summarizeRuhrohBenchmarkClaimV2;
+export declare function summarizeRuhrohBenchmarkSummaryV2(claim: RuhrohBenchmarkClaimExportV2): RuhrohBenchmarkSummaryExportV2;
+export declare const buildRuhrohBenchmarkSummaryV2: typeof summarizeRuhrohBenchmarkSummaryV2;
+export declare function buildRuhrohCompareV2(input: BuildRuhrohCompareV2Input): RuhrohCompareV2;
 export declare function validateRuhrohBenchmarkClaim(input: unknown): RuhrohBenchmarkClaimValidationResult;
 export declare function validateRuhrohBenchmarkSummary(input: unknown): RuhrohBenchmarkSummaryValidationResult;
+export declare function validateRuhrohBenchmarkClaimV2(input: unknown): RuhrohBenchmarkClaimValidationResult;
+export declare function validateRuhrohBenchmarkSummaryV2(input: unknown): RuhrohBenchmarkSummaryValidationResult;
+export declare function validateRuhrohCompareV2(input: unknown): RuhrohCompareV2ValidationResult;
 export declare function readRunUsage(value: unknown): RuhrohRunUsage | undefined;
 export declare function mapEvalResultToVerdict(evalResult: Pick<RuhrohEvalResult, "status">): RuhrohVerdict;
 export declare function mapRuntimeFailureToVerdict(implementationRuns: Array<{

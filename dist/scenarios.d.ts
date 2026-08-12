@@ -1,4 +1,6 @@
 import { type RuhrohContinuityLevel, type RuhrohRunAgentAdapterCapabilities } from "./adapters.js";
+import { type RuhrohWorkloadProfileV1 } from "./decision.js";
+import { type RuhrohResourceBudgetsV1 } from "./economics-runtime.js";
 export type RuhrohScenarioTier = "smoke" | "nightly" | "release";
 export type RuhrohScenarioKind = "real_user" | "contract_stress";
 export type RuhrohLoopStopPolicy = "goal_satisfied_or_max";
@@ -38,6 +40,7 @@ export interface RuhrohScenario {
     tier: RuhrohScenarioTier;
     kind: RuhrohScenarioKind;
     metadata?: RuhrohScenarioMetadata | undefined;
+    workloadProfile?: RuhrohWorkloadProfileV1 | undefined;
     userPrompt: string;
     assets?: string[] | undefined;
     driver?: {
@@ -52,6 +55,7 @@ export interface RuhrohScenario {
     run: {
         mode?: RuhrohDriverMode | undefined;
         timeoutSeconds: number;
+        resourceBudgets?: RuhrohResourceBudgetsV1 | undefined;
     };
     requires: {
         continuity: RuhrohContinuityLevel;

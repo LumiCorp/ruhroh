@@ -8,11 +8,15 @@ import { fileURLToPath } from "node:url";
 import { RUHROH_ARTIFACTS, RUHROH_HARBOR_AGENT_IMPORT_PATH, buildRuhrohHarborCommand } from "./harbor.js";
 import { discoverRuhrohScenarios, generateHarborDataset, loadRuhrohScenario, validateRuhrohScenarioSource, } from "./generate.js";
 import { inspectRuhrohBenchmarkPack } from "./pack.js";
-import { buildRuhrohPublishCheckReport, ruhrohPublishCheckRemediationCatalog, ruhrohPublishCheckRemediationForBlocker, validateRuhrohPublishBundle, verifyRuhrohBenchmarkClaimSources, } from "./publication.js";
+import { buildRuhrohClaimIndexEntryV2, buildRuhrohClaimIndexV2, buildRuhrohPublicationBundleV2, buildRuhrohPublicationV2, buildRuhrohPublishCheckV2, ruhrohPublishCheckRemediationCatalog, ruhrohPublishCheckRemediationForBlocker, validateRuhrohPublishBundle, verifyRuhrohBenchmarkClaimSources, } from "./publication.js";
 import { loadRuhrohRerunLedger } from "./rerun-ledger.js";
-import { aggregateRuhrohRuns, normalizeRuhrohEvalResult, summarizeRuhrohBenchmarkClaim, summarizeRuhrohBenchmarkSummary, summarizeRuhrohBenchmarkClaimReadiness, summarizeRuhrohPairwiseAdapterComparisons, summarizeRuhrohReviewQueue, summarizeRuhrohRun, summarizeRuhrohSuiteAdapters, validateRuhrohBenchmarkClaim, validateRuhrohBenchmarkSummary, } from "./results.js";
+import { aggregateRuhrohRuns, buildRuhrohCompareV2, normalizeRuhrohEvalResult, summarizeRuhrohBenchmarkClaimReadiness, summarizeRuhrohPairwiseAdapterComparisons, summarizeRuhrohReviewQueue, summarizeRuhrohRun, summarizeRuhrohSuiteAdapters, validateRuhrohBenchmarkClaim, validateRuhrohBenchmarkSummary, } from "./results.js";
+import { buildRuhrohOutcomeFrontier } from "./economics.js";
 import { discoverRuhrohSuites, loadRuhrohSuite, validateRuhrohSuiteSource, } from "./suites.js";
 import { RUHROH_AGENT_ENV_KEYS } from "./env.js";
+import { validateRuhrohControlSurface, validateRuhrohWorkloadBinding, } from "./decision.js";
+import { budgetCapabilityErrors, sha256CanonicalJson, validateAdapterManifest, } from "./economics-runtime.js";
+import { RUHROH_ECONOMICS_COMMANDS, runRuhrohEconomicsCommand, } from "./economics-cli.js";
 const RUN_PLAN_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/run-plan-v1.schema.json";
 const LOOP_RESULT_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/loop-result-v1.schema.json";
 const RUN_MANIFEST_SCHEMA_URL = "https://lumicorp.github.io/ruhroh/schemas/run-manifest-v1.schema.json";
@@ -67,7 +71,7 @@ export function parseRuhrohCliArgs(argv, cwd = process.cwd()) {
             continue;
         }
         if (index === 0
-            && (arg === "run" || arg === "demo" || arg === "generate" || arg === "list" || arg === "list-suites" || arg === "plan" || arg === "validate" || arg === "inspect-pack" || arg === "validate-artifacts" || arg === "validate-targets" || arg === "validate-claim" || arg === "validate-summary" || arg === "validate-bundle" || arg === "claim-index" || arg === "report" || arg === "compare" || arg === "review" || arg === "eval-quality" || arg === "publish-check" || arg === "explain" || arg === "examples" || arg === "first-run" || arg === "workflow" || arg === "doctor" || arg === "init" || arg === "new-scenario" || arg === "new-suite" || arg === "new-adapter" || arg === "new-evaluator" || arg === "calibrate-evaluator")) {
+            && (arg === "run" || arg === "demo" || arg === "generate" || arg === "list" || arg === "list-suites" || arg === "plan" || arg === "validate" || arg === "inspect-pack" || arg === "validate-artifacts" || arg === "validate-targets" || arg === "validate-claim" || arg === "validate-summary" || arg === "validate-bundle" || arg === "claim-index" || arg === "report" || arg === "compare" || arg === "review" || arg === "eval-quality" || arg === "publish-check" || arg === "economics" || arg === "explain" || arg === "examples" || arg === "first-run" || arg === "workflow" || arg === "doctor" || arg === "init" || arg === "new-scenario" || arg === "new-suite" || arg === "new-adapter" || arg === "new-evaluator" || arg === "calibrate-evaluator")) {
             options.command = arg;
             if (arg === "generate") {
                 options.generateOnly = true;
@@ -251,6 +255,16 @@ export function parseRuhrohCliArgs(argv, cwd = process.cwd()) {
             index += 1;
             continue;
         }
+        if (arg === "--adapter-manifest") {
+            options.adapterManifestPath = path.resolve(cwd, readValue(argv, index, arg));
+            index += 1;
+            continue;
+        }
+        if (arg === "--workload-binding") {
+            options.workloadBindingPath = path.resolve(cwd, readValue(argv, index, arg));
+            index += 1;
+            continue;
+        }
         if (arg === "--target") {
             options.targets.push(assertSafeScenarioId(readValue(argv, index, arg)));
             index += 1;
@@ -296,6 +310,20 @@ export function parseRuhrohCliArgs(argv, cwd = process.cwd()) {
             options.explainCode = assertSafeScenarioId(arg);
             continue;
         }
+        if (!arg.startsWith("-") && options.command === "economics") {
+            if (options.economicsCommand === undefined) {
+                if (!RUHROH_ECONOMICS_COMMANDS.includes(arg)) {
+                    throw new Error(`Unknown economics command: ${arg}`);
+                }
+                options.economicsCommand = arg;
+                continue;
+            }
+            if (options.inputPath === undefined) {
+                options.inputPath = path.resolve(cwd, arg);
+                continue;
+            }
+            throw new Error(`Unexpected extra argument: ${arg}`);
+        }
         if (!arg.startsWith("-") && (options.command === "report" || options.command === "compare" || options.command === "review" || options.command === "eval-quality" || options.command === "publish-check" || options.command === "workflow" || options.command === "init" || options.command === "validate-artifacts" || options.command === "validate-targets" || options.command === "validate-claim" || options.command === "validate-summary" || options.command === "validate-bundle" || options.command === "claim-index")) {
             if (options.inputPath !== undefined) {
                 throw new Error(`Unexpected extra argument: ${arg}`);
@@ -338,6 +366,9 @@ export async function runRuhrohCli(argv, deps) {
     }
     if (options.command === "publish-check") {
         return runPublishCheckCommand(options, deps);
+    }
+    if (options.command === "economics") {
+        return runEconomicsCommand(options, deps);
     }
     if (options.command === "explain") {
         return runExplainCommand(options, deps);
@@ -572,6 +603,38 @@ function runValidateClaimCommand(options, deps) {
         return 1;
     }
 }
+function runEconomicsCommand(options, deps) {
+    if (options.economicsCommand === undefined || options.inputPath === undefined) {
+        deps.stderr.write("ruhroh failed: economics requires an operation and JSON input file.\n");
+        return 1;
+    }
+    try {
+        const input = readJsonObject(options.inputPath);
+        const result = runRuhrohEconomicsCommand({
+            version: "ruhroh_economics_command_v1",
+            command: options.economicsCommand,
+            input,
+        });
+        if (options.json) {
+            deps.stdout.write(`${JSON.stringify(result, null, 2)}\n`);
+        }
+        else if (result.output !== undefined) {
+            deps.stdout.write(`${JSON.stringify(result.output, null, 2)}\n`);
+        }
+        if (!result.ok) {
+            for (const error of result.errors)
+                deps.stderr.write(`ruhroh economics ${options.economicsCommand}: ${error}\n`);
+            return 1;
+        }
+        for (const warning of result.warnings)
+            deps.stderr.write(`ruhroh economics ${options.economicsCommand} warning: ${warning}\n`);
+        return 0;
+    }
+    catch (error) {
+        deps.stderr.write(`ruhroh failed: ${error instanceof Error ? error.message : String(error)}\n`);
+        return 1;
+    }
+}
 function runValidateSummaryCommand(options, deps) {
     if (options.inputPath === undefined) {
         deps.stderr.write("ruhroh failed: validate-summary requires a benchmark summary JSON file.\n");
@@ -703,6 +766,20 @@ function runClaimIndexCommand(options, deps) {
 }
 function buildClaimIndexReport(inputPath, htmlPath) {
     const claimPaths = discoverBenchmarkClaimPaths(inputPath);
+    const claimDocuments = claimPaths.map((claimPath) => ({ claimPath, claim: readJsonObject(claimPath) }));
+    if (claimDocuments.length > 0 && claimDocuments.every(({ claim }) => claim.version === "ruhroh_benchmark_claim_v2")) {
+        return buildRuhrohClaimIndexV2({
+            source: {
+                inputPath: path.resolve(inputPath),
+                ...(htmlPath === undefined ? {} : { htmlPath }),
+            },
+            claims: claimDocuments.map(({ claimPath, claim }) => buildRuhrohClaimIndexEntryV2({
+                claim: claim,
+                claimPath,
+                ...(claimBundlePath(claimPath) === undefined ? {} : { bundlePath: claimBundlePath(claimPath) }),
+            })),
+        });
+    }
     const claims = claimPaths.map((claimPath) => buildClaimIndexEntry(claimPath));
     const suites = new Set(claims.flatMap((claim) => claim.suite?.id === undefined ? [] : [claim.suite.id]));
     const adapters = new Set(claims.flatMap((claim) => claim.adapters));
@@ -759,7 +836,8 @@ function isBenchmarkClaimFile(filePath) {
         return true;
     }
     try {
-        return readJsonObject(filePath).version === "ruhroh_benchmark_claim_v1";
+        const version = readJsonObject(filePath).version;
+        return version === "ruhroh_benchmark_claim_v1" || version === "ruhroh_benchmark_claim_v2";
     }
     catch {
         return false;
@@ -847,27 +925,88 @@ function claimBundlePath(claimPath) {
     }
     try {
         const manifest = readJsonObject(manifestPath);
-        return manifest.version === "ruhroh_publish_bundle_v1" ? bundlePath : undefined;
+        return manifest.version === "ruhroh_publish_bundle_v1" || manifest.version === "ruhroh_publish_bundle_v2"
+            ? bundlePath
+            : undefined;
     }
     catch {
         return undefined;
     }
 }
+function claimIndexRenderView(report) {
+    if (report.version === "ruhroh_claim_index_v1") {
+        return report;
+    }
+    return {
+        $schema: CLAIM_INDEX_SCHEMA_URL,
+        version: "ruhroh_claim_index_v1",
+        generatedAt: report.generatedAt,
+        source: { ...report.source },
+        registryReady: report.registryReady,
+        registryBlockers: [...report.registryBlockers],
+        claimCount: report.claimCount,
+        publishableCount: report.publishableCount,
+        blockedCount: report.blockedCount,
+        invalidCount: report.invalidCount,
+        suiteCount: report.suiteCount,
+        adapterCount: report.targetCount,
+        totalRuns: report.totalRuns,
+        claims: report.claims.map((claim) => ({
+            claimPath: claim.claimPath,
+            ...(claim.bundlePath === undefined ? {} : { bundlePath: claim.bundlePath }),
+            valid: claim.valid,
+            publishable: claim.publishable,
+            scope: claim.scope,
+            createdAt: claim.createdAt,
+            ...(claim.suite === undefined ? {} : { suite: { ...claim.suite } }),
+            adapters: uniqueSortedClaimContext(claim.targets.flatMap((target) => target.executionAdapterIds)),
+            benchmarkContext: {
+                streams: [],
+                targets: claim.targets.map((target) => target.benchmarkTargetId),
+                harnesses: [],
+                providerPaths: [],
+                canonicalModels: [],
+                promptVersions: [],
+                environmentFingerprints: [],
+            },
+            summary: {
+                scenarioCount: claim.summary.scenarioCount,
+                adapterCount: claim.summary.targetCount,
+                totalRuns: claim.summary.totalRuns,
+                totalPasses: claim.summary.totalAcceptedOutcomes,
+                runWeightedPassRate: claim.summary.runWeightedPassRate,
+                reviewRecommended: claim.summary.reviewRecommended,
+            },
+            evidence: {
+                runPlanPresent: claim.evidence.runPlanPresent,
+                artifactValidationErrors: claim.evidence.artifactValidationErrors,
+                artifactCompletenessWarnings: claim.evidence.artifactCompletenessWarnings,
+                requiredReviewItems: claim.evidence.requiredReviewItems,
+            },
+            sourcePaths: { ...claim.sourcePaths },
+            blockers: [...claim.blockers],
+            advisories: [...claim.advisories],
+            validationErrors: [...claim.validationErrors],
+            validationWarnings: [...claim.validationWarnings],
+        })),
+    };
+}
 function formatClaimIndexReport(report, cwd) {
+    const renderReport = claimIndexRenderView(report);
     const lines = [
-        `Ruhroh claim index: ${report.claimCount} claim${report.claimCount === 1 ? "" : "s"} (${report.publishableCount} publishable, ${report.blockedCount} blocked, ${report.invalidCount} invalid)`,
-        `  registry ready: ${report.registryReady ? "yes" : "no"}`,
-        `  suites: ${report.suiteCount}`,
-        `  adapters: ${report.adapterCount}`,
-        `  total runs: ${report.totalRuns}`,
+        `Ruhroh claim index: ${renderReport.claimCount} claim${renderReport.claimCount === 1 ? "" : "s"} (${renderReport.publishableCount} publishable, ${renderReport.blockedCount} blocked, ${renderReport.invalidCount} invalid)`,
+        `  registry ready: ${renderReport.registryReady ? "yes" : "no"}`,
+        `  suites: ${renderReport.suiteCount}`,
+        `  adapters or targets: ${renderReport.adapterCount}`,
+        `  total runs: ${renderReport.totalRuns}`,
     ];
-    if (report.registryBlockers.length > 0) {
+    if (renderReport.registryBlockers.length > 0) {
         lines.push("  registry blockers:");
-        for (const blocker of report.registryBlockers) {
+        for (const blocker of renderReport.registryBlockers) {
             lines.push(`    - ${blocker}`);
         }
     }
-    for (const claim of report.claims) {
+    for (const claim of renderReport.claims) {
         lines.push("", `${path.relative(cwd, claim.claimPath) || claim.claimPath}`, `  status: ${claim.valid ? claim.publishable ? "publishable" : "blocked" : "invalid"}`, `  scope: ${claim.scope ?? "unknown"}`, `  suite: ${claim.suite === undefined ? "none" : `${claim.suite.id}@${claim.suite.suiteVersion ?? "unknown"}`}`, `  adapters: ${formatList(claim.adapters)}`, `  benchmark: ${formatClaimIndexBenchmarkContext(claim)}`, `  runs: ${claim.summary.totalRuns}, passRate: ${formatPercent(claim.summary.runWeightedPassRate)}`, `  evidence: runPlan=${claim.evidence.runPlanPresent ? "yes" : "no"}, artifactErrors=${claim.evidence.artifactValidationErrors}, artifactWarnings=${claim.evidence.artifactCompletenessWarnings}, reviewRequired=${claim.evidence.requiredReviewItems}`);
         if (claim.bundlePath !== undefined) {
             lines.push(`  bundle: ${path.relative(cwd, claim.bundlePath) || claim.bundlePath}`);
@@ -881,7 +1020,8 @@ function formatClaimIndexReport(report, cwd) {
     }
     return `${lines.join("\n")}\n`;
 }
-function formatClaimIndexReportHtml(report, htmlPath) {
+function formatClaimIndexReportHtml(input, htmlPath) {
+    const report = claimIndexRenderView(input);
     return `<!doctype html>
 <html lang="en">
   <head>
@@ -1112,6 +1252,12 @@ function validateRuhrohArtifactBundle(resultPath) {
     ]) {
         const artifactPath = resolveRunArtifactPath(result, resultDir, artifact.name, artifact.fileName);
         checks.push(filePresenceCheck(artifact.name, artifactPath));
+    }
+    const hasV2EconomicEvidence = isRecord(result.runAgent) && result.runAgent.version === "ruhroh_run_agent_result_v2"
+        || isRecord(result.runManifest) && isRecord(result.runManifest.runAgent) && isRecord(result.runManifest.runAgent.economics);
+    if (hasV2EconomicEvidence) {
+        const economicTracePath = resolveRunArtifactPath(result, resultDir, "economicTrace", "ruhroh-economic-trace.jsonl");
+        checks.push(filePresenceCheck("economicTrace", economicTracePath));
     }
     checks.push(...validateCrossArtifactConsistency(result, resultDir));
     const errors = checks.filter((check) => check.status === "failed").map((check) => `${check.name}: ${check.details}`);
@@ -3814,11 +3960,11 @@ function workflowClaimIndexReadinessCheck(claimIndexJsonPath, claimIndexHtmlPath
     }
     try {
         const index = readJsonObject(claimIndexJsonPath);
-        if (index.version !== "ruhroh_claim_index_v1") {
+        if (index.version !== "ruhroh_claim_index_v1" && index.version !== "ruhroh_claim_index_v2") {
             return {
                 name: "registry-index",
                 status: "failed",
-                details: "claim-index.json is not a ruhroh_claim_index_v1 report.",
+                details: "claim-index.json is not a supported Ruhroh claim index report.",
             };
         }
         const registryReady = index.registryReady === true;
@@ -4130,6 +4276,10 @@ function runPublishCheckCommand(options, deps) {
         deps.stderr.write(`ruhroh failed: publish-check could not read compare output: ${error instanceof Error ? error.message : String(error)}\n`);
         return 1;
     }
+    if (compare.version !== "ruhroh_compare_v2") {
+        deps.stderr.write(`ruhroh failed: publish-check requires compare v2 output; found ${typeof compare.version === "string" ? compare.version : "missing version"}.\n`);
+        return 1;
+    }
     const benchmarkClaim = isRecord(compare.benchmarkClaim) ? compare.benchmarkClaim : undefined;
     if (benchmarkClaim === undefined) {
         deps.stderr.write("ruhroh failed: publish-check compare output did not include benchmarkClaim.\n");
@@ -4155,7 +4305,7 @@ function runPublishCheckCommand(options, deps) {
     const sourceVerification = options.verifySources
         ? verifyRuhrohBenchmarkClaimSources(benchmarkClaim, effectiveBenchmarkClaimPath ?? path.join(options.inputPath, "benchmark-claim.json"))
         : undefined;
-    const report = buildRuhrohPublishCheckReport({
+    const report = buildRuhrohPublishCheckV2({
         source: {
             resultsPath: options.inputPath,
             ...(options.suiteId === undefined ? {} : { suiteId: options.suiteId }),
@@ -4168,7 +4318,7 @@ function runPublishCheckCommand(options, deps) {
             ...(options.bundlePath === undefined ? {} : { bundlePath: options.bundlePath }),
             ...(evaluatorCalibrationReportPath === undefined ? {} : { evaluatorCalibrationReportPath }),
         },
-        compare,
+        compare: compare,
         sourceVerification,
     });
     if (options.bundlePath !== undefined) {
@@ -4230,9 +4380,12 @@ function publishBundlePaths(bundlePath) {
         manifestPath: path.join(bundlePath, "manifest.json"),
         readmePath: path.join(bundlePath, "README.md"),
         publishCheckPath: path.join(bundlePath, "publish-check.json"),
+        publicationPath: path.join(bundlePath, "publication.json"),
+        compareJsonPath: path.join(bundlePath, "compare.json"),
         compareHtmlPath: path.join(bundlePath, "ruhroh-compare.html"),
         benchmarkClaimPath: path.join(bundlePath, "benchmark-claim.json"),
         benchmarkSummaryPath: path.join(bundlePath, "benchmark-summary.json"),
+        outcomeFrontierPath: path.join(bundlePath, "outcome-frontier.json"),
         reviewJsonPath: path.join(bundlePath, "ruhroh-review.json"),
         reviewHtmlPath: path.join(bundlePath, "ruhroh-review.html"),
         evalQualityPath: path.join(bundlePath, "ruhroh-eval-quality.json"),
@@ -4257,19 +4410,67 @@ function writePublishBundle(options, report, benchmarkClaim, cwd) {
         ...localized.report.compare,
         reviewQueue: localizedReviewReport.reviewQueue,
     };
-    writeJsonFile(paths.publishCheckPath, localized.report);
-    writeJsonFile(paths.benchmarkClaimPath, localized.benchmarkClaim);
-    if (localized.benchmarkSummary !== undefined) {
-        writeJsonFile(paths.benchmarkSummaryPath, localized.benchmarkSummary);
+    const localizedOutcomeFrontier = isRecord(localized.report.compare.outcomeFrontier)
+        ? localized.report.compare.outcomeFrontier
+        : undefined;
+    if (localized.benchmarkSummary === undefined || localizedOutcomeFrontier === undefined) {
+        throw new Error("compare v2 output must include benchmarkSummary and outcomeFrontier");
     }
+    writeJsonFile(paths.publishCheckPath, localized.report);
+    writeJsonFile(paths.compareJsonPath, localized.report.compare);
+    writeJsonFile(paths.benchmarkClaimPath, localized.benchmarkClaim);
+    writeJsonFile(paths.benchmarkSummaryPath, localized.benchmarkSummary);
+    writeJsonFile(paths.outcomeFrontierPath, localizedOutcomeFrontier);
     writeFileSync(paths.compareHtmlPath, formatPublishBundleCompareHtml(localized.report, paths.compareHtmlPath), "utf8");
     writeJsonFile(paths.reviewJsonPath, localizedReviewReport);
     writeFileSync(paths.reviewHtmlPath, formatReviewQueueHtml(localizedReviewReport, paths.reviewHtmlPath), "utf8");
     writeJsonFile(paths.evalQualityPath, localizedEvalQualityReport);
     writeFileSync(paths.evalQualityHtmlPath, formatEvalQualityReportHtml(localizedEvalQualityReport, paths.evalQualityHtmlPath), "utf8");
-    const manifest = buildPublishBundleManifest(localized.report, paths, localized.benchmarkSummary !== undefined, localized.sourceFiles);
+    const manifest = buildPublishBundleManifest(localized.report, paths, localized.sourceFiles);
     writeJsonFile(paths.manifestPath, manifest);
+    const publicationArtifacts = [
+        publicationArtifactReference("publish-check", "ruhroh_publish_check_v2", paths.publishCheckPath, paths.publicationPath),
+        publicationArtifactReference("bundle-manifest", "ruhroh_publish_bundle_v2", paths.manifestPath, paths.publicationPath),
+        publicationArtifactReference("compare", "ruhroh_compare_v2", paths.compareJsonPath, paths.publicationPath),
+        publicationArtifactReference("benchmark-claim", "ruhroh_benchmark_claim_v2", paths.benchmarkClaimPath, paths.publicationPath),
+        publicationArtifactReference("benchmark-summary", "ruhroh_benchmark_summary_v2", paths.benchmarkSummaryPath, paths.publicationPath),
+        publicationArtifactReference("outcome-frontier", "ruhroh_outcome_frontier_v1", paths.outcomeFrontierPath, paths.publicationPath),
+        ...publicationEconomicTraceReferences(localized.benchmarkClaim, paths),
+    ];
+    const publication = buildRuhrohPublicationV2({
+        createdAt: manifest.createdAt,
+        publishable: localized.report.publishable,
+        artifacts: publicationArtifacts,
+    });
+    writeJsonFile(paths.publicationPath, publication);
     writeFileSync(paths.readmePath, formatPublishBundleReadme(manifest, localized.report, cwd), "utf8");
+}
+function publicationEconomicTraceReferences(claim, paths) {
+    const source = isRecord(claim.source) ? claim.source : undefined;
+    const resultArtifacts = source !== undefined && Array.isArray(source.resultArtifacts) ? source.resultArtifacts : [];
+    return resultArtifacts.flatMap((rawArtifact) => {
+        if (!isRecord(rawArtifact) || !Array.isArray(rawArtifact.artifactInventory))
+            return [];
+        return rawArtifact.artifactInventory.flatMap((rawItem) => {
+            if (!isRecord(rawItem) || rawItem.name !== "economicTrace" || rawItem.available !== true)
+                return [];
+            const relativePath = stringField(rawItem, "path");
+            if (relativePath === undefined)
+                return [];
+            const absolutePath = path.join(paths.bundlePath, relativePath);
+            if (!existsSync(absolutePath) || !statSync(absolutePath).isFile())
+                return [];
+            return [publicationArtifactReference("economic-trace", "ruhroh_economic_trace_span_v1", absolutePath, paths.publicationPath)];
+        });
+    });
+}
+function publicationArtifactReference(role, contractVersion, artifactPath, publicationPath) {
+    return {
+        role,
+        path: path.relative(path.dirname(publicationPath), artifactPath),
+        sha256: sha256File(artifactPath),
+        contractVersion,
+    };
 }
 function formatPublishBundleCompareHtml(report, htmlPath) {
     const compare = report.compare;
@@ -4283,7 +4484,7 @@ function formatPublishBundleCompareHtml(report, htmlPath) {
     const resultArtifacts = source !== undefined && Array.isArray(source.resultArtifacts)
         ? source.resultArtifacts
         : [];
-    return formatCompareReportHtml(Array.isArray(compare.groups) ? compare.groups : [], suite, Array.isArray(compare.suiteAdapterSummaries) ? compare.suiteAdapterSummaries : [], Array.isArray(compare.pairwiseComparisons) ? compare.pairwiseComparisons : [], Array.isArray(compare.reviewQueue) ? compare.reviewQueue : [], claimReadiness, runPlan, stringArrayField(compare, "runPlanWarnings"), resultArtifacts, htmlPath);
+    return formatCompareReportHtml(Array.isArray(compare.groups) ? compare.groups : [], suite, Array.isArray(compare.suiteAdapterSummaries) ? compare.suiteAdapterSummaries : [], Array.isArray(compare.pairwiseComparisons) ? compare.pairwiseComparisons : [], Array.isArray(compare.reviewQueue) ? compare.reviewQueue : [], claimReadiness, runPlan, stringArrayField(compare, "runPlanWarnings"), resultArtifacts, htmlPath, isRecord(compare.outcomeFrontier) ? compare.outcomeFrontier : undefined);
 }
 function publishBundleArtifactPathMap(originalClaim, localizedClaim) {
     const pathMap = new Map();
@@ -4519,7 +4720,7 @@ function publishBundleArtifacts(inputPath, benchmarkClaim) {
     const scopedArtifacts = artifacts.filter((artifact) => resultPaths.has(path.resolve(artifact.path)));
     return scopedArtifacts.length === 0 ? artifacts : scopedArtifacts;
 }
-function buildPublishBundleManifest(report, paths, includesBenchmarkSummary, sourceFiles = []) {
+function buildPublishBundleManifest(report, paths, sourceFiles = []) {
     const files = [
         {
             role: "manifest",
@@ -4532,6 +4733,16 @@ function buildPublishBundleManifest(report, paths, includesBenchmarkSummary, sou
             description: "Publishability verdict, blockers, remediation, compare output, and optional source verification.",
         },
         {
+            role: "publication",
+            path: path.relative(paths.bundlePath, paths.publicationPath),
+            description: "Thin hash-linked index of the v2 publication contracts.",
+        },
+        {
+            role: "compare",
+            path: path.relative(paths.bundlePath, paths.compareJsonPath),
+            description: "Machine-readable v2 comparison output.",
+        },
+        {
             role: "compare-html",
             path: path.relative(paths.bundlePath, paths.compareHtmlPath),
             description: "Static aggregate report for human inspection.",
@@ -4540,6 +4751,16 @@ function buildPublishBundleManifest(report, paths, includesBenchmarkSummary, sou
             role: "benchmark-claim",
             path: path.relative(paths.bundlePath, paths.benchmarkClaimPath),
             description: "Compact benchmark claim JSON for archival and downstream publication.",
+        },
+        {
+            role: "benchmark-summary",
+            path: path.relative(paths.bundlePath, paths.benchmarkSummaryPath),
+            description: "Target-oriented benchmark summary JSON for reports or registry ingestion.",
+        },
+        {
+            role: "outcome-frontier",
+            path: path.relative(paths.bundlePath, paths.outcomeFrontierPath),
+            description: "Quality-gated efficiency frontier with coverage and uncertainty evidence.",
         },
         {
             role: "review-json",
@@ -4567,17 +4788,8 @@ function buildPublishBundleManifest(report, paths, includesBenchmarkSummary, sou
             description: "Human-readable bundle summary.",
         },
     ];
-    if (includesBenchmarkSummary) {
-        files.splice(4, 0, {
-            role: "benchmark-summary",
-            path: path.relative(paths.bundlePath, paths.benchmarkSummaryPath),
-            description: "Row-oriented benchmark summary JSON for reports or leaderboard ingestion.",
-        });
-    }
     files.push(...sourceFiles);
-    return {
-        $schema: PUBLISH_BUNDLE_SCHEMA_URL,
-        version: "ruhroh_publish_bundle_v1",
+    return buildRuhrohPublicationBundleV2({
         createdAt: new Date().toISOString(),
         source: {
             resultsPath: report.source.resultsPath,
@@ -4587,11 +4799,9 @@ function buildPublishBundleManifest(report, paths, includesBenchmarkSummary, sou
             ...(report.source.rerunLedgerPath === undefined ? {} : { rerunLedgerPath: report.source.rerunLedgerPath }),
             ...(report.source.evaluatorCalibrationReportPath === undefined ? {} : { evaluatorCalibrationReportPath: report.source.evaluatorCalibrationReportPath }),
         },
-        publishable: report.publishable,
-        blockerCount: report.blockerCount,
-        advisoryCount: report.advisoryCount,
+        publishCheck: report,
         files,
-    };
+    });
 }
 function writeJsonFile(filePath, value) {
     mkdirSync(path.dirname(filePath), { recursive: true });
@@ -4823,27 +5033,31 @@ function runCompareCommand(options, deps) {
             artifactValidationWarnings: artifactValidation.warnings.length,
             reviewQueue,
         });
-        const benchmarkClaim = summarizeRuhrohBenchmarkClaim(groups, {
+        const source = {
+            resultsPath: options.inputPath,
+            ...(compareSuite === undefined ? {} : {
+                suitePath: compareSuite.source.suitePath,
+                suiteSha256: sha256File(compareSuite.source.suitePath),
+            }),
+            ...(options.runPlanPath === undefined ? {} : {
+                runPlanPath: options.runPlanPath,
+                runPlanSha256: sha256File(options.runPlanPath),
+            }),
+            ...(options.rerunLedgerPath === undefined ? {} : {
+                rerunLedgerPath: options.rerunLedgerPath,
+                rerunLedgerSha256: sha256File(options.rerunLedgerPath),
+            }),
+            ...(options.htmlPath === undefined ? {} : { htmlPath: options.htmlPath }),
+            ...(options.benchmarkClaimPath === undefined ? {} : { benchmarkClaimPath: options.benchmarkClaimPath }),
+            ...(options.benchmarkSummaryPath === undefined ? {} : { benchmarkSummaryPath: options.benchmarkSummaryPath }),
+            resultArtifacts: runArtifacts.map((artifact) => benchmarkClaimResultArtifact(artifact)),
+        };
+        const outcomeFrontier = buildRuhrohOutcomeFrontier({ summaries: runSummaries, suite: compareSuite?.suite });
+        const compareV2 = buildRuhrohCompareV2({
+            groups,
+            outcomeFrontier,
             tool: readRuhrohPackageIdentity(),
-            source: {
-                resultsPath: options.inputPath,
-                ...(compareSuite === undefined ? {} : {
-                    suitePath: compareSuite.source.suitePath,
-                    suiteSha256: sha256File(compareSuite.source.suitePath),
-                }),
-                ...(options.runPlanPath === undefined ? {} : {
-                    runPlanPath: options.runPlanPath,
-                    runPlanSha256: sha256File(options.runPlanPath),
-                }),
-                ...(options.rerunLedgerPath === undefined ? {} : {
-                    rerunLedgerPath: options.rerunLedgerPath,
-                    rerunLedgerSha256: sha256File(options.rerunLedgerPath),
-                }),
-                ...(options.htmlPath === undefined ? {} : { htmlPath: options.htmlPath }),
-                ...(options.benchmarkClaimPath === undefined ? {} : { benchmarkClaimPath: options.benchmarkClaimPath }),
-                ...(options.benchmarkSummaryPath === undefined ? {} : { benchmarkSummaryPath: options.benchmarkSummaryPath }),
-                resultArtifacts: runArtifacts.map((artifact) => benchmarkClaimResultArtifact(artifact)),
-            },
+            source,
             ...(compareSuite === undefined ? {} : {
                 suite: suiteToBenchmarkClaimSummary(compareSuite.suite),
                 suiteAdapterSummaries,
@@ -4856,10 +5070,11 @@ function runCompareCommand(options, deps) {
             artifactValidationErrors: artifactValidation.errors.length,
             artifactValidationWarnings: artifactValidation.warnings.length,
         });
-        const benchmarkSummary = summarizeRuhrohBenchmarkSummary(benchmarkClaim);
+        const benchmarkClaim = compareV2.benchmarkClaim;
+        const benchmarkSummary = compareV2.benchmarkSummary;
         if (options.htmlPath !== undefined) {
             mkdirSync(path.dirname(options.htmlPath), { recursive: true });
-            writeFileSync(options.htmlPath, formatCompareReportHtml(groups, compareSuite, suiteAdapterSummaries, pairwiseComparisons, reviewQueue, claimReadiness, compareRunPlan, runPlanWarnings, benchmarkClaim.source?.resultArtifacts ?? [], options.htmlPath), "utf8");
+            writeFileSync(options.htmlPath, formatCompareReportHtml(groups, compareSuite, suiteAdapterSummaries, pairwiseComparisons, reviewQueue, claimReadiness, compareRunPlan, runPlanWarnings, benchmarkClaim.source?.resultArtifacts ?? [], options.htmlPath, outcomeFrontier), "utf8");
         }
         if (options.benchmarkClaimPath !== undefined) {
             mkdirSync(path.dirname(options.benchmarkClaimPath), { recursive: true });
@@ -4871,17 +5086,12 @@ function runCompareCommand(options, deps) {
         }
         if (options.json) {
             deps.stdout.write(`${JSON.stringify({
-                version: "ruhroh_compare_v1",
+                ...compareV2,
                 ...(compareSuite === undefined ? {} : { suite: compareSuite.suite, suiteWarnings: compareSuite.warnings, suiteAdapterSummaries }),
                 ...(compareRunPlan === undefined ? {} : { runPlan: summarizeRunPlan(compareRunPlan), runPlanWarnings }),
                 ...(rerunLedgerSummary === undefined ? {} : { rerunLedger: rerunLedgerSummary }),
                 artifactValidation,
-                claimReadiness,
-                benchmarkClaim,
-                benchmarkSummary,
-                pairwiseComparisons,
                 reviewQueue,
-                groups,
                 ...(options.htmlPath === undefined ? {} : { htmlPath: options.htmlPath }),
                 ...(options.benchmarkClaimPath === undefined ? {} : { benchmarkClaimPath: options.benchmarkClaimPath }),
                 ...(options.benchmarkSummaryPath === undefined ? {} : { benchmarkSummaryPath: options.benchmarkSummaryPath }),
@@ -4895,11 +5105,11 @@ function runCompareCommand(options, deps) {
                 ? ""
                 : `Wrote Ruhroh benchmark summary: ${options.benchmarkSummaryPath}\n`;
             deps.stdout.write(options.htmlPath === undefined
-                ? `${formatCompareReport(groups, compareSuite, suiteAdapterSummaries, pairwiseComparisons, reviewQueue, claimReadiness, compareRunPlan, runPlanWarnings)}${benchmarkClaimMessage}${benchmarkSummaryMessage}`
+                ? `${formatCompareReport(groups, compareSuite, suiteAdapterSummaries, pairwiseComparisons, reviewQueue, claimReadiness, compareRunPlan, runPlanWarnings, outcomeFrontier)}${benchmarkClaimMessage}${benchmarkSummaryMessage}`
                 : `Wrote Ruhroh compare HTML report: ${options.htmlPath}\n${benchmarkClaimMessage}${benchmarkSummaryMessage}`);
         }
-        if (options.requirePublishable && !claimReadiness.publishable) {
-            deps.stderr.write(`ruhroh compare failed publishability gate: ${claimReadiness.blockers.length} blocker${claimReadiness.blockers.length === 1 ? "" : "s"}\n`);
+        if (options.requirePublishable && !benchmarkClaim.publishable) {
+            deps.stderr.write(`ruhroh compare failed publishability gate: ${benchmarkClaim.readiness.publication.blockers.length} blocker${benchmarkClaim.readiness.publication.blockers.length === 1 ? "" : "s"}\n`);
             return 2;
         }
         return 0;
@@ -4946,6 +5156,24 @@ function loadRunPlanManifest(filePath) {
         }
     }
     return raw;
+}
+function loadWorkloadBinding(filePath) {
+    const raw = readJsonObject(filePath);
+    const binding = raw;
+    const errors = validateRuhrohWorkloadBinding(binding);
+    if (errors.length > 0) {
+        throw new Error(`Invalid Ruhroh workload binding ${filePath}: ${errors.join("; ")}`);
+    }
+    return binding;
+}
+function loadAdapterManifest(filePath) {
+    const raw = readJsonObject(filePath);
+    const manifest = raw;
+    const errors = validateAdapterManifest(manifest);
+    if (errors.length > 0) {
+        throw new Error(`Invalid Ruhroh adapter manifest ${filePath}: ${errors.join("; ")}`);
+    }
+    return manifest;
 }
 function runPlanCoverageWarnings(runPlan, summaries, scenarioFilter, rerunLedger) {
     const scenarioIds = scenarioFilter === undefined ? undefined : new Set(scenarioFilter);
@@ -5226,6 +5454,8 @@ function summarizeRunPlan(runPlan) {
         createdAt: runPlan.createdAt,
         selection: runPlan.selection,
         ...(runPlan.suite === undefined ? {} : { suite: runPlan.suite }),
+        ...(runPlan.workloadBinding === undefined ? {} : { workloadBinding: runPlan.workloadBinding }),
+        ...(runPlan.workloadBindingSource === undefined ? {} : { workloadBindingSource: runPlan.workloadBindingSource }),
         generated: runPlan.generated,
         scenarios: runPlan.scenarios,
         sampleCount: runPlan.samples.length,
@@ -6498,9 +6728,17 @@ function loadSelectedSuite(options) {
 function buildCommands(scenarios, options, datasetPath, adapters, cwd) {
     const commands = [];
     const includeAdapterInLabel = adapters.length > 1;
+    const workloadBinding = options.workloadBindingPath === undefined ? undefined : loadWorkloadBinding(options.workloadBindingPath);
     for (const adapter of adapters) {
         for (let runIndex = 1; runIndex <= options.runs; runIndex += 1) {
             for (const scenario of scenarios) {
+                const resourceBudgets = scenario.run.resourceBudgets;
+                if (resourceBudgets !== undefined) {
+                    const errors = budgetCapabilityErrors(adapter.adapterManifest, resourceBudgets);
+                    if (errors.length > 0) {
+                        throw new Error(`Resource-budget preflight failed for ${scenario.id}/${adapter.adapterId}: ${errors.join("; ")}`);
+                    }
+                }
                 const sampleEnv = buildSampleEnv({
                     adapterId: adapter.adapterId,
                     scenarioId: scenario.id,
@@ -6510,6 +6748,17 @@ function buildCommands(scenarios, options, datasetPath, adapters, cwd) {
                 const env = buildPortableCommandEnv({
                     ...adapter.env,
                     ...sampleEnv,
+                    ...(workloadBinding === undefined ? {} : { RUHROH_WORKLOAD_BINDING_JSON: JSON.stringify(workloadBinding) }),
+                    ...(scenario.workloadProfile === undefined ? {} : { RUHROH_WORKLOAD_PROFILE_JSON: JSON.stringify(scenario.workloadProfile) }),
+                    ...(adapter.adapterManifest === undefined ? {} : {
+                        RUHROH_ADAPTER_MANIFEST_JSON: JSON.stringify(adapter.adapterManifest),
+                        RUHROH_ADAPTER_MANIFEST_SHA256: sha256CanonicalJson(adapter.adapterManifest),
+                        RUHROH_EFFECTIVE_CAPABILITIES_SHA256: sha256CanonicalJson(adapter.adapterManifest.resources),
+                    }),
+                    ...(resourceBudgets === undefined ? {} : {
+                        RUHROH_RESOURCE_BUDGETS_JSON: JSON.stringify(resourceBudgets),
+                        RUHROH_EFFECTIVE_BUDGET_SHA256: sha256CanonicalJson(resourceBudgets),
+                    }),
                     RUHROH_RUN_SEED: adapter.env.RUHROH_RUN_SEED ?? sampleEnv.RUHROH_SAMPLE_SEED,
                 }, cwd);
                 const command = buildRuhrohHarborCommand({
@@ -6537,6 +6786,11 @@ function buildCommands(scenarios, options, datasetPath, adapters, cwd) {
                     runCount: options.runs,
                     env,
                     benchmarkTarget: adapter.benchmarkTarget,
+                    adapterManifest: adapter.adapterManifest,
+                    adapterManifestPath: adapter.adapterManifestPath,
+                    resourceBudgets,
+                    ...(resourceBudgets === undefined ? {} : { effectiveBudgetSha256: sha256CanonicalJson(resourceBudgets) }),
+                    ...(adapter.adapterManifest === undefined ? {} : { effectiveCapabilitiesSha256: sha256CanonicalJson(adapter.adapterManifest.resources) }),
                 });
             }
         }
@@ -6574,6 +6828,8 @@ function buildRunPlanManifest(input) {
             runs: input.options.runs,
             adapters: [...new Set(input.commands.map((command) => command.adapterId))],
             ...(input.options.targetConfigPath === undefined ? {} : { targetConfigPath: input.options.targetConfigPath }),
+            ...(input.options.adapterManifestPath === undefined ? {} : { adapterManifestPath: input.options.adapterManifestPath }),
+            ...(input.options.workloadBindingPath === undefined ? {} : { workloadBindingPath: input.options.workloadBindingPath }),
             ...(input.options.targets.length === 0 ? {} : { targets: input.options.targets }),
             ...(input.options.shard === undefined ? {} : { shard: input.options.shard }),
         },
@@ -6590,6 +6846,13 @@ function buildRunPlanManifest(input) {
                 },
             },
         }),
+        ...(input.options.workloadBindingPath === undefined ? {} : {
+            workloadBinding: loadWorkloadBinding(input.options.workloadBindingPath),
+            workloadBindingSource: {
+                path: input.options.workloadBindingPath,
+                sha256: sha256File(input.options.workloadBindingPath),
+            },
+        }),
         generated: {
             generatedDir: input.options.generatedDir,
             datasetPath: input.datasetPath,
@@ -6599,6 +6862,7 @@ function buildRunPlanManifest(input) {
             title: scenario.title,
             tier: scenario.tier,
             ...(scenario.metadata?.scenarioVersion === undefined ? {} : { scenarioVersion: scenario.metadata.scenarioVersion }),
+            ...(scenario.workloadProfile === undefined ? {} : { workloadProfile: scenario.workloadProfile }),
             source: {
                 scenarioPath: source.scenarioPath,
                 scenarioSha256: sha256File(source.scenarioPath),
@@ -6614,6 +6878,7 @@ function buildRunPlanManifest(input) {
             adapter: command.adapterId,
             sampleId: command.sampleId,
             sampleSeed: command.sampleSeed,
+            weight: 1,
             runIndex: command.runIndex,
             runCount: command.runCount,
             forwardedEnvKeys: forwardedRunPlanEnvKeys(command.env),
@@ -6623,6 +6888,11 @@ function buildRunPlanManifest(input) {
                 display: formatCommand(input.harborBin, command.displayArgs),
             },
             ...(command.benchmarkTarget === undefined ? {} : { benchmarkTarget: command.benchmarkTarget }),
+            ...(command.adapterManifest === undefined ? {} : { adapterManifest: command.adapterManifest }),
+            ...(command.adapterManifestPath === undefined ? {} : { adapterManifestPath: command.adapterManifestPath }),
+            ...(command.resourceBudgets === undefined ? {} : { resourceBudgets: command.resourceBudgets }),
+            ...(command.effectiveBudgetSha256 === undefined ? {} : { effectiveBudgetSha256: command.effectiveBudgetSha256 }),
+            ...(command.effectiveCapabilitiesSha256 === undefined ? {} : { effectiveCapabilitiesSha256: command.effectiveCapabilitiesSha256 }),
         })),
     };
 }
@@ -6640,6 +6910,7 @@ function buildSampleEnv(input) {
     return {
         RUHROH_SAMPLE_ID: sampleId,
         RUHROH_SAMPLE_SEED: sampleSeed,
+        RUHROH_SAMPLE_WEIGHT: "1",
         RUHROH_RUN_INDEX: String(input.runIndex),
         RUHROH_RUN_COUNT: String(input.runCount),
     };
@@ -6703,7 +6974,7 @@ function resolveAdapterSelections(options, cwd, env) {
     if (adapters.length === 0) {
         throw new Error("--adapter or --target-config is required for ruhroh run, dry-run, and plan commands");
     }
-    return adapters.map((adapter) => resolveAdapterSelection(adapter, cwd, env));
+    return adapters.map((adapter) => attachAdapterManifest(resolveAdapterSelection(adapter, cwd, env), options.adapterManifestPath, cwd));
 }
 function resolveBenchmarkTargetSelections(options, cwd, env) {
     if (options.targetConfigPath === undefined) {
@@ -6733,7 +7004,25 @@ function resolveBenchmarkTargetSelections(options, cwd, env) {
     }
     return targets
         .map((target) => config.stream === undefined || target.stream !== undefined ? target : { ...target, stream: config.stream })
-        .map((target) => resolveBenchmarkTargetSelection(target, cwd, env));
+        .map((target) => attachAdapterManifest(resolveBenchmarkTargetSelection(target, cwd, env), target.adapterManifestPath ?? options.adapterManifestPath, cwd));
+}
+function attachAdapterManifest(selection, explicitPath, cwd) {
+    const command = selection.env.RUHROH_RUN_AGENT_COMMAND?.trim();
+    const commandPath = command === undefined || command.length === 0 || command.includes(" ")
+        ? undefined
+        : path.isAbsolute(command) ? command : path.resolve(cwd, command);
+    const adjacent = commandPath === undefined ? undefined : path.join(path.dirname(commandPath), "adapter-manifest.json");
+    const manifestPath = explicitPath === undefined
+        ? adjacent !== undefined && existsSync(adjacent) ? adjacent : undefined
+        : path.isAbsolute(explicitPath) ? explicitPath : path.resolve(cwd, explicitPath);
+    if (manifestPath === undefined) {
+        return selection;
+    }
+    const manifest = loadAdapterManifest(manifestPath);
+    if (manifest.adapterId !== selection.runAgentAdapterId) {
+        throw new Error(`Adapter manifest ${manifestPath} declares ${manifest.adapterId}, expected ${selection.runAgentAdapterId}`);
+    }
+    return { ...selection, adapterManifest: manifest, adapterManifestPath: manifestPath };
 }
 function resolveBenchmarkTargetSelection(target, cwd, env) {
     const adapterCommand = target.adapterCommand?.trim();
@@ -6994,10 +7283,12 @@ function summarizeBenchmarkTargetForValidation(target) {
         targetId: target.targetId,
         stream: target.stream,
         adapterId: target.adapterId,
+        adapterManifestPath: target.adapterManifestPath,
         harness: target.harness,
         requestedModel: target.requestedModel,
         providerPath: target.providerPath,
         recommendedStack: target.recommendedStack,
+        controlSurface: target.controlSurface,
         hasAdapterCommand: target.adapterCommand !== undefined,
         envKeys: target.env === undefined ? undefined : Object.keys(target.env).sort(),
     });
@@ -7020,26 +7311,44 @@ function normalizeBenchmarkTarget(value, label) {
     const targetId = readRequiredIdentifier(value, "targetId", label);
     const adapterId = readOptionalString(value, "adapterId");
     const adapterCommand = readOptionalString(value, "adapterCommand");
+    const adapterManifestPath = readOptionalString(value, "adapterManifestPath");
     const stream = normalizeOptionalBenchmarkTargetStream(value.stream, `${label}.stream`);
     const harness = normalizeBenchmarkHarness(value.harness, label);
     const requestedModel = normalizeBenchmarkModel(value.requestedModel, `${label}.requestedModel`, false);
     const actualModel = normalizeBenchmarkModel(value.actualModel, `${label}.actualModel`, true);
     const providerPath = normalizeProviderPath(value.providerPath, `${label}.providerPath`);
     const recommendedStack = normalizeRecommendedStack(value.recommendedStack, `${label}.recommendedStack`);
+    const controlSurface = normalizeControlSurface(value.controlSurface, `${label}.controlSurface`);
     const env = normalizeStringRecord(value.env, `${label}.env`);
     return withoutUndefined({
         targetId,
         stream,
         adapterId,
         adapterCommand,
+        adapterManifestPath,
         harness,
         harnessConfig: isRecord(value.harnessConfig) ? value.harnessConfig : undefined,
         requestedModel,
         actualModel,
         providerPath,
         recommendedStack,
+        controlSurface,
         env,
     });
+}
+function normalizeControlSurface(value, label) {
+    if (value === undefined) {
+        return undefined;
+    }
+    if (!isRecord(value)) {
+        throw new Error(`${label} must be an object`);
+    }
+    const surface = value;
+    const errors = validateRuhrohControlSurface(surface);
+    if (errors.length > 0) {
+        throw new Error(`${label} is invalid: ${errors.join("; ")}`);
+    }
+    return surface;
 }
 function normalizeOptionalBenchmarkTargetStream(value, label) {
     if (value === undefined) {
@@ -8251,7 +8560,7 @@ function escapeHtml(value) {
         .replace(/"/gu, "&quot;")
         .replace(/'/gu, "&#39;");
 }
-function formatCompareReport(groups, compareSuite, suiteAdapterSummaries = [], pairwiseComparisons = [], reviewQueue = [], claimReadiness, runPlan, runPlanWarnings = []) {
+function formatCompareReport(groups, compareSuite, suiteAdapterSummaries = [], pairwiseComparisons = [], reviewQueue = [], claimReadiness, runPlan, runPlanWarnings = [], outcomeFrontier) {
     const lines = ["Ruhroh compare"];
     if (runPlan !== undefined) {
         lines.push(`runPlan: ${runPlan.samples.length} planned sample${runPlan.samples.length === 1 ? "" : "s"}`);
@@ -8296,6 +8605,15 @@ function formatCompareReport(groups, compareSuite, suiteAdapterSummaries = [], p
             lines.push(`  advisory: ${advisory}`);
         }
     }
+    if (outcomeFrontier !== undefined) {
+        lines.push("", "Outcome frontier:", `  status: ${outcomeFrontier.status}`, `  reasons: ${formatList(outcomeFrontier.reasonCodes)}`, `  pareto: ${formatList(outcomeFrontier.paretoFrontierTargetIds)}`, `  robustPareto: ${formatList(outcomeFrontier.robustFrontierTargetIds)}`);
+        for (const target of outcomeFrontier.targets) {
+            lines.push(`  ${target.benchmarkTargetId}: quality=${target.quality.floorStatus} pareto=${target.paretoStatus} robust=${target.robustStatus}`);
+            for (const objective of target.objectives) {
+                lines.push(`    ${objective.objective}: ${objective.status}${objective.value === undefined ? "" : ` value=${formatNumber(objective.value)}`} validBootstrap=${objective.validBootstrapSamples}`);
+            }
+        }
+    }
     if (reviewQueue.length > 0) {
         lines.push("", "Review queue:");
         for (const item of reviewQueue) {
@@ -8329,7 +8647,7 @@ function formatCompareReport(groups, compareSuite, suiteAdapterSummaries = [], p
     }
     return `${lines.join("\n")}\n`;
 }
-function formatCompareReportHtml(groups, compareSuite, suiteAdapterSummaries = [], pairwiseComparisons = [], reviewQueue = [], claimReadiness, runPlan, runPlanWarnings = [], resultArtifacts = [], htmlPath) {
+function formatCompareReportHtml(groups, compareSuite, suiteAdapterSummaries = [], pairwiseComparisons = [], reviewQueue = [], claimReadiness, runPlan, runPlanWarnings = [], resultArtifacts = [], htmlPath, outcomeFrontier) {
     return `<!doctype html>
 <html lang="en">
   <head>
@@ -8380,6 +8698,7 @@ function formatCompareReportHtml(groups, compareSuite, suiteAdapterSummaries = [
             claimReadiness.blockers.join("; "),
             claimReadiness.advisories.join("; "),
         ]]))}
+      ${outcomeFrontier === undefined ? "" : outcomeFrontierHtml(outcomeFrontier)}
       ${sectionHtml("Side-by-Side Results", compareMatrixHtml(groups))}
       ${compareFailureTriageHtml(groups)}
       ${compareCostEfficiencyHtml(groups)}
@@ -8498,6 +8817,35 @@ function formatCompareReportHtml(groups, compareSuite, suiteAdapterSummaries = [
 </html>
 `;
 }
+function outcomeFrontierHtml(frontier) {
+    const summary = tableHtml([
+        "Status",
+        "Reasons",
+        "Pareto frontier",
+        "Confidence-bound robust frontier",
+    ], [[
+            frontier.status,
+            formatList(frontier.reasonCodes),
+            formatList(frontier.paretoFrontierTargetIds),
+            formatList(frontier.robustFrontierTargetIds),
+        ]]);
+    const targets = frontier.targets.length === 0 ? "" : tableHtml([
+        "Benchmark target",
+        "Quality floor",
+        "Pareto",
+        "Robust",
+        "Objectives",
+        "Reasons",
+    ], frontier.targets.map((target) => [
+        target.benchmarkTargetId,
+        target.quality.floorStatus,
+        target.paretoStatus,
+        target.robustStatus,
+        target.objectives.map((objective) => `${objective.objective}: ${objective.status}${objective.value === undefined ? "" : ` ${formatNumber(objective.value)}`}`).join("; "),
+        target.reasonCodes.join("; "),
+    ]));
+    return sectionHtml("Outcome Frontier", `${summary}${targets}`);
+}
 function compareEvidenceBrowserHtml(resultArtifacts, htmlPath) {
     if (resultArtifacts.length === 0) {
         return "";
@@ -8534,6 +8882,7 @@ function compareEvidenceLinksHtml(artifact, htmlPath) {
         { name: "events", label: "events" },
         { name: "workspaceSummary", label: "project summary" },
         { name: "workspaceTarball", label: "project archive" },
+        { name: "economicTrace", label: "economic trace" },
     ]) {
         const evidence = byName.get(item.name);
         if (evidence === undefined) {
@@ -8908,7 +9257,7 @@ function isRecord(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 function helpText() {
-    return `Usage: ruhroh [run|demo|generate|list|list-suites|plan|validate|inspect-pack|validate-artifacts|validate-targets|validate-claim|validate-summary|validate-bundle|claim-index|report|compare|review|eval-quality|calibrate-evaluator|publish-check|explain|examples|first-run|workflow|doctor|init|new-scenario|new-suite|new-adapter|new-evaluator] [options]
+    return `Usage: ruhroh [run|demo|generate|list|list-suites|plan|validate|inspect-pack|validate-artifacts|validate-targets|validate-claim|validate-summary|validate-bundle|claim-index|report|compare|review|eval-quality|calibrate-evaluator|publish-check|economics|explain|examples|first-run|workflow|doctor|init|new-scenario|new-suite|new-adapter|new-evaluator] [options]
 
 Common commands:
   ruhroh init [dir]
@@ -8949,6 +9298,13 @@ Common commands:
   ruhroh explain run_plan_mismatch
   ruhroh validate-claim ./benchmark-claim.json --require-publishable --verify-sources --json
   ruhroh validate-summary ./benchmark-summary.json --json
+  ruhroh economics validate ./economics-envelope.json --json
+  ruhroh economics conformance ./adapter-conformance-input.json --json
+  ruhroh economics scale-analyze ./scale-analysis-input.json --json
+  ruhroh economics findings ./finding-assessments.json --json
+  ruhroh economics provider-drift ./provider-drift-input.json --json
+  ruhroh economics decision-packet ./decision-packet-input.json --json
+  ruhroh economics billing-reconcile ./billing-reconciliation-input.json --json
 
 Options:
   --list                    Legacy alias for list.
