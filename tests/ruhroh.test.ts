@@ -170,6 +170,21 @@ function loopResultFixture(overrides: Partial<RuhrohLoopResult> = {}): RuhrohLoo
   };
 }
 
+function passedEvalResultFixture(): NonNullable<RuhrohLoopResult["evalResult"]> {
+  return {
+    version: "ruhroh_eval_result_v1",
+    status: "passed",
+    goalMet: true,
+    confidence: "high",
+    reasons: ["accepted outcome fixture"],
+    unmetCriteria: [],
+    evidenceRefs: [],
+    commandsRun: [],
+    artifacts: {},
+    finalSummary: "Accepted outcome fixture.",
+  };
+}
+
 function sha256File(filePath: string): string {
   return createHash("sha256").update(readFileSync(filePath, "utf8")).digest("hex");
 }
@@ -4942,9 +4957,11 @@ test("run summaries and aggregates include enriched evaluator evidence", () => {
   assert.equal(aggregate[0]?.usage.runsWithTokens, 2);
   assert.equal(Number(aggregate[0]?.usage.totalCostUsd?.toFixed(3)), 0.6);
   assert.equal(Number(aggregate[0]?.usage.meanCostUsd?.toFixed(3)), 0.3);
-  assert.equal(Number(aggregate[0]?.usage.costPerPass?.toFixed(3)), 0.6);
+  assert.equal(aggregate[0]?.usage.coverage.cost.status, "unknown");
+  assert.equal(aggregate[0]?.usage.costPerPass, undefined);
   assert.equal(aggregate[0]?.usage.totalTokens, 4000);
-  assert.equal(aggregate[0]?.usage.tokensPerPass, 4000);
+  assert.equal(aggregate[0]?.usage.coverage.totalTokens.status, "unknown");
+  assert.equal(aggregate[0]?.usage.tokensPerPass, undefined);
   assert.equal(aggregate[0]?.passRateCi95.method, "wilson");
   assert.equal((aggregate[0]?.passRateCi95.lower ?? 1) < 0.5, true);
   assert.equal((aggregate[0]?.passRateCi95.upper ?? 0) > 0.5, true);
@@ -5015,6 +5032,7 @@ test("run summaries and aggregates include enriched evaluator evidence", () => {
     status: "completed",
     failure_kind: "none",
     failureBucket: "none",
+    evalResult: passedEvalResultFixture(),
     runManifest: {
       version: "ruhroh_run_manifest_v1",
       runId: "agent-b-pass",
@@ -5034,6 +5052,7 @@ test("run summaries and aggregates include enriched evaluator evidence", () => {
     status: "completed",
     failure_kind: "none",
     failureBucket: "none",
+    evalResult: passedEvalResultFixture(),
     runManifest: {
       version: "ruhroh_run_manifest_v1",
       runId: "agent-b-pass-2",
@@ -5762,7 +5781,7 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.match(compareHtml, /95% CI/u);
     assert.match(compareHtml, /scenarioVersion=1\.0\.0\|unknown/u);
     assert.match(compareHtml, /mixed scenario versions in aggregate group/u);
-    assert.match(compareHtml, /costPerPass=\$0\.25/u);
+    assert.doesNotMatch(compareHtml, /costPerPass=/u);
 
     const textStdout: string[] = [];
     const textCode = await runRuhrohCli(["report", "run-one"], {
@@ -5919,7 +5938,8 @@ test("public CLI reports and compares run artifacts", async () => {
   assert.equal(compare.groups[0].usage.runsWithCost, 1);
   assert.equal(compare.groups[0].usage.runsWithTokens, 1);
   assert.equal(compare.groups[0].usage.totalCostUsd, 0.25);
-    assert.equal(compare.groups[0].usage.costPerPass, 0.25);
+    assert.equal(compare.groups[0].usage.coverage.cost.status, "unknown");
+    assert.equal(compare.groups[0].usage.costPerPass, undefined);
     assert.equal(compare.groups[0].usage.totalTokens, 1200);
     assert.equal(compare.artifactValidation.version, "ruhroh_artifact_validation_report_v1");
     assert.equal(compare.artifactValidation.valid, false);
@@ -5941,10 +5961,10 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(compare.benchmarkClaim.summary.totalPasses, 1);
     assert.equal(compare.benchmarkClaim.summary.runWeightedPassRate, 0.5);
     assert.equal(compare.benchmarkClaim.adapterSummaries[0].usage.runsWithUsage, 1);
-    assert.equal(compare.benchmarkClaim.adapterSummaries[0].usage.costPerPass, 0.25);
+    assert.equal(compare.benchmarkClaim.adapterSummaries[0].usage.costPerPass, undefined);
     assert.equal(compare.benchmarkClaim.scenarioResults[0].meanScoreCi95.method, "bootstrap_percentile");
     assert.equal(compare.benchmarkClaim.scenarioResults[0].usage.runsWithUsage, 1);
-    assert.equal(compare.benchmarkClaim.scenarioResults[0].usage.tokensPerPass, 1200);
+    assert.equal(compare.benchmarkClaim.scenarioResults[0].usage.tokensPerPass, undefined);
     assert.equal(compare.benchmarkClaim.source.resultsPath, tmp);
     assert.equal(compare.benchmarkClaim.source.resultArtifacts.length, 2);
     assert.deepEqual(compare.benchmarkClaim.source.resultArtifacts.map((artifact: { path: string }) => artifact.path), [runOneResultPath, runTwoResultPath]);
@@ -6980,6 +7000,7 @@ test("public CLI compare includes pairwise adapter comparisons", async () => {
       runId: "agent-a-pass",
       runAgentAdapterId: "agent-a",
       score: 1,
+      evalResult: passedEvalResultFixture(),
       runManifest: {
         version: "ruhroh_run_manifest_v1",
         runId: "agent-a-pass",
@@ -7010,6 +7031,7 @@ test("public CLI compare includes pairwise adapter comparisons", async () => {
       runId: "agent-b-pass-one",
       runAgentAdapterId: "agent-b",
       score: 1,
+      evalResult: passedEvalResultFixture(),
       runManifest: {
         version: "ruhroh_run_manifest_v1",
         runId: "agent-b-pass-one",
@@ -7025,6 +7047,7 @@ test("public CLI compare includes pairwise adapter comparisons", async () => {
       runId: "agent-b-pass-two",
       runAgentAdapterId: "agent-b",
       score: 1,
+      evalResult: passedEvalResultFixture(),
       runManifest: {
         version: "ruhroh_run_manifest_v1",
         runId: "agent-b-pass-two",

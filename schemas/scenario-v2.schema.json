@@ -24,6 +24,7 @@
     "tier": { "enum": ["smoke", "nightly", "release"] },
     "kind": { "enum": ["real_user", "contract_stress"] },
     "metadata": { "$ref": "#/$defs/metadata" },
+    "workloadProfile": { "$ref": "workload-profile-v1.schema.json" },
     "userPromptPath": { "type": "string", "minLength": 1 },
     "assets": {
       "type": "array",
@@ -35,7 +36,8 @@
       "required": ["timeoutSeconds"],
       "properties": {
         "mode": { "enum": ["build", "plan", "chat"] },
-        "timeoutSeconds": { "type": "number", "exclusiveMinimum": 0 }
+        "timeoutSeconds": { "type": "number", "exclusiveMinimum": 0 },
+        "resourceBudgets": { "$ref": "resource-budgets-v1.schema.json" }
       }
     },
     "requires": {

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/compare-v2.schema.json",
+  "title": "Ruhroh Compare Output v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "createdAt", "groups", "pairwiseComparisons", "claimReadiness", "outcomeFrontier", "benchmarkClaim", "benchmarkSummary"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/compare-v2.schema.json" },
+    "version": { "const": "ruhroh_compare_v2" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "groups": { "type": "array", "items": { "type": "object", "required": ["scenarioId", "executionAdapterIds", "runs", "passes", "usage"] } },
+    "pairwiseComparisons": { "type": "array", "items": { "type": "object", "required": ["baselineBenchmarkTargetId", "contenderBenchmarkTargetId"] } },
+    "claimReadiness": { "type": "object" },
+    "outcomeFrontier": { "$ref": "outcome-frontier-v1.schema.json" },
+    "benchmarkClaim": { "$ref": "benchmark-claim-v2.schema.json" },
+    "benchmarkSummary": { "$ref": "benchmark-summary-v2.schema.json" }
+  }
+}

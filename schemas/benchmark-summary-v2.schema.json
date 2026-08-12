@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/benchmark-summary-v2.schema.json",
+  "title": "Ruhroh Benchmark Summary v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "createdAt", "claimVersion", "tool", "scope", "publishable", "summary", "readiness", "evidence", "outcomeFrontier", "scenarioRows", "targetRows"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/benchmark-summary-v2.schema.json" },
+    "version": { "const": "ruhroh_benchmark_summary_v2" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "claimVersion": { "const": "ruhroh_benchmark_claim_v2" },
+    "tool": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string", "minLength": 1 } } },
+    "source": { "type": "object" },
+    "scope": { "enum": ["suite", "ad_hoc_compare"] },
+    "publishable": { "type": "boolean" },
+    "suite": { "type": "object" },
+    "summary": { "type": "object" },
+    "readiness": { "type": "object" },
+    "evidence": { "type": "object" },
+    "outcomeFrontier": { "$ref": "outcome-frontier-v1.schema.json" },
+    "scenarioRows": { "type": "array", "items": { "type": "object", "required": ["scenarioId", "benchmarkTargetId", "identityStatus", "executionAdapterIds", "runs", "acceptedOutcomes", "passRate", "usage", "qualityFloorStatus"] } },
+    "targetRows": { "type": "array", "items": { "type": "object", "required": ["benchmarkTargetId", "identityStatus", "executionAdapterIds", "runs", "acceptedOutcomes", "usage", "qualityFloorStatus", "objectives", "paretoStatus", "robustStatus"] } }
+  }
+}

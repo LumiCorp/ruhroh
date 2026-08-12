@@ -1,0 +1,191 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v2.schema.json",
+  "title": "Ruhroh Benchmark Claim v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "createdAt", "tool", "scope", "publishable", "methodology", "summary", "targetSummaries", "scenarioResults", "pairwiseComparisons", "outcomeFrontier", "readiness", "evidence"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/benchmark-claim-v2.schema.json" },
+    "version": { "const": "ruhroh_benchmark_claim_v2" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "tool": { "$ref": "#/$defs/tool" },
+    "source": { "type": "object" },
+    "scope": { "enum": ["suite", "ad_hoc_compare"] },
+    "publishable": { "type": "boolean" },
+    "suite": { "type": "object" },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["confidenceLevel", "acceptedOutcome", "suitableWorkloads", "requiredEvidence", "hiddenWork", "gamingRisks", "statisticalMethods", "objectives"],
+      "properties": {
+        "confidenceLevel": { "const": 0.95 },
+        "acceptedOutcome": { "const": "score_1_and_eval_passed" },
+        "aggregation": { "type": "object" },
+        "suitableWorkloads": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "requiredEvidence": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "hiddenWork": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "gamingRisks": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+        "statisticalMethods": { "type": "array", "items": { "type": "string" } },
+        "qualityFloor": { "type": "object" },
+        "objectives": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["cost_per_accepted_outcome", "tokens_per_accepted_outcome", "p95_implementation_wall_time_ms"] }
+        },
+        "minRuns": { "type": "integer", "minimum": 1 },
+        "retryPolicy": { "type": "string", "minLength": 1 }
+      }
+    },
+    "summary": { "$ref": "#/$defs/summary" },
+    "targetSummaries": { "type": "array", "items": { "$ref": "#/$defs/targetSummary" } },
+    "scenarioResults": { "type": "array", "items": { "$ref": "#/$defs/scenarioResult" } },
+    "pairwiseComparisons": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["baselineBenchmarkTargetId", "contenderBenchmarkTargetId"],
+        "properties": {
+          "baselineBenchmarkTargetId": { "type": "string", "minLength": 1 },
+          "contenderBenchmarkTargetId": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "outcomeFrontier": { "$ref": "outcome-frontier-v1.schema.json" },
+    "readiness": { "$ref": "#/$defs/readiness" },
+    "evidence": { "type": "object" }
+  },
+  "$defs": {
+    "stringArray": { "type": "array", "items": { "type": "string" } },
+    "tool": {
+      "type": "object",
+      "required": ["name"],
+      "properties": { "name": { "type": "string", "minLength": 1 }, "version": { "type": "string", "minLength": 1 } }
+    },
+    "confidenceInterval": {
+      "type": "object",
+      "required": ["method", "confidenceLevel", "lower", "upper"],
+      "properties": {
+        "method": { "type": "string" },
+        "confidenceLevel": { "const": 0.95 },
+        "lower": { "type": "number" },
+        "upper": { "type": "number" }
+      }
+    },
+    "metricCoverage": {
+      "type": "object",
+      "required": ["status", "observedRuns", "completeRuns", "totalRuns"],
+      "properties": {
+        "status": { "enum": ["complete", "partial", "unknown", "unavailable"] },
+        "observedRuns": { "type": "integer", "minimum": 0 },
+        "completeRuns": { "type": "integer", "minimum": 0 },
+        "totalRuns": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "required": ["runsWithUsage", "runsWithCost", "runsWithTokens", "coverage"],
+      "properties": {
+        "runsWithUsage": { "type": "integer", "minimum": 0 },
+        "runsWithCost": { "type": "integer", "minimum": 0 },
+        "runsWithTokens": { "type": "integer", "minimum": 0 },
+        "coverage": {
+          "type": "object",
+          "required": ["cost", "totalTokens"],
+          "properties": {
+            "cost": { "$ref": "#/$defs/metricCoverage" },
+            "totalTokens": { "$ref": "#/$defs/metricCoverage" }
+          }
+        },
+        "costPerAcceptedOutcome": { "type": "number", "minimum": 0 },
+        "tokensPerAcceptedOutcome": { "type": "number", "minimum": 0 }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["scenarioCount", "targetCount", "totalRuns", "totalAcceptedOutcomes", "runWeightedPassRate", "runWeightedPassRateCi95", "reviewRequired", "reviewRecommended", "pairwiseComparisonCount"],
+      "properties": {
+        "scenarioCount": { "type": "integer", "minimum": 0 },
+        "targetCount": { "type": "integer", "minimum": 0 },
+        "totalRuns": { "type": "integer", "minimum": 0 },
+        "totalAcceptedOutcomes": { "type": "integer", "minimum": 0 },
+        "runWeightedPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "runWeightedPassRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "reviewRequired": { "type": "integer", "minimum": 0 },
+        "reviewRecommended": { "type": "integer", "minimum": 0 },
+        "pairwiseComparisonCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "targetSummary": {
+      "type": "object",
+      "required": ["benchmarkTargetId", "identityStatus", "executionAdapterIds", "scenarioCount", "runs", "acceptedOutcomes", "runWeightedPassRate", "runWeightedPassRateCi95", "meanScenarioPassRate", "usage", "qualityFloorStatus", "objectives", "paretoStatus", "robustStatus", "warnings"],
+      "properties": {
+        "benchmarkTargetId": { "type": "string", "minLength": 1 },
+        "identityStatus": { "enum": ["declared", "legacy_execution_adapter_fallback"] },
+        "executionAdapterIds": { "$ref": "#/$defs/stringArray" },
+        "scenarioCount": { "type": "integer", "minimum": 0 },
+        "runs": { "type": "integer", "minimum": 0 },
+        "acceptedOutcomes": { "type": "integer", "minimum": 0 },
+        "runWeightedPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "runWeightedPassRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "meanScenarioPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "usage": { "$ref": "#/$defs/usage" },
+        "qualityFloorStatus": { "enum": ["passed", "failed", "indeterminate"] },
+        "objectives": { "type": "array", "items": { "type": "object" } },
+        "paretoStatus": { "enum": ["pareto", "dominated", "ineligible", "indeterminate"] },
+        "robustStatus": { "enum": ["pareto", "dominated", "ineligible", "indeterminate"] },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "scenarioResult": {
+      "type": "object",
+      "required": ["scenarioId", "benchmarkTargetId", "identityStatus", "executionAdapterIds", "runs", "acceptedOutcomes", "passRate", "passRateCi95", "passAtK", "meanScore", "meanScoreCi95", "usage", "qualityFloorStatus", "reviewRequired", "statisticalWarnings", "cohort"],
+      "properties": {
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "benchmarkTargetId": { "type": "string", "minLength": 1 },
+        "identityStatus": { "enum": ["declared", "legacy_execution_adapter_fallback"] },
+        "executionAdapterIds": { "$ref": "#/$defs/stringArray" },
+        "runs": { "type": "integer", "minimum": 0 },
+        "acceptedOutcomes": { "type": "integer", "minimum": 0 },
+        "passRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "passRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "passAtK": { "type": "object" },
+        "meanScore": { "type": "number", "minimum": 0, "maximum": 1 },
+        "meanScoreCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "usage": { "$ref": "#/$defs/usage" },
+        "qualityFloorStatus": { "enum": ["passed", "failed", "indeterminate"] },
+        "reviewRequired": { "type": "integer", "minimum": 0 },
+        "statisticalWarnings": { "$ref": "#/$defs/stringArray" },
+        "cohort": { "type": "object" }
+      }
+    },
+    "readinessSection": {
+      "type": "object",
+      "required": ["ready", "blockers", "advisories"],
+      "properties": {
+        "ready": { "type": "boolean" },
+        "blockers": { "$ref": "#/$defs/stringArray" },
+        "advisories": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "readiness": {
+      "type": "object",
+      "required": ["publication", "outcomeComparison", "pairwiseSuperiority", "efficiencyFrontier"],
+      "properties": {
+        "publication": {
+          "type": "object",
+          "required": ["scope", "publishable", "blockers", "advisories"],
+          "properties": {
+            "scope": { "enum": ["suite", "ad_hoc_compare"] },
+            "publishable": { "type": "boolean" },
+            "blockers": { "$ref": "#/$defs/stringArray" },
+            "advisories": { "$ref": "#/$defs/stringArray" }
+          }
+        },
+        "outcomeComparison": { "$ref": "#/$defs/readinessSection" },
+        "pairwiseSuperiority": { "$ref": "#/$defs/readinessSection" },
+        "efficiencyFrontier": { "$ref": "#/$defs/readinessSection" }
+      }
+    }
+  }
+}

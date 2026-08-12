@@ -30,6 +30,7 @@
         },
         "adapterId": { "type": "string", "minLength": 1 },
         "adapterCommand": { "type": "string", "minLength": 1 },
+        "adapterManifestPath": { "type": "string", "minLength": 1 },
         "harness": { "$ref": "#/$defs/harness" },
         "harnessConfig": {
           "type": "object",
@@ -49,6 +50,7 @@
             { "$ref": "#/$defs/recommendedStack" }
           ]
         },
+        "controlSurface": { "$ref": "control-surface-v1.schema.json" },
         "env": {
           "type": "object",
           "additionalProperties": { "type": "string" }
