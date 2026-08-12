@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/workload-binding-v1.schema.json",
+  "title": "Ruhroh Workload Binding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "experimentId", "workloadId", "projectId"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/workload-binding-v1.schema.json" },
+    "version": { "const": "ruhroh_workload_binding_v1" },
+    "experimentId": { "$ref": "#/$defs/nonEmptyString" },
+    "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+    "projectId": { "$ref": "#/$defs/nonEmptyString" },
+    "workflowInstanceId": { "$ref": "#/$defs/nonEmptyString" },
+    "hierarchyRef": { "$ref": "#/$defs/hashedSourceRef" }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "hashedSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    }
+  }
+}

@@ -3,6 +3,8 @@ import {
   type RuhrohContinuityLevel,
   type RuhrohRunAgentAdapterCapabilities,
 } from "./adapters.js";
+import { validateRuhrohWorkloadProfile, type RuhrohWorkloadProfileV1 } from "./decision.js";
+import { validateResourceBudgets, type RuhrohResourceBudgetsV1 } from "./economics-runtime.js";
 
 export type RuhrohScenarioTier = "smoke" | "nightly" | "release";
 export type RuhrohScenarioKind = "real_user" | "contract_stress";
@@ -46,6 +48,7 @@ export interface RuhrohScenario {
   tier: RuhrohScenarioTier;
   kind: RuhrohScenarioKind;
   metadata?: RuhrohScenarioMetadata | undefined;
+  workloadProfile?: RuhrohWorkloadProfileV1 | undefined;
   userPrompt: string;
   assets?: string[] | undefined;
   driver?: {
@@ -60,6 +63,7 @@ export interface RuhrohScenario {
   run: {
     mode?: RuhrohDriverMode | undefined;
     timeoutSeconds: number;
+    resourceBudgets?: RuhrohResourceBudgetsV1 | undefined;
   };
   requires: {
     continuity: RuhrohContinuityLevel;
@@ -137,6 +141,9 @@ export function validateRuhrohScenario(
   if (scenario.metadata !== undefined) {
     errors.push(...validateScenarioMetadata(scenario.metadata));
   }
+  if (scenario.workloadProfile !== undefined) {
+    errors.push(...validateRuhrohWorkloadProfile(scenario.workloadProfile).map((error) => `workloadProfile.${error}`));
+  }
   errors.push(...validatePublishedScenarioMetadata(scenario));
   if (scenario.userPrompt.trim().length === 0) {
     errors.push("userPrompt is required");
@@ -154,6 +161,9 @@ export function validateRuhrohScenario(
   }
   if (scenario.run.timeoutSeconds <= 0) {
     errors.push("run.timeoutSeconds must be positive");
+  }
+  if (scenario.run.resourceBudgets !== undefined) {
+    errors.push(...validateResourceBudgets(scenario.run.resourceBudgets).map((error) => `run.resourceBudgets.${error}`));
   }
   if (!["native_session", "workspace_plus_transcript", "workspace_only"].includes(scenario.requires.continuity)) {
     errors.push("requires.continuity must be native_session, workspace_plus_transcript, or workspace_only");

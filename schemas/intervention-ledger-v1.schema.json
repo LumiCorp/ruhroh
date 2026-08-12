@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/intervention-ledger-v1.schema.json",
+  "title": "Ruhroh Intervention Ledger v1",
+  "$comment": "Event workflowInstanceId values must equal workloadBinding.workflowInstanceId; the TypeScript validator enforces this cross-object invariant.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "ledgerId", "workloadBinding", "coverage", "verification", "events"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/intervention-ledger-v1.schema.json" },
+    "version": { "const": "ruhroh_intervention_ledger_v1" },
+    "ledgerId": { "$ref": "#/$defs/nonEmptyString" },
+    "workloadBinding": { "$ref": "#/$defs/workloadBinding" },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["startedAt", "endedAt", "complete", "missingReasons"],
+      "properties": {
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" },
+        "complete": { "type": "boolean" },
+        "missingReasons": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/nonEmptyString" },
+          "uniqueItems": true
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "complete": { "const": true } }, "required": ["complete"] },
+          "then": { "properties": { "missingReasons": { "maxItems": 0 } } }
+        }
+      ]
+    },
+    "verification": { "enum": ["measured", "independently_verified"] },
+    "events": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/interventionEvent" }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "hashedSourceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "version": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "workloadBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "experimentId", "workloadId", "projectId"],
+      "properties": {
+        "version": { "const": "ruhroh_workload_binding_v1" },
+        "experimentId": { "$ref": "#/$defs/nonEmptyString" },
+        "workloadId": { "$ref": "#/$defs/nonEmptyString" },
+        "projectId": { "$ref": "#/$defs/nonEmptyString" },
+        "workflowInstanceId": { "$ref": "#/$defs/nonEmptyString" },
+        "hierarchyRef": { "$ref": "#/$defs/hashedSourceRef" }
+      }
+    },
+    "interventionEvent": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "eventId", "kind", "actorRole", "startedAt", "durationMinutes", "workflowInstanceId", "reason", "evidenceRefs"],
+      "properties": {
+        "version": { "const": "ruhroh_intervention_event_v1" },
+        "eventId": { "$ref": "#/$defs/nonEmptyString" },
+        "kind": { "enum": ["approval", "guidance", "correction", "execution", "recovery", "passive_oversight", "rework"] },
+        "actorRole": { "$ref": "#/$defs/nonEmptyString" },
+        "startedAt": { "type": "string", "format": "date-time" },
+        "endedAt": { "type": "string", "format": "date-time" },
+        "durationMinutes": { "type": "number", "minimum": 0 },
+        "workflowInstanceId": { "$ref": "#/$defs/nonEmptyString" },
+        "runId": { "$ref": "#/$defs/nonEmptyString" },
+        "reason": { "$ref": "#/$defs/nonEmptyString" },
+        "evidenceRefs": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/hashedSourceRef" },
+          "uniqueItems": true
+        }
+      }
+    }
+  }
+}
