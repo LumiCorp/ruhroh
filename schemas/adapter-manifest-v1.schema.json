@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/adapter-manifest-v1.schema.json",
+  "title": "Ruhroh Adapter Manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "adapterId", "adapterVersion", "resultProtocol", "resources"],
+  "properties": {
+    "version": { "const": "ruhroh_adapter_manifest_v1" },
+    "adapterId": { "type": "string", "minLength": 1 },
+    "adapterVersion": { "type": "string", "minLength": 1 },
+    "resultProtocol": { "enum": ["ruhroh_run_agent_result_v1", "ruhroh_run_agent_result_v2"] },
+    "traceProtocol": { "const": "ruhroh_economic_trace_span_v1" },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "wallTimeMs": { "$ref": "#/$defs/capability" },
+        "implementationIterations": { "$ref": "#/$defs/capability" },
+        "modelCalls": { "$ref": "#/$defs/capability" },
+        "failedModelCalls": { "$ref": "#/$defs/capability" },
+        "retryAttempts": { "$ref": "#/$defs/capability" },
+        "toolCalls": { "$ref": "#/$defs/capability" },
+        "inputTokens": { "$ref": "#/$defs/capability" },
+        "outputTokens": { "$ref": "#/$defs/capability" },
+        "cachedInputTokens": { "$ref": "#/$defs/capability" },
+        "reasoningTokens": { "$ref": "#/$defs/capability" },
+        "totalTokens": { "$ref": "#/$defs/capability" },
+        "cost": { "$ref": "#/$defs/capability" },
+        "childAgents": { "$ref": "#/$defs/capability" },
+        "agentDepth": { "$ref": "#/$defs/capability" }
+      }
+    }
+  },
+  "$defs": {
+    "capability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["observable", "enforcement", "source"],
+      "properties": {
+        "observable": { "type": "boolean" },
+        "enforcement": { "enum": ["preemptive", "boundary", "unsupported"] },
+        "source": { "enum": ["runtime", "connector"] }
+      }
+    }
+  }
+}

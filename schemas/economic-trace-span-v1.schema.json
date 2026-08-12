@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/economic-trace-span-v1.schema.json",
+  "title": "Ruhroh Economic Trace Span v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "traceId", "spanId", "kind", "status", "startedAt"],
+  "properties": {
+    "version": { "const": "ruhroh_economic_trace_span_v1" },
+    "traceId": { "$ref": "#/$defs/id" },
+    "spanId": { "$ref": "#/$defs/id" },
+    "parentSpanId": { "$ref": "#/$defs/id" },
+    "links": { "type": "array", "items": { "$ref": "#/$defs/id" }, "uniqueItems": true },
+    "kind": { "enum": ["agent_turn", "inference", "tool", "retrieval", "embedding", "route_decision", "retry", "fallback", "child_agent"] },
+    "status": { "enum": ["ok", "error", "timeout", "cancelled", "unknown"] },
+    "startedAt": { "$ref": "#/$defs/nonEmptyString" },
+    "endedAt": { "$ref": "#/$defs/nonEmptyString" },
+    "durationMs": { "type": "number", "minimum": 0 },
+    "iteration": { "type": "integer", "minimum": 1 },
+    "agent": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "adapterId": { "$ref": "#/$defs/nonEmptyString" },
+        "agentIdHash": { "$ref": "#/$defs/sha256" },
+        "parentAgentIdHash": { "$ref": "#/$defs/sha256" },
+        "depth": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "inference": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": { "$ref": "#/$defs/nonEmptyString" },
+        "model": { "$ref": "#/$defs/nonEmptyString" },
+        "modelVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "routeHash": { "$ref": "#/$defs/sha256" },
+        "requestIdHash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "resourceObservationRefs": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true },
+    "evidenceRefs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["artifact", "sha256"],
+        "properties": {
+          "artifact": { "$ref": "#/$defs/nonEmptyString" },
+          "sha256": { "$ref": "#/$defs/sha256" }
+        }
+      }
+    },
+    "eventTypes": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "id": { "type": "string", "minLength": 8, "maxLength": 128, "pattern": "^[A-Za-z0-9._-]+$" },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "nonEmptyString": { "type": "string", "minLength": 1 }
+  }
+}

@@ -1,3 +1,13 @@
+export * from "./economics-runtime.js";
+
+import type {
+  RuhrohAdapterManifestV1,
+  RuhrohEconomicTraceSpanV1,
+  RuhrohEconomicsEnvelopeV1,
+  RuhrohEconomicsObservationV1,
+  RuhrohResourceBudgetOutcomeV1,
+} from "./economics-runtime.js";
+
 export type RuhrohContinuityLevel = "native_session" | "workspace_plus_transcript" | "workspace_only";
 export type RuhrohCompletionConfidence = "explicit" | "adapter_inferred";
 export type RuhrohCompletionDoneReason = "goal_satisfied";
@@ -11,7 +21,10 @@ export type RuhrohCompletionTerminalFailureReason =
   | "policy_blocked"
   | "out_of_scope"
   | "runtime_failure"
-  | "infra_failure";
+  | "infra_failure"
+  | "cancelled"
+  | "resource_budget_exhausted"
+  | "resource_budget_unobservable";
 
 export interface RuhrohEvidenceRef {
   kind: string;
@@ -73,6 +86,10 @@ export interface RunTurnResult {
   transcriptPath?: string | undefined;
   eventLogPath?: string | undefined;
   artifactPaths: Record<string, string>;
+  economicsObservations?: RuhrohEconomicsObservationV1[] | undefined;
+  economicTraceSpans?: RuhrohEconomicTraceSpanV1[] | undefined;
+  adapterManifest?: RuhrohAdapterManifestV1 | undefined;
+  resourceBudgetOutcome?: RuhrohResourceBudgetOutcomeV1 | undefined;
   raw: unknown;
 }
 
@@ -92,6 +109,10 @@ export interface RunAgentArtifactManifest {
   transcriptPaths: string[];
   eventLogPaths: string[];
   artifactPaths: Record<string, string>;
+  economics?: RuhrohEconomicsEnvelopeV1 | undefined;
+  economicTraceSpans?: RuhrohEconomicTraceSpanV1[] | undefined;
+  adapterManifest?: RuhrohAdapterManifestV1 | undefined;
+  resourceBudgetOutcome?: RuhrohResourceBudgetOutcomeV1 | undefined;
 }
 
 export interface CleanupInput {
@@ -115,6 +136,7 @@ export interface RuhrohRunAgentAdapterCapabilities {
   continuity: RuhrohContinuityLevel;
   tools: string[];
   network: boolean;
+  economics?: RuhrohAdapterManifestV1 | undefined;
 }
 
 const CONTINUITY_RANK: Record<RuhrohContinuityLevel, number> = {

@@ -1,0 +1,156 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/outcome-frontier-v1.schema.json",
+  "title": "Ruhroh Outcome Frontier v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "status", "reasonCodes", "coverage", "targets", "paretoFrontierTargetIds", "robustFrontierTargetIds"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/outcome-frontier-v1.schema.json" },
+    "version": { "const": "ruhroh_outcome_frontier_v1" },
+    "status": { "enum": ["available", "quality_only", "unavailable"] },
+    "reasonCodes": { "$ref": "#/$defs/stringArray" },
+    "methodology": { "$ref": "#/$defs/methodology" },
+    "coverage": { "$ref": "#/$defs/frontierCoverage" },
+    "targets": { "type": "array", "items": { "$ref": "#/$defs/target" } },
+    "paretoFrontierTargetIds": { "$ref": "#/$defs/stringArray" },
+    "robustFrontierTargetIds": { "$ref": "#/$defs/stringArray" }
+  },
+  "$defs": {
+    "stringArray": { "type": "array", "items": { "type": "string" } },
+    "nonEmptyStringArray": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suiteId", "suiteVersion", "acceptedOutcome", "aggregation", "suitableWorkloads", "requiredEvidence", "hiddenWork", "gamingRisks", "qualityFloor", "objectives", "bootstrap", "dominance"],
+      "properties": {
+        "suiteId": { "type": "string", "minLength": 1 },
+        "suiteVersion": { "type": "string", "minLength": 1 },
+        "acceptedOutcome": { "type": "object" },
+        "aggregation": {
+          "type": "object",
+          "required": ["weighting", "failedWork"],
+          "properties": {
+            "weighting": { "const": "run_plan" },
+            "failedWork": { "const": "included_in_resource_numerator" }
+          }
+        },
+        "suitableWorkloads": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "requiredEvidence": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "hiddenWork": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "gamingRisks": { "$ref": "#/$defs/nonEmptyStringArray" },
+        "qualityFloor": { "type": "object" },
+        "objectives": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["cost_per_accepted_outcome", "tokens_per_accepted_outcome", "p95_implementation_wall_time_ms"] }
+        },
+        "bootstrap": {
+          "type": "object",
+          "required": ["resamples", "minValidResamples", "confidenceLevel", "stratification"],
+          "properties": {
+            "resamples": { "const": 1000 },
+            "minValidResamples": { "const": 950 },
+            "confidenceLevel": { "const": 0.95 },
+            "stratification": { "const": "scenario" }
+          }
+        },
+        "dominance": { "const": "pareto_minimize_with_robust_ci_v1" }
+      }
+    },
+    "frontierCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetCount", "qualityEligibleTargetCount", "comparableTargetCount", "paretoFrontierTargetCount", "robustFrontierTargetCount"],
+      "properties": {
+        "targetCount": { "type": "integer", "minimum": 0 },
+        "qualityEligibleTargetCount": { "type": "integer", "minimum": 0 },
+        "comparableTargetCount": { "type": "integer", "minimum": 0 },
+        "paretoFrontierTargetCount": { "type": "integer", "minimum": 0 },
+        "robustFrontierTargetCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "confidenceInterval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "confidenceLevel", "lower", "upper"],
+      "properties": {
+        "method": { "enum": ["wilson", "bootstrap_percentile"] },
+        "confidenceLevel": { "const": 0.95 },
+        "lower": { "type": "number", "minimum": 0 },
+        "upper": { "type": "number", "minimum": 0 }
+      }
+    },
+    "metricCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "observedRuns", "completeRuns", "totalRuns"],
+      "properties": {
+        "status": { "enum": ["complete", "partial", "unknown", "unavailable"] },
+        "observedRuns": { "type": "integer", "minimum": 0 },
+        "completeRuns": { "type": "integer", "minimum": 0 },
+        "totalRuns": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "scenarioQuality": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["scenarioId", "runs", "acceptedOutcomes", "passRate", "passRateCi95", "floorStatus", "reasonCodes"],
+      "properties": {
+        "scenarioId": { "type": "string", "minLength": 1 },
+        "runs": { "type": "integer", "minimum": 0 },
+        "acceptedOutcomes": { "type": "integer", "minimum": 0 },
+        "passRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "passRateCi95": { "$ref": "#/$defs/confidenceInterval" },
+        "floorStatus": { "enum": ["passed", "failed", "indeterminate"] },
+        "reasonCodes": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "objective": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["objective", "status", "unit", "acceptedOutcomes", "coverage", "planWeightCoverage", "validBootstrapSamples", "reasonCodes"],
+      "properties": {
+        "objective": { "enum": ["cost_per_accepted_outcome", "tokens_per_accepted_outcome", "p95_implementation_wall_time_ms"] },
+        "status": { "enum": ["available", "partial", "unavailable", "indeterminate"] },
+        "unit": { "enum": ["usd_per_accepted_outcome", "tokens_per_accepted_outcome", "milliseconds"] },
+        "acceptedOutcomes": { "type": "integer", "minimum": 0 },
+        "coverage": { "$ref": "#/$defs/metricCoverage" },
+        "planWeightCoverage": { "$ref": "#/$defs/metricCoverage" },
+        "value": { "type": "number", "minimum": 0 },
+        "totalConsumption": { "type": "number", "minimum": 0 },
+        "weightedAcceptedOutcomes": { "type": "number", "minimum": 0 },
+        "ci95": { "$ref": "#/$defs/confidenceInterval" },
+        "validBootstrapSamples": { "type": "integer", "minimum": 0, "maximum": 1000 },
+        "reasonCodes": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmarkTargetId", "executionAdapterIds", "identity", "runs", "acceptedOutcomes", "quality", "objectives", "paretoStatus", "paretoDominatedByTargetIds", "robustStatus", "robustDominatedByTargetIds", "reasonCodes"],
+      "properties": {
+        "benchmarkTargetId": { "type": "string", "minLength": 1 },
+        "executionAdapterIds": { "$ref": "#/$defs/stringArray" },
+        "identity": { "type": "object" },
+        "runs": { "type": "integer", "minimum": 0 },
+        "acceptedOutcomes": { "type": "integer", "minimum": 0 },
+        "quality": {
+          "type": "object",
+          "required": ["floorStatus", "scenarioResults"],
+          "properties": {
+            "floorStatus": { "enum": ["passed", "failed", "indeterminate"] },
+            "scenarioResults": { "type": "array", "items": { "$ref": "#/$defs/scenarioQuality" } }
+          }
+        },
+        "objectives": { "type": "array", "items": { "$ref": "#/$defs/objective" } },
+        "paretoStatus": { "enum": ["pareto", "dominated", "ineligible", "indeterminate"] },
+        "paretoDominatedByTargetIds": { "$ref": "#/$defs/stringArray" },
+        "robustStatus": { "enum": ["pareto", "dominated", "ineligible", "indeterminate"] },
+        "robustDominatedByTargetIds": { "$ref": "#/$defs/stringArray" },
+        "reasonCodes": { "$ref": "#/$defs/stringArray" }
+      }
+    }
+  }
+}

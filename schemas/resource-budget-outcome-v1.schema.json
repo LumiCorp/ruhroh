@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/resource-budget-outcome-v1.schema.json",
+  "title": "Ruhroh Resource Budget Outcome v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "scope", "status", "limits"],
+  "properties": {
+    "version": { "const": "ruhroh_resource_budget_outcome_v1" },
+    "scope": { "const": "implementation" },
+    "status": { "enum": ["within", "exhausted", "overrun", "unobservable"] },
+    "termination": { "$ref": "#/$defs/processTermination" },
+    "limits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource", "limit", "enforcement", "coverage", "status"],
+        "properties": {
+          "resource": { "type": "string", "minLength": 1 },
+          "limit": { "type": "number", "minimum": 0 },
+          "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+          "observed": { "type": "number", "minimum": 0 },
+          "enforcement": { "enum": ["preemptive", "boundary"] },
+          "coverage": { "enum": ["complete", "partial", "unknown", "unavailable"] },
+          "status": { "enum": ["within", "exhausted", "overrun", "unobservable"] },
+          "triggerSpanId": { "type": "string", "minLength": 1 },
+          "triggeredAt": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "processTermination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "version",
+        "scope",
+        "reason",
+        "timeoutMs",
+        "timeoutObservedAtMs",
+        "gracePeriodMs",
+        "signalsSent",
+        "terminatedBy",
+        "terminationDurationMs",
+        "terminatedAtMs"
+      ],
+      "properties": {
+        "version": { "const": "ruhroh_process_termination_v1" },
+        "scope": { "enum": ["process_group", "process"] },
+        "reason": { "enum": ["wall_time_limit", "iteration_timeout"] },
+        "timeoutMs": { "type": "number", "minimum": 0 },
+        "timeoutObservedAtMs": { "type": "number", "minimum": 0 },
+        "gracePeriodMs": { "const": 5000 },
+        "signalsSent": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "enum": ["SIGTERM", "SIGKILL"] }
+        },
+        "terminatedBy": { "enum": ["already_exited", "SIGTERM", "SIGKILL", "not_found"] },
+        "terminationDurationMs": { "type": "number", "minimum": 0 },
+        "terminatedAtMs": { "type": "number", "minimum": 0 },
+        "limitMs": { "type": "number", "minimum": 0 },
+        "overrunMs": { "type": "number", "minimum": 0 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "reason": { "const": "wall_time_limit" } } },
+          "then": { "required": ["limitMs", "overrunMs"] },
+          "else": {
+            "not": {
+              "anyOf": [
+                { "required": ["limitMs"] },
+                { "required": ["overrunMs"] }
+              ]
+            }
+          }
+        },
+        {
+          "if": { "properties": { "signalsSent": { "contains": { "const": "SIGKILL" } } } },
+          "then": { "properties": { "signalsSent": { "prefixItems": [{ "const": "SIGTERM" }] } } }
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/run-agent-result-v2.schema.json",
+  "title": "Ruhroh Run Agent Result v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["version", "status"],
+  "properties": {
+    "version": { "const": "ruhroh_run_agent_result_v2" },
+    "status": { "enum": ["goal_satisfied", "continue", "cannot_satisfy", "policy_blocked", "out_of_scope", "runtime_failure", "infra_failure", "cancelled"] },
+    "runId": { "type": "string", "minLength": 1 },
+    "threadId": { "type": "string", "minLength": 1 },
+    "adapterVersion": { "type": "string", "minLength": 1 },
+    "model": { "type": "object" },
+    "economicsObservations": {
+      "type": "array",
+      "items": { "$ref": "economics-envelope-v1.schema.json#/$defs/observation" }
+    },
+    "economicTraceSpans": {
+      "type": "array",
+      "items": { "$ref": "economic-trace-span-v1.schema.json" }
+    },
+    "adapterManifest": { "$ref": "adapter-manifest-v1.schema.json" },
+    "resourceBudgetOutcome": { "$ref": "resource-budget-outcome-v1.schema.json" },
+    "artifacts": { "type": "object", "additionalProperties": { "type": "string" } }
+  }
+}

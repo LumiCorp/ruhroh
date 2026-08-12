@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/resource-budgets-v1.schema.json",
+  "title": "Ruhroh Resource Budgets v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "scope", "onUnobservable", "limits"],
+  "properties": {
+    "version": { "const": "ruhroh_resource_budgets_v1" },
+    "scope": { "const": "implementation" },
+    "onUnobservable": { "const": "fail" },
+    "limits": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["resource", "max", "requiredEnforcement"],
+        "properties": {
+          "resource": { "enum": ["wallTimeMs", "implementationIterations", "modelCalls", "failedModelCalls", "retryAttempts", "toolCalls", "inputTokens", "outputTokens", "cachedInputTokens", "reasoningTokens", "totalTokens", "cost", "childAgents", "agentDepth"] },
+          "max": { "type": "number", "minimum": 0 },
+          "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+          "requiredEnforcement": { "enum": ["preemptive", "boundary"] }
+        },
+        "allOf": [{
+          "if": { "properties": { "resource": { "const": "cost" } }, "required": ["resource"] },
+          "then": { "required": ["currency"] }
+        }]
+      }
+    }
+  }
+}

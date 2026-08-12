@@ -1,0 +1,135 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/economics-envelope-v1.schema.json",
+  "title": "Ruhroh Economics Envelope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "scope", "observations", "totals", "coverage", "legacy", "warnings"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "version": { "const": "ruhroh_economics_envelope_v1" },
+    "scope": { "const": "run" },
+    "observations": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/observation" }
+    },
+    "totals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["usage", "costs"],
+      "properties": {
+        "usage": { "$ref": "#/$defs/usage" },
+        "costs": { "type": "array", "items": { "$ref": "#/$defs/cost" } }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["wallTimeMs", "implementationIterations"],
+      "properties": {
+        "wallTimeMs": { "$ref": "#/$defs/nonNegativeNumber" },
+        "implementationIterations": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "coverage": {
+      "type": "object",
+      "additionalProperties": { "$ref": "#/$defs/metricCoverage" }
+    },
+    "traceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "sha256", "spanCount", "coverage"],
+      "properties": {
+        "artifact": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "spanCount": { "type": "integer", "minimum": 0 },
+        "coverage": { "enum": ["complete", "partial", "unknown"] }
+      }
+    },
+    "legacy": { "type": "boolean" },
+    "warnings": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+  },
+  "$defs": {
+    "observation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "observationId", "seriesId", "sequence", "scope", "aggregation", "accounting", "coverage", "source"],
+      "anyOf": [
+        { "required": ["usage"] },
+        { "required": ["cost"] }
+      ],
+      "properties": {
+        "version": { "const": "ruhroh_economics_observation_v1" },
+        "observationId": { "$ref": "#/$defs/nonEmptyString" },
+        "seriesId": { "$ref": "#/$defs/nonEmptyString" },
+        "sequence": { "type": "integer", "minimum": 1 },
+        "scope": { "enum": ["model_call", "turn", "session", "run"] },
+        "aggregation": { "enum": ["delta", "cumulative"] },
+        "accounting": { "enum": ["exclusive", "inclusive_checkpoint"] },
+        "coverage": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["status"],
+          "properties": {
+            "status": { "enum": ["complete", "partial", "unknown"] },
+            "missingReasons": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+          }
+        },
+        "source": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "name", "quality"],
+          "properties": {
+            "kind": { "enum": ["provider_api", "gateway", "sdk", "adapter", "runtime", "invoice", "environment", "legacy"] },
+            "name": { "$ref": "#/$defs/nonEmptyString" },
+            "quality": { "enum": ["billed", "metered", "reported", "estimated", "manual", "legacy"] },
+            "observedAt": { "$ref": "#/$defs/nonEmptyString" },
+            "priceBasisId": { "$ref": "#/$defs/nonEmptyString" }
+          }
+        },
+        "usage": { "$ref": "#/$defs/usage" },
+        "cost": { "$ref": "#/$defs/cost" }
+      }
+    },
+    "usage": {
+      "type": "object",
+      "additionalProperties": false,
+      "minProperties": 1,
+      "properties": {
+        "modelCalls": { "$ref": "#/$defs/nonNegativeNumber" },
+        "failedModelCalls": { "$ref": "#/$defs/nonNegativeNumber" },
+        "retryAttempts": { "$ref": "#/$defs/nonNegativeNumber" },
+        "toolCalls": { "$ref": "#/$defs/nonNegativeNumber" },
+        "inputTokens": { "$ref": "#/$defs/nonNegativeNumber" },
+        "outputTokens": { "$ref": "#/$defs/nonNegativeNumber" },
+        "cachedInputTokens": { "$ref": "#/$defs/nonNegativeNumber" },
+        "reasoningTokens": { "$ref": "#/$defs/nonNegativeNumber" },
+        "totalTokens": { "$ref": "#/$defs/nonNegativeNumber" },
+        "childAgents": { "$ref": "#/$defs/nonNegativeNumber" },
+        "maxAgentDepth": { "$ref": "#/$defs/nonNegativeNumber" }
+      }
+    },
+    "cost": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["amount", "currency", "kind"],
+      "properties": {
+        "amount": { "$ref": "#/$defs/nonNegativeNumber" },
+        "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+        "kind": { "enum": ["billed", "metered", "estimated", "manual"] }
+      }
+    },
+    "metricCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "observationCount", "completeObservationCount"],
+      "properties": {
+        "status": { "enum": ["complete", "partial", "unknown", "unavailable"] },
+        "observationCount": { "type": "integer", "minimum": 0 },
+        "completeObservationCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "nonNegativeNumber": { "type": "number", "minimum": 0 },
+    "nonEmptyString": { "type": "string", "minLength": 1 }
+  }
+}

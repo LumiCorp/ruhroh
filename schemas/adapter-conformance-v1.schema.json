@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/adapter-conformance-v1.schema.json",
+  "title": "Ruhroh Adapter Conformance v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "adapterId", "adapterVersion", "manifestSha256", "passed", "checks"],
+  "properties": {
+    "version": { "const": "ruhroh_adapter_conformance_v1" },
+    "adapterId": { "type": "string", "minLength": 1 },
+    "adapterVersion": { "type": "string", "minLength": 1 },
+    "manifestSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "passed": { "type": "boolean" },
+    "checks": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "status", "details"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "status": { "enum": ["passed", "failed"] },
+          "details": { "type": "string", "minLength": 1 }
+        }
+      }
+    }
+  }
+}

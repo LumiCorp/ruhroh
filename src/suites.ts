@@ -1,25 +1,50 @@
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
-export type RuhrohSuiteVersion = "ruhroh_suite_v1";
-export type RuhrohSuiteAggregationUnit = "scenario_adapter";
-export type RuhrohSuiteReportPolicy = "pass_rate_ci_pass_at_k";
+export type RuhrohSuiteVersion = "ruhroh_suite_v1" | "ruhroh_suite_v2";
+export type RuhrohSuiteAggregationUnit = "scenario_adapter" | "scenario_benchmark_target";
+export type RuhrohSuiteReportPolicy = "pass_rate_ci_pass_at_k" | "pass_rate_ci_pass_at_k_outcome_frontier";
+export type RuhrohEfficiencyObjective =
+  | "cost_per_accepted_outcome"
+  | "tokens_per_accepted_outcome"
+  | "p95_implementation_wall_time_ms";
 
-export interface RuhrohBenchmarkSuite {
-  version: RuhrohSuiteVersion;
+export interface RuhrohSuiteEfficiencyContract {
+  denominator: {
+    id: "accepted_scenario_outcome";
+    predicate: "score_1_and_eval_passed";
+    failedWork: "included_in_resource_numerator";
+  };
+  aggregation: {
+    weighting: "run_plan";
+    failedWork: "included_in_resource_numerator";
+  };
+  suitableWorkloads: string[];
+  requiredEvidence: string[];
+  hiddenWork: string[];
+  gamingRisks: string[];
+  qualityFloor: {
+    metric: "pass_rate";
+    rule: "wilson_lower_bound_gte";
+    threshold: number;
+    scope: "each_scenario";
+  };
+  objectives: RuhrohEfficiencyObjective[];
+  bootstrap: {
+    resamples: 1000;
+    minValidResamples: 950;
+    confidenceLevel: 0.95;
+    stratification: "scenario";
+  };
+}
+
+interface RuhrohBenchmarkSuiteBase {
   id: string;
   title: string;
   suiteVersion: string;
   description: string;
   scenarioIds: string[];
   scenarioVersions: Record<string, string>;
-  methodology: {
-    minRuns: number;
-    aggregationUnit: RuhrohSuiteAggregationUnit;
-    reportPolicy: RuhrohSuiteReportPolicy;
-    confidenceLevel: 0.95;
-    retryPolicy: string;
-  };
   governance: {
     owner: string;
     createdAt?: string | undefined;
@@ -32,6 +57,31 @@ export interface RuhrohBenchmarkSuite {
     deprecationPolicy: string;
   };
 }
+
+export interface RuhrohBenchmarkSuiteV1 extends RuhrohBenchmarkSuiteBase {
+  version: "ruhroh_suite_v1";
+  methodology: {
+    minRuns: number;
+    aggregationUnit: "scenario_adapter";
+    reportPolicy: "pass_rate_ci_pass_at_k";
+    confidenceLevel: 0.95;
+    retryPolicy: string;
+  };
+}
+
+export interface RuhrohBenchmarkSuiteV2 extends RuhrohBenchmarkSuiteBase {
+  version: "ruhroh_suite_v2";
+  methodology: {
+    minRuns: number;
+    aggregationUnit: "scenario_benchmark_target";
+    reportPolicy: "pass_rate_ci_pass_at_k_outcome_frontier";
+    confidenceLevel: 0.95;
+    retryPolicy: string;
+    efficiency: RuhrohSuiteEfficiencyContract;
+  };
+}
+
+export type RuhrohBenchmarkSuite = RuhrohBenchmarkSuiteV1 | RuhrohBenchmarkSuiteV2;
 
 export interface RuhrohSuiteSource {
   suiteDir: string;
@@ -79,8 +129,8 @@ export function validateRuhrohSuite(
   } = {},
 ): string[] {
   const errors: string[] = [];
-  if (suite.version !== "ruhroh_suite_v1") {
-    errors.push("version must be ruhroh_suite_v1");
+  if (suite.version !== "ruhroh_suite_v1" && suite.version !== "ruhroh_suite_v2") {
+    errors.push("version must be ruhroh_suite_v1 or ruhroh_suite_v2");
   }
   if (typeof suite.id !== "string" || suite.id.trim().length === 0) {
     errors.push("id is required");
@@ -123,7 +173,7 @@ export function validateRuhrohSuite(
     }
   }
   errors.push(...validateScenarioVersionLocks(suite, options.availableScenarioVersions));
-  errors.push(...validateMethodology(suite.methodology));
+  errors.push(...validateMethodology(suite));
   errors.push(...validateGovernance(suite.governance));
   return errors;
 }
@@ -162,19 +212,32 @@ export function validateRuhrohSuiteSource(
   };
 }
 
-function validateMethodology(methodology: RuhrohBenchmarkSuite["methodology"]): string[] {
+function validateMethodology(suite: RuhrohBenchmarkSuite): string[] {
   const errors: string[] = [];
+  const methodology = suite.methodology;
   if (!isRecord(methodology)) {
     return ["methodology is required"];
   }
   if (typeof methodology.minRuns !== "number" || !Number.isFinite(methodology.minRuns) || methodology.minRuns <= 0) {
     errors.push("methodology.minRuns must be positive");
+  } else if (suite.version === "ruhroh_suite_v2" && !Number.isInteger(methodology.minRuns)) {
+    errors.push("methodology.minRuns must be an integer for ruhroh_suite_v2");
   }
-  if (methodology.aggregationUnit !== "scenario_adapter") {
-    errors.push("methodology.aggregationUnit must be scenario_adapter");
-  }
-  if (methodology.reportPolicy !== "pass_rate_ci_pass_at_k") {
-    errors.push("methodology.reportPolicy must be pass_rate_ci_pass_at_k");
+  if (suite.version === "ruhroh_suite_v1") {
+    if (methodology.aggregationUnit !== "scenario_adapter") {
+      errors.push("methodology.aggregationUnit must be scenario_adapter for ruhroh_suite_v1");
+    }
+    if (methodology.reportPolicy !== "pass_rate_ci_pass_at_k") {
+      errors.push("methodology.reportPolicy must be pass_rate_ci_pass_at_k for ruhroh_suite_v1");
+    }
+  } else if (suite.version === "ruhroh_suite_v2") {
+    if (methodology.aggregationUnit !== "scenario_benchmark_target") {
+      errors.push("methodology.aggregationUnit must be scenario_benchmark_target for ruhroh_suite_v2");
+    }
+    if (methodology.reportPolicy !== "pass_rate_ci_pass_at_k_outcome_frontier") {
+      errors.push("methodology.reportPolicy must be pass_rate_ci_pass_at_k_outcome_frontier for ruhroh_suite_v2");
+    }
+    errors.push(...validateEfficiencyContract(suite.methodology.efficiency, methodology.minRuns));
   }
   if (methodology.confidenceLevel !== 0.95) {
     errors.push("methodology.confidenceLevel must be 0.95");
@@ -183,6 +246,119 @@ function validateMethodology(methodology: RuhrohBenchmarkSuite["methodology"]): 
     errors.push("methodology.retryPolicy is required");
   }
   return errors;
+}
+
+function validateEfficiencyContract(value: unknown, minRuns: unknown): string[] {
+  if (!isRecord(value)) {
+    return ["methodology.efficiency is required for ruhroh_suite_v2"];
+  }
+  const errors: string[] = [];
+  const denominator = value.denominator;
+  if (!isRecord(denominator)) {
+    errors.push("methodology.efficiency.denominator is required");
+  } else {
+    if (denominator.id !== "accepted_scenario_outcome") {
+      errors.push("methodology.efficiency.denominator.id must be accepted_scenario_outcome");
+    }
+    if (denominator.predicate !== "score_1_and_eval_passed") {
+      errors.push("methodology.efficiency.denominator.predicate must be score_1_and_eval_passed");
+    }
+    if (denominator.failedWork !== "included_in_resource_numerator") {
+      errors.push("methodology.efficiency.denominator.failedWork must be included_in_resource_numerator");
+    }
+  }
+  const qualityFloor = value.qualityFloor;
+  if (!isRecord(qualityFloor)) {
+    errors.push("methodology.efficiency.qualityFloor is required");
+  } else {
+    if (qualityFloor.metric !== "pass_rate") {
+      errors.push("methodology.efficiency.qualityFloor.metric must be pass_rate");
+    }
+    if (qualityFloor.rule !== "wilson_lower_bound_gte") {
+      errors.push("methodology.efficiency.qualityFloor.rule must be wilson_lower_bound_gte");
+    }
+    if (qualityFloor.scope !== "each_scenario") {
+      errors.push("methodology.efficiency.qualityFloor.scope must be each_scenario");
+    }
+    if (typeof qualityFloor.threshold !== "number" || !Number.isFinite(qualityFloor.threshold) || qualityFloor.threshold <= 0 || qualityFloor.threshold > 1) {
+      errors.push("methodology.efficiency.qualityFloor.threshold must be greater than 0 and at most 1");
+    } else if (
+      typeof minRuns === "number"
+      && Number.isFinite(minRuns)
+      && minRuns > 0
+      && ruhrohWilsonLowerBound(minRuns, minRuns) + Number.EPSILON < qualityFloor.threshold
+    ) {
+      errors.push(
+        `methodology.efficiency.qualityFloor.threshold ${qualityFloor.threshold} is unreachable at methodology.minRuns ${minRuns}; maximum Wilson lower bound is ${ruhrohWilsonLowerBound(minRuns, minRuns).toFixed(6)}`,
+      );
+    }
+  }
+  const aggregation = value.aggregation;
+  if (!isRecord(aggregation)) {
+    errors.push("methodology.efficiency.aggregation is required");
+  } else {
+    if (aggregation.weighting !== "run_plan") {
+      errors.push("methodology.efficiency.aggregation.weighting must be run_plan");
+    }
+    if (aggregation.failedWork !== "included_in_resource_numerator") {
+      errors.push("methodology.efficiency.aggregation.failedWork must be included_in_resource_numerator");
+    }
+  }
+  for (const field of ["suitableWorkloads", "requiredEvidence", "hiddenWork", "gamingRisks"] as const) {
+    errors.push(...validateNonEmptyStringArray(value[field], `methodology.efficiency.${field}`));
+  }
+  const objectives = value.objectives;
+  const allowedObjectives = new Set<RuhrohEfficiencyObjective>([
+    "cost_per_accepted_outcome",
+    "tokens_per_accepted_outcome",
+    "p95_implementation_wall_time_ms",
+  ]);
+  if (!Array.isArray(objectives) || objectives.length === 0) {
+    errors.push("methodology.efficiency.objectives must include at least one objective");
+  } else {
+    const seen = new Set<string>();
+    for (const objective of objectives) {
+      if (typeof objective !== "string" || !allowedObjectives.has(objective as RuhrohEfficiencyObjective)) {
+        errors.push(`methodology.efficiency.objectives contains unsupported objective: ${String(objective)}`);
+      } else if (seen.has(objective)) {
+        errors.push(`methodology.efficiency.objectives contains duplicate objective: ${objective}`);
+      }
+      if (typeof objective === "string") {
+        seen.add(objective);
+      }
+    }
+  }
+  const bootstrap = value.bootstrap;
+  if (!isRecord(bootstrap)) {
+    errors.push("methodology.efficiency.bootstrap is required");
+  } else {
+    if (bootstrap.resamples !== 1000) {
+      errors.push("methodology.efficiency.bootstrap.resamples must be 1000");
+    }
+    if (bootstrap.minValidResamples !== 950) {
+      errors.push("methodology.efficiency.bootstrap.minValidResamples must be 950");
+    }
+    if (bootstrap.confidenceLevel !== 0.95) {
+      errors.push("methodology.efficiency.bootstrap.confidenceLevel must be 0.95");
+    }
+    if (bootstrap.stratification !== "scenario") {
+      errors.push("methodology.efficiency.bootstrap.stratification must be scenario");
+    }
+  }
+  return errors;
+}
+
+export function ruhrohWilsonLowerBound(successes: number, total: number): number {
+  if (!Number.isFinite(successes) || !Number.isFinite(total) || total <= 0 || successes < 0 || successes > total) {
+    return 0;
+  }
+  const z = 1.959963984540054;
+  const proportion = successes / total;
+  const zSquared = z ** 2;
+  const denominator = 1 + zSquared / total;
+  const center = proportion + zSquared / (2 * total);
+  const margin = z * Math.sqrt((proportion * (1 - proportion) + zSquared / (4 * total)) / total);
+  return Math.max(0, Math.min(1, (center - margin) / denominator));
 }
 
 function validateScenarioVersionLocks(
