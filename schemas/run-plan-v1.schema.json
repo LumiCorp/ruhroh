@@ -41,6 +41,8 @@
           "items": { "type": "string", "minLength": 1 }
         },
         "targetConfigPath": { "type": "string", "minLength": 1 },
+        "adapterManifestPath": { "type": "string", "minLength": 1 },
+        "workloadBindingPath": { "type": "string", "minLength": 1 },
         "targets": {
           "type": "array",
           "items": { "type": "string", "minLength": 1 }
@@ -66,6 +68,8 @@
         "source": { "$ref": "#/$defs/sourceFingerprint" }
       }
     },
+    "workloadBinding": { "$ref": "workload-binding-v1.schema.json" },
+    "workloadBindingSource": { "$ref": "#/$defs/hashedSource" },
     "generated": {
       "type": "object",
       "additionalProperties": true,
@@ -101,6 +105,15 @@
         "instructionSha256": { "$ref": "#/$defs/sha256" }
       }
     },
+    "hashedSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    },
     "plannedScenario": {
       "type": "object",
       "additionalProperties": true,
@@ -110,6 +123,7 @@
         "title": { "type": "string", "minLength": 1 },
         "tier": { "enum": ["smoke", "standard", "extended"] },
         "scenarioVersion": { "type": "string", "minLength": 1 },
+        "workloadProfile": { "$ref": "workload-profile-v1.schema.json" },
         "source": { "$ref": "#/$defs/sourceFingerprint" }
       }
     },
@@ -122,6 +136,7 @@
         "adapter",
         "sampleId",
         "sampleSeed",
+        "weight",
         "runIndex",
         "runCount",
         "forwardedEnvKeys",
@@ -133,6 +148,7 @@
         "adapter": { "type": "string", "minLength": 1 },
         "sampleId": { "type": "string", "minLength": 1 },
         "sampleSeed": { "type": "string", "minLength": 1 },
+        "weight": { "type": "number", "exclusiveMinimum": 0 },
         "runIndex": { "type": "number", "minimum": 1 },
         "runCount": { "type": "number", "minimum": 1 },
         "forwardedEnvKeys": {
@@ -152,7 +168,12 @@
             "display": { "type": "string", "minLength": 1 }
           }
         },
-        "benchmarkTarget": { "$ref": "#/$defs/benchmarkTarget" }
+        "benchmarkTarget": { "$ref": "#/$defs/benchmarkTarget" },
+        "adapterManifest": { "$ref": "adapter-manifest-v1.schema.json" },
+        "adapterManifestPath": { "type": "string", "minLength": 1 },
+        "resourceBudgets": { "$ref": "resource-budgets-v1.schema.json" },
+        "effectiveBudgetSha256": { "$ref": "#/$defs/sha256" },
+        "effectiveCapabilitiesSha256": { "$ref": "#/$defs/sha256" }
       }
     },
     "benchmarkTarget": {
@@ -166,6 +187,7 @@
         },
         "adapterId": { "type": "string", "minLength": 1 },
         "adapterCommand": { "type": "string", "minLength": 1 },
+        "adapterManifestPath": { "type": "string", "minLength": 1 },
         "harness": { "$ref": "#/$defs/harness" },
         "requestedModel": { "$ref": "#/$defs/model" },
         "actualModel": { "$ref": "#/$defs/model" },
@@ -181,6 +203,7 @@
             { "type": "object", "additionalProperties": true }
           ]
         },
+        "controlSurface": { "$ref": "control-surface-v1.schema.json" },
         "env": {
           "type": "object",
           "additionalProperties": { "type": "string" }

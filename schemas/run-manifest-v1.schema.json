@@ -59,6 +59,13 @@
       }
     },
     "sample": { "$ref": "#/$defs/sample" },
+    "workloadBinding": { "$ref": "workload-binding-v1.schema.json" },
+    "workloadProfile": { "$ref": "workload-profile-v1.schema.json" },
+    "adapterManifest": { "$ref": "adapter-manifest-v1.schema.json" },
+    "adapterManifestSha256": { "$ref": "#/$defs/sha256" },
+    "resourceBudgets": { "$ref": "resource-budgets-v1.schema.json" },
+    "effectiveBudgetSha256": { "$ref": "#/$defs/sha256" },
+    "effectiveCapabilitiesSha256": { "$ref": "#/$defs/sha256" },
     "runAgent": {
       "type": "object",
       "additionalProperties": true,
@@ -76,6 +83,9 @@
         },
         "model": { "$ref": "#/$defs/model" },
         "usage": { "$ref": "#/$defs/usage" },
+        "economics": { "$ref": "economics-envelope-v1.schema.json" },
+        "adapterManifest": { "$ref": "adapter-manifest-v1.schema.json" },
+        "resourceBudgetOutcome": { "$ref": "resource-budget-outcome-v1.schema.json" },
         "command": { "$ref": "#/$defs/commandManifest" }
       }
     },
@@ -122,6 +132,8 @@
       }
     },
     "usage": { "$ref": "#/$defs/usage" },
+    "economics": { "$ref": "economics-envelope-v1.schema.json" },
+    "resourceBudgetOutcome": { "$ref": "resource-budget-outcome-v1.schema.json" },
     "benchmarkTarget": { "$ref": "#/$defs/benchmarkTarget" },
     "artifactPaths": {
       "type": "object",
@@ -141,7 +153,8 @@
         "id": { "type": "string", "minLength": 1 },
         "index": { "type": "number", "minimum": 1 },
         "count": { "type": "number", "minimum": 1 },
-        "seed": { "type": "string", "minLength": 1 }
+        "seed": { "type": "string", "minLength": 1 },
+        "weight": { "type": "number", "exclusiveMinimum": 0 }
       }
     },
     "model": {
