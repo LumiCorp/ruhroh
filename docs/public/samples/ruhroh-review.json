@@ -10,7 +10,7 @@
   "reviewQueue": [
     {
       "scenarioId": "simple-newsletter",
-      "adapter": "docs-fixture-native-stack",
+      "adapter": "agent-a",
       "runId": "sample-newsletter-agent-a-2",
       "status": "failed",
       "evalStatus": "failed",

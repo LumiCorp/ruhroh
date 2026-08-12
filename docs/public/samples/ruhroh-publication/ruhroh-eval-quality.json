@@ -14,7 +14,7 @@
     {
       "resultPath": "sources/results/run-1/ruhroh-loop-result.json",
       "scenarioId": "simple-newsletter",
-      "adapter": "docs-fixture-native-stack",
+      "adapter": "agent-a",
       "runId": "sample-newsletter-agent-a-1",
       "evalStatus": "passed",
       "score": 1,
@@ -33,7 +33,7 @@
     {
       "resultPath": "sources/results/run-2/ruhroh-loop-result.json",
       "scenarioId": "simple-newsletter",
-      "adapter": "docs-fixture-native-stack",
+      "adapter": "agent-a",
       "runId": "sample-newsletter-agent-a-2",
       "evalStatus": "failed",
       "score": 0,

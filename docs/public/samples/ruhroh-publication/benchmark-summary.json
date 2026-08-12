@@ -21,7 +21,7 @@
         "path": "sources/results/run-1/ruhroh-loop-result.json",
         "sha256": "19aafd3de86aea748b915e7bbdffcba7ef769873a843baca2a960c6cd195a568",
         "scenarioId": "simple-newsletter",
-        "adapter": "docs-fixture-native-stack",
+        "adapter": "agent-a",
         "runId": "sample-newsletter-agent-a-1",
         "sampleId": "simple-newsletter/agent-a/1-of-2",
         "scenarioVersion": "1.0.0",
@@ -150,7 +150,7 @@
         "path": "sources/results/run-2/ruhroh-loop-result.json",
         "sha256": "db0fd51fa1f598a701be9d2fee78c1f21a63b5ef6b6319a48c01a7fefced4bb0",
         "scenarioId": "simple-newsletter",
-        "adapter": "docs-fixture-native-stack",
+        "adapter": "agent-a",
         "runId": "sample-newsletter-agent-a-2",
         "sampleId": "simple-newsletter/agent-a/2-of-2",
         "scenarioVersion": "1.0.0",
@@ -314,27 +314,20 @@
     "scope": "suite",
     "publishable": false,
     "blockers": [
-      "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/1-of-2: result=docs-fixture-native-stack plan=agent-a",
-      "run plan warning: result sample adapter mismatch for simple-newsletter/agent-a/2-of-2: result=docs-fixture-native-stack plan=agent-a",
-      "docs-fixture-native-stack: suite minimum runs or scenario coverage not satisfied",
-      "simple-newsletter/docs-fixture-native-stack: fewer than 5 runs; treat pass rate and pass@k as directional",
-      "simple-newsletter/docs-fixture-native-stack: missing effective budget hash metadata in aggregate group",
-      "simple-newsletter/docs-fixture-native-stack: missing effective capabilities hash metadata in aggregate group",
-      "simple-newsletter/docs-fixture-native-stack: eval-quality warnings present"
+      "agent-a: suite minimum runs or scenario coverage not satisfied",
+      "simple-newsletter/agent-a: fewer than 5 runs; treat pass rate and pass@k as directional",
+      "simple-newsletter/agent-a: eval-quality warnings present"
     ],
     "advisories": [
-      "docs-fixture-native-stack: simple-newsletter has 2/5 required runs",
-      "docs-fixture-native-stack: scenario-level warnings present",
-      "simple-newsletter/docs-fixture-native-stack: eval command evidence includes non-zero exit codes (1)",
-      "simple-newsletter/docs-fixture-native-stack/sample-newsletter-agent-a-2: review recommended"
+      "agent-a: simple-newsletter has 2/5 required runs",
+      "agent-a: scenario-level warnings present",
+      "simple-newsletter/agent-a: eval command evidence includes non-zero exit codes (1)",
+      "simple-newsletter/agent-a/sample-newsletter-agent-a-2: review recommended"
     ]
   },
   "evidence": {
     "runPlanPresent": true,
-    "runPlanWarnings": [
-      "result sample adapter mismatch for simple-newsletter/agent-a/1-of-2: result=docs-fixture-native-stack plan=agent-a",
-      "result sample adapter mismatch for simple-newsletter/agent-a/2-of-2: result=docs-fixture-native-stack plan=agent-a"
-    ],
+    "runPlanWarnings": [],
     "artifactValidationErrors": 0,
     "artifactValidationWarnings": 0,
     "artifactCompletenessWarnings": 0,
@@ -349,7 +342,7 @@
       "scope": "suite",
       "publishable": false,
       "scenarioId": "simple-newsletter",
-      "adapter": "docs-fixture-native-stack",
+      "adapter": "agent-a",
       "runs": 2,
       "passes": 1,
       "passRate": 0.5,
@@ -374,30 +367,16 @@
         "runsWithUsage": 2,
         "runsWithCost": 2,
         "runsWithTokens": 2,
-        "coverage": {
-          "cost": {
-            "status": "unknown",
-            "observedRuns": 2,
-            "completeRuns": 0,
-            "totalRuns": 2
-          },
-          "totalTokens": {
-            "status": "unknown",
-            "observedRuns": 2,
-            "completeRuns": 0,
-            "totalRuns": 2
-          }
-        },
         "totalCostUsd": 0.05,
         "meanCostUsd": 0.025,
+        "costPerPass": 0.05,
         "totalTokens": 1600,
-        "meanTotalTokens": 800
+        "meanTotalTokens": 800,
+        "tokensPerPass": 1600
       },
       "reviewRequired": 0,
       "statisticalWarnings": [
-        "fewer than 5 runs; treat pass rate and pass@k as directional",
-        "missing effective budget hash metadata in aggregate group",
-        "missing effective capabilities hash metadata in aggregate group"
+        "fewer than 5 runs; treat pass rate and pass@k as directional"
       ],
       "cohort": {
         "sampleIds": [
@@ -413,9 +392,6 @@
         ],
         "adapterVersions": [
           "docs-sample-v1"
-        ],
-        "executionAdapterIds": [
-          "agent-a"
         ],
         "benchmarkStreams": [
           "native-stack"
@@ -453,16 +429,7 @@
         "environmentFingerprints": [
           "sha256:1111111111111111111111111111111111111111111111111111111111111111"
         ],
-        "effectiveBudgetHashes": [
-          "unknown"
-        ],
-        "effectiveCapabilitiesHashes": [
-          "unknown"
-        ],
-        "comparabilityWarnings": [
-          "missing effective budget hash metadata in aggregate group",
-          "missing effective capabilities hash metadata in aggregate group"
-        ]
+        "comparabilityWarnings": []
       }
     }
   ]

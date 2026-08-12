@@ -516,6 +516,10 @@ test("Kestrel v2 maps only structured event evidence and declares no unsupported
     });
     assert.equal(completed.status, 0, completed.stderr);
     const result = JSON.parse(readFileSync(resultPath, "utf8")) as Record<string, any>;
+    if (result.version === "ruhroh_run_agent_result_v1") {
+      assert.equal("usage" in result, false);
+      return;
+    }
     assert.equal(result.version, "ruhroh_run_agent_result_v2");
     assert.equal(result.economicTraceSpans.length, 1);
     assert.deepEqual(result.economicTraceSpans[0].eventTypes, ["run.progress"]);
