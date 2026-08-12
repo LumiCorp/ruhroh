@@ -1,0 +1,112 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/provider-baseline-v1.schema.json",
+  "title": "Ruhroh Provider Baseline v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "baselineId", "createdAt", "controls", "margins", "metrics", "source"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/provider-baseline-v1.schema.json" },
+    "version": { "const": "ruhroh_provider_baseline_v1" },
+    "baselineId": { "$ref": "#/$defs/nonEmptyString" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "controls": { "$ref": "#/$defs/controls" },
+    "margins": { "$ref": "#/$defs/margins" },
+    "metrics": { "$ref": "#/$defs/metrics" },
+    "source": { "$ref": "#/$defs/hashedSource" }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "positiveNumber": { "type": "number", "exclusiveMinimum": 0 },
+    "proportion": { "type": "number", "minimum": 0, "maximum": 1 },
+    "interval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower", "upper"],
+      "properties": {
+        "lower": { "type": "number" },
+        "upper": { "type": "number" }
+      }
+    },
+    "proportionInterval": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["lower", "upper"],
+      "properties": {
+        "lower": { "$ref": "#/$defs/proportion" },
+        "upper": { "$ref": "#/$defs/proportion" }
+      }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["suiteId", "suiteVersion", "scenarioVersions", "benchmarkTargetId", "harnessId", "providerPath", "promptHash", "evaluatorSignature", "judgeIdentity", "environmentPolicyHash"],
+      "properties": {
+        "suiteId": { "$ref": "#/$defs/nonEmptyString" },
+        "suiteVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "scenarioVersions": {
+          "type": "object",
+          "minProperties": 1,
+          "propertyNames": { "minLength": 1 },
+          "additionalProperties": { "$ref": "#/$defs/nonEmptyString" }
+        },
+        "benchmarkTargetId": { "$ref": "#/$defs/nonEmptyString" },
+        "harnessId": { "$ref": "#/$defs/nonEmptyString" },
+        "harnessVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "providerPath": { "$ref": "#/$defs/nonEmptyString" },
+        "promptHash": { "$ref": "#/$defs/sha256" },
+        "evaluatorSignature": { "$ref": "#/$defs/nonEmptyString" },
+        "judgeIdentity": { "$ref": "#/$defs/nonEmptyString" },
+        "environmentPolicyHash": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "margins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qualityPassRateDelta", "latencyRatio", "consumptionRatio", "priceRatio"],
+      "properties": {
+        "qualityPassRateDelta": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "latencyRatio": { "$ref": "#/$defs/positiveNumber" },
+        "consumptionRatio": { "$ref": "#/$defs/positiveNumber" },
+        "priceRatio": { "$ref": "#/$defs/positiveNumber" }
+      }
+    },
+    "metrics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["passRate", "passRateCi95", "sampleCount"],
+      "properties": {
+        "passRate": { "$ref": "#/$defs/proportion" },
+        "passRateCi95": { "$ref": "#/$defs/proportionInterval" },
+        "p95ImplementationWallTimeMs": { "type": "number", "minimum": 0 },
+        "p95ImplementationWallTimeRatioCi95": { "$ref": "#/$defs/interval" },
+        "tokensPerAcceptedOutcome": { "type": "number", "minimum": 0 },
+        "tokenRatioCi95": { "$ref": "#/$defs/interval" },
+        "pricePerMillionTokens": { "type": "number", "minimum": 0 },
+        "priceRatioCi95": { "$ref": "#/$defs/interval" },
+        "observedModelFingerprint": { "$ref": "#/$defs/nonEmptyString" },
+        "sampleCount": { "type": "integer", "minimum": 0 },
+        "metricTestPValues": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "quality": { "$ref": "#/$defs/proportion" },
+            "latency": { "$ref": "#/$defs/proportion" },
+            "consumption": { "$ref": "#/$defs/proportion" },
+            "price": { "$ref": "#/$defs/proportion" }
+          }
+        }
+      }
+    },
+    "hashedSource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" }
+      }
+    }
+  }
+}

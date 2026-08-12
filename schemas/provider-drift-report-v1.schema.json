@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/provider-drift-report-v1.schema.json",
+  "title": "Ruhroh Provider Drift Report v1",
+  "$comment": "classification is the primary member of classifications; the comparison builder preserves this invariant.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "baselineId", "classification", "classifications", "confounders", "evidence", "margins", "multipleTesting"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/provider-drift-report-v1.schema.json" },
+    "version": { "const": "ruhroh_provider_drift_report_v1" },
+    "baselineId": { "$ref": "#/$defs/nonEmptyString" },
+    "classification": { "$ref": "#/$defs/classification" },
+    "classifications": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/classification" } },
+    "confounders": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true },
+    "evidence": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/nonEmptyString" } },
+    "margins": { "$ref": "#/$defs/margins" },
+    "multipleTesting": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "familySize", "alpha", "results"],
+      "properties": {
+        "method": { "const": "holm" },
+        "familySize": { "type": "integer", "minimum": 0 },
+        "alpha": { "const": 0.05 },
+        "results": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["metric", "rawPValue", "holmAdjustedPValue", "significant"],
+            "properties": {
+              "metric": { "enum": ["quality", "latency", "consumption", "price"] },
+              "rawPValue": { "type": "number", "minimum": 0, "maximum": 1 },
+              "holmAdjustedPValue": { "type": "number", "minimum": 0, "maximum": 1 },
+              "significant": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "positiveNumber": { "type": "number", "exclusiveMinimum": 0 },
+    "classification": { "enum": ["identity_drift", "quality_regression", "latency_regression", "price_change", "consumption_change", "inconclusive", "confounded", "no_drift"] },
+    "margins": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["qualityPassRateDelta", "latencyRatio", "consumptionRatio", "priceRatio"],
+      "properties": {
+        "qualityPassRateDelta": { "type": "number", "exclusiveMinimum": 0, "maximum": 1 },
+        "latencyRatio": { "$ref": "#/$defs/positiveNumber" },
+        "consumptionRatio": { "$ref": "#/$defs/positiveNumber" },
+        "priceRatio": { "$ref": "#/$defs/positiveNumber" }
+      }
+    }
+  }
+}
