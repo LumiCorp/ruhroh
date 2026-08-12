@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/findings-v1.schema.json",
+  "title": "Ruhroh Evidence-Linked Findings v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "createdAt", "findings", "counts"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/findings-v1.schema.json" },
+    "version": { "const": "ruhroh_findings_v1" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "findings": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/finding" }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirmed", "candidate", "not_observable"],
+      "properties": {
+        "confirmed": { "type": "integer", "minimum": 0 },
+        "candidate": { "type": "integer", "minimum": 0 },
+        "not_observable": { "type": "integer", "minimum": 0 }
+      }
+    }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "detector": { "enum": ["context_amplification", "retry_loop_amplification", "unnecessary_reasoning", "cache_misuse", "rework", "unpinned_model_alias"] },
+    "evidenceRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["artifact", "sha256"],
+      "properties": {
+        "artifact": { "$ref": "#/$defs/nonEmptyString" },
+        "sha256": { "$ref": "#/$defs/sha256" },
+        "pointer": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "measurements": {
+      "type": "object",
+      "properties": {
+        "turnInputTokens": { "$ref": "#/$defs/nonNegativeNumberArray" },
+        "repeatedInputTokens": { "type": "number", "minimum": 0 },
+        "equivalentRetryCount": { "type": "number", "minimum": 0 },
+        "retryCount": { "type": "number", "minimum": 0 },
+        "reasoningTokens": { "type": "number", "minimum": 0 },
+        "lowerReasoningTokens": { "type": "number", "minimum": 0 },
+        "cacheEligibleInputTokens": { "type": "number", "minimum": 0 },
+        "cachedInputTokens": { "type": "number", "minimum": 0 },
+        "revertedOrReplacedChanges": { "type": "number", "minimum": 0 },
+        "observedModelFingerprints": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } }
+      },
+      "additionalProperties": {
+        "oneOf": [
+          { "type": "number" },
+          { "type": "array", "items": { "type": "number" } },
+          { "type": "array", "items": { "type": "string" } }
+        ]
+      }
+    },
+    "nonNegativeNumberArray": { "type": "array", "items": { "type": "number", "minimum": 0 } },
+    "finding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "id", "detectorId", "detectorVersion", "status", "scope", "signature", "measurements", "evidenceRefs", "counterEvidence", "confounders", "confidence", "suggestedExperiment", "confirmationChecks"],
+      "properties": {
+        "version": { "const": "ruhroh_finding_v1" },
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "detectorId": { "$ref": "#/$defs/detector" },
+        "detectorVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "status": { "enum": ["confirmed", "candidate", "not_observable"] },
+        "scope": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["benchmarkTargetId", "runIds"],
+          "properties": {
+            "benchmarkTargetId": { "$ref": "#/$defs/nonEmptyString" },
+            "scenarioId": { "$ref": "#/$defs/nonEmptyString" },
+            "runIds": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true }
+          }
+        },
+        "signature": { "$ref": "#/$defs/nonEmptyString" },
+        "measurements": { "$ref": "#/$defs/measurements" },
+        "evidenceRefs": { "type": "array", "items": { "$ref": "#/$defs/evidenceRef" }, "uniqueItems": true },
+        "counterEvidence": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "confounders": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "confidence": { "enum": ["none", "low", "medium", "high"] },
+        "suggestedExperiment": { "$ref": "#/$defs/nonEmptyString" },
+        "confirmationChecks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["signatureObserved", "controlledCountercase", "equalQuality", "relevantCoverageComplete"],
+          "properties": {
+            "signatureObserved": { "type": "boolean" },
+            "controlledCountercase": { "type": "boolean" },
+            "equalQuality": { "type": "boolean" },
+            "relevantCoverageComplete": { "type": "boolean" }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "confirmed" } }, "required": ["status"] },
+          "then": {
+            "properties": {
+              "confirmationChecks": {
+                "properties": {
+                  "signatureObserved": { "const": true },
+                  "controlledCountercase": { "const": true },
+                  "equalQuality": { "const": true },
+                  "relevantCoverageComplete": { "const": true }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  }
+}
