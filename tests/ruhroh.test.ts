@@ -1052,7 +1052,7 @@ test("Harbor command construction includes adapter and artifacts", () => {
   assert.equal(command.args.includes("/installed-agent/ruhroh-run-manifest.json"), true);
   assert.equal(command.args.includes("/installed-agent/ruhroh-loop-eval-input.json"), true);
   assert.equal(command.args.includes("/installed-agent/ruhroh-workspace-summary.json"), true);
-  assert.equal(command.args.filter((arg) => arg === "--artifact").length, 11);
+  assert.equal(command.args.filter((arg) => arg === "--artifact").length, 12);
 });
 
 test("JSON scenario discovery loads prompt files", () => {
@@ -6375,7 +6375,7 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(validateBundle.publishable, false);
     assert.equal(validateBundle.source.bundlePath, publishBundlePath);
     assert.equal(validateBundle.errors.length, 0);
-    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "manifest.$schema" && check.status === "ok"), true);
+    assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "manifest.validation" && check.status === "ok"), true);
     assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.version" && check.status === "ok"), true);
     assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.source.reportPath" && check.status === "ok"), true);
     assert.equal(validateBundle.checks.some((check: { name: string; status: string }) => check.name === "evaluator-calibration-report.results[0].inputPath" && check.status === "ok"), true);
@@ -6393,7 +6393,7 @@ test("public CLI reports and compares run artifacts", async () => {
     assert.equal(apiBundleValidation.valid, true);
     assert.equal(apiBundleValidation.publishable, false);
     assert.deepEqual(apiBundleValidation.errors, []);
-    assert.equal(apiBundleValidation.checks.some((check) => check.name === "manifest.$schema" && check.status === "ok"), true);
+    assert.equal(apiBundleValidation.checks.some((check) => check.name === "manifest.validation" && check.status === "ok"), true);
     assert.equal(apiBundleValidation.checks.some((check) => check.name === "benchmark-claim.source.evaluatorCalibrationReport" && check.status === "ok"), true);
     assert.equal(apiBundleValidation.checks.some((check) => check.name === "evaluator-calibration-report.version" && check.status === "ok"), true);
     assert.equal(apiBundleValidation.checks.some((check) => check.name === "evaluator-calibration-report.source.reportPath" && check.status === "ok"), true);
