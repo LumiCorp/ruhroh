@@ -10,7 +10,7 @@
     "evaluatorCalibrationReportPath": "sources/evaluator-calibration/ruhroh-evaluator-calibration-report.json"
   },
   "publishable": false,
-  "blockerCount": 7,
+  "blockerCount": 11,
   "advisoryCount": 4,
   "files": [
     {
