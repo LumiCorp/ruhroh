@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/scale-experiment-v1.schema.json",
+  "title": "Ruhroh Scale Experiment v1",
+  "$comment": "The TypeScript validator additionally verifies prefix nesting of requestIds across levels.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "id", "suite", "variable", "levels", "hypothesis", "controls", "qualityFloor", "resourceMetric", "bootstrapSamples"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/scale-experiment-v1.schema.json" },
+    "version": { "const": "ruhroh_scale_experiment_v1" },
+    "id": { "$ref": "#/$defs/nonEmptyString" },
+    "suite": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "suiteVersion"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "suiteVersion": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "variable": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["symbol", "name", "unit"],
+      "properties": {
+        "symbol": { "const": "n" },
+        "name": { "const": "ordered_change_requests" },
+        "unit": { "const": "change_request" }
+      }
+    },
+    "levels": {
+      "type": "array",
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/level" },
+      "allOf": [
+        { "contains": { "properties": { "n": { "const": 1 } }, "required": ["n"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "n": { "const": 2 } }, "required": ["n"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "n": { "const": 4 } }, "required": ["n"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "n": { "const": 8 } }, "required": ["n"] }, "minContains": 1, "maxContains": 1 },
+        { "contains": { "properties": { "n": { "const": 16 } }, "required": ["n"] }, "minContains": 1, "maxContains": 1 }
+      ]
+    },
+    "hypothesis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expectedClass", "rationale"],
+      "properties": {
+        "expectedClass": { "$ref": "#/$defs/scaleCandidate" },
+        "rationale": { "$ref": "#/$defs/nonEmptyString" }
+      }
+    },
+    "controls": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetIds", "frozenBaselineSha256", "promptTemplateSha256", "evaluatorSignature", "fixedRequestOrderSha256", "sessionPolicy", "levelPolicy"],
+      "properties": {
+        "targetIds": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } },
+        "frozenBaselineSha256": { "$ref": "#/$defs/sha256" },
+        "promptTemplateSha256": { "$ref": "#/$defs/sha256" },
+        "evaluatorSignature": { "$ref": "#/$defs/nonEmptyString" },
+        "fixedRequestOrderSha256": { "$ref": "#/$defs/sha256" },
+        "sessionPolicy": { "const": "fresh_per_sample" },
+        "levelPolicy": { "const": "prefix_nested" }
+      }
+    },
+    "qualityFloor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["perChangeCompletionRate", "zeroCriticalRegressions"],
+      "properties": {
+        "perChangeCompletionRate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "zeroCriticalRegressions": { "const": true }
+      }
+    },
+    "resourceMetric": { "const": "totalTokens" },
+    "bootstrapSamples": { "const": 1000 }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "scaleCandidate": { "enum": ["T(1)", "T(log_n)", "T(n)", "T(n_k)", "T(n_k_a)"] },
+    "level": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "n", "scenarioId", "scenarioVersion", "fixtureSha256", "requestIds"],
+      "properties": {
+        "id": { "$ref": "#/$defs/nonEmptyString" },
+        "n": { "enum": [1, 2, 4, 8, 16] },
+        "scenarioId": { "$ref": "#/$defs/nonEmptyString" },
+        "scenarioVersion": { "$ref": "#/$defs/nonEmptyString" },
+        "fixtureSha256": { "$ref": "#/$defs/sha256" },
+        "requestIds": { "type": "array", "minItems": 1, "maxItems": 16, "uniqueItems": true, "items": { "$ref": "#/$defs/nonEmptyString" } }
+      },
+      "allOf": [
+        { "if": { "properties": { "n": { "const": 1 } }, "required": ["n"] }, "then": { "properties": { "requestIds": { "minItems": 1, "maxItems": 1 } } } },
+        { "if": { "properties": { "n": { "const": 2 } }, "required": ["n"] }, "then": { "properties": { "requestIds": { "minItems": 2, "maxItems": 2 } } } },
+        { "if": { "properties": { "n": { "const": 4 } }, "required": ["n"] }, "then": { "properties": { "requestIds": { "minItems": 4, "maxItems": 4 } } } },
+        { "if": { "properties": { "n": { "const": 8 } }, "required": ["n"] }, "then": { "properties": { "requestIds": { "minItems": 8, "maxItems": 8 } } } },
+        { "if": { "properties": { "n": { "const": 16 } }, "required": ["n"] }, "then": { "properties": { "requestIds": { "minItems": 16, "maxItems": 16 } } } }
+      ]
+    }
+  }
+}

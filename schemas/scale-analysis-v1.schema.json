@@ -1,0 +1,101 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/scale-analysis-v1.schema.json",
+  "title": "Ruhroh Scale Analysis v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "experimentId", "createdAt", "methodology", "targets", "errors"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/scale-analysis-v1.schema.json" },
+    "version": { "const": "ruhroh_scale_analysis_v1" },
+    "experimentId": { "$ref": "#/$defs/nonEmptyString" },
+    "createdAt": { "type": "string", "format": "date-time" },
+    "methodology": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["finiteEmpiricalCandidateOnly", "qualityRule", "bootstrapSamples", "crossValidation"],
+      "properties": {
+        "finiteEmpiricalCandidateOnly": { "const": true },
+        "qualityRule": { "const": "per_change_completion_floor_and_zero_critical_regressions" },
+        "bootstrapSamples": { "const": 1000 },
+        "crossValidation": { "const": "leave_one_scale_out" }
+      }
+    },
+    "targets": { "type": "array", "items": { "$ref": "#/$defs/targetAnalysis" } },
+    "errors": { "type": "array", "items": { "$ref": "#/$defs/nonEmptyString" }, "uniqueItems": true }
+  },
+  "$defs": {
+    "nonEmptyString": { "type": "string", "minLength": 1 },
+    "scaleCandidate": { "enum": ["T(1)", "T(log_n)", "T(n)", "T(n_k)", "T(n_k_a)"] },
+    "nonNegativeInteger": { "type": "integer", "minimum": 0 },
+    "proportion": { "type": "number", "minimum": 0, "maximum": 1 },
+    "levelAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["levelId", "n", "samples", "completedChanges", "requestedChanges", "perChangeCompletionRate", "criticalRegressions", "fullBatchSuccessRate", "qualityEligible", "completeTokenCoverage", "budgetStatusCounts"],
+      "properties": {
+        "levelId": { "$ref": "#/$defs/nonEmptyString" },
+        "n": { "type": "number", "exclusiveMinimum": 0 },
+        "samples": { "$ref": "#/$defs/nonNegativeInteger" },
+        "completedChanges": { "$ref": "#/$defs/nonNegativeInteger" },
+        "requestedChanges": { "$ref": "#/$defs/nonNegativeInteger" },
+        "perChangeCompletionRate": { "$ref": "#/$defs/proportion" },
+        "criticalRegressions": { "$ref": "#/$defs/nonNegativeInteger" },
+        "fullBatchSuccessRate": { "$ref": "#/$defs/proportion" },
+        "qualityEligible": { "type": "boolean" },
+        "completeTokenCoverage": { "type": "boolean" },
+        "totalTokens": { "type": "number", "minimum": 0 },
+        "p50TotalTokens": { "type": "number", "minimum": 0 },
+        "p95TotalTokens": { "type": "number", "minimum": 0 },
+        "totalModelCalls": { "type": "number", "minimum": 0 },
+        "p50ModelCalls": { "type": "number", "minimum": 0 },
+        "p95ModelCalls": { "type": "number", "minimum": 0 },
+        "totalRetryAttempts": { "type": "number", "minimum": 0 },
+        "p50RetryAttempts": { "type": "number", "minimum": 0 },
+        "p95RetryAttempts": { "type": "number", "minimum": 0 },
+        "p50ChildAgentDepth": { "type": "number", "minimum": 0 },
+        "p95ChildAgentDepth": { "type": "number", "minimum": 0 },
+        "p50ChildAgentFanout": { "type": "number", "minimum": 0 },
+        "p95ChildAgentFanout": { "type": "number", "minimum": 0 },
+        "budgetStatusCounts": {
+          "type": "object",
+          "propertyNames": { "minLength": 1 },
+          "additionalProperties": { "$ref": "#/$defs/nonNegativeInteger" }
+        }
+      }
+    },
+    "fit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["candidate", "coefficient", "normalizedRmse", "leaveOneScaleOutError", "bootstrapBestFitStability", "observable"],
+      "properties": {
+        "candidate": { "$ref": "#/$defs/scaleCandidate" },
+        "coefficient": { "type": "number" },
+        "normalizedRmse": { "type": "number", "minimum": 0 },
+        "leaveOneScaleOutError": { "type": "number", "minimum": 0 },
+        "bootstrapBestFitStability": { "$ref": "#/$defs/proportion" },
+        "observable": { "type": "boolean" }
+      }
+    },
+    "targetAnalysis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["targetId", "levels", "classificationStatus", "fits", "caveat"],
+      "properties": {
+        "targetId": { "$ref": "#/$defs/nonEmptyString" },
+        "levels": { "type": "array", "items": { "$ref": "#/$defs/levelAnalysis" } },
+        "classificationStatus": { "enum": ["eligible", "quality_ineligible", "incomplete_coverage", "insufficient_scales"] },
+        "bestFitCandidate": { "$ref": "#/$defs/scaleCandidate" },
+        "runnerUpCandidate": { "$ref": "#/$defs/scaleCandidate" },
+        "fits": { "type": "array", "items": { "$ref": "#/$defs/fit" } },
+        "caveat": { "$ref": "#/$defs/nonEmptyString" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "classificationStatus": { "const": "eligible" } }, "required": ["classificationStatus"] },
+          "then": { "required": ["bestFitCandidate", "runnerUpCandidate"], "properties": { "fits": { "minItems": 2 } } }
+        }
+      ]
+    }
+  }
+}
