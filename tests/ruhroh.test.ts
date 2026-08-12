@@ -1052,7 +1052,7 @@ test("Harbor command construction includes adapter and artifacts", () => {
   assert.equal(command.args.includes("/installed-agent/ruhroh-run-manifest.json"), true);
   assert.equal(command.args.includes("/installed-agent/ruhroh-loop-eval-input.json"), true);
   assert.equal(command.args.includes("/installed-agent/ruhroh-workspace-summary.json"), true);
-  assert.equal(command.args.filter((arg) => arg === "--artifact").length, 11);
+  assert.equal(command.args.filter((arg) => arg === "--artifact").length, 12);
 });
 
 test("JSON scenario discovery loads prompt files", () => {
