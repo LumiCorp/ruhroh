@@ -1,0 +1,88 @@
+{
+  "$schema": "https://lumicorp.github.io/ruhroh/schemas/suite-v2.schema.json",
+  "version": "ruhroh_suite_v2",
+  "id": "ruhroh-economics-smoke",
+  "title": "Ruhroh Experimental Economics Smoke",
+  "suiteVersion": "1.0.0-experimental.1",
+  "description": "Experimental, conformance-gated comparison of accepted outcomes, token consumption, and implementation wall time on simple-newsletter. It is not enabled as a generally available Kestrel economics claim.",
+  "scenarioIds": [
+    "simple-newsletter"
+  ],
+  "scenarioVersions": {
+    "simple-newsletter": "1.0.0"
+  },
+  "methodology": {
+    "minRuns": 10,
+    "aggregationUnit": "scenario_benchmark_target",
+    "reportPolicy": "pass_rate_ci_pass_at_k_outcome_frontier",
+    "confidenceLevel": 0.95,
+    "retryPolicy": "Do not retry failed agent runs inside a sample. Re-run the full sample only for rerun-ledger-approved infrastructure exclusions.",
+    "efficiency": {
+      "denominator": {
+        "id": "accepted_scenario_outcome",
+        "predicate": "score_1_and_eval_passed",
+        "failedWork": "included_in_resource_numerator"
+      },
+      "aggregation": {
+        "weighting": "run_plan",
+        "failedWork": "included_in_resource_numerator"
+      },
+      "suitableWorkloads": [
+        "Fresh-session implementation work with a frozen repository baseline and a complete evaluator contract."
+      ],
+      "requiredEvidence": [
+        "Declared benchmark-target and execution-adapter identities for every run.",
+        "Complete implementation token coverage from a conformance-proven adapter.",
+        "Implementation process start and terminal timestamps for every included run.",
+        "Run-plan weights and all failed work retained in the resource numerator."
+      ],
+      "hiddenWork": [
+        "Provider-side preprocessing, cache preparation, and unreported routing work may remain outside observed implementation tokens.",
+        "Evaluator and publication packaging consumption is excluded from implementation economics v1."
+      ],
+      "gamingRisks": [
+        "Optimizing only for the small smoke workload may not transfer to maintenance or multi-file product work.",
+        "Reducing tokens by omitting necessary validation can lower quality and fail the Wilson eligibility floor.",
+        "Changing run-plan weights after observing results would bias the frontier."
+      ],
+      "qualityFloor": {
+        "metric": "pass_rate",
+        "rule": "wilson_lower_bound_gte",
+        "threshold": 0.5,
+        "scope": "each_scenario"
+      },
+      "objectives": [
+        "tokens_per_accepted_outcome",
+        "p95_implementation_wall_time_ms"
+      ],
+      "bootstrap": {
+        "resamples": 1000,
+        "minValidResamples": 950,
+        "confidenceLevel": 0.95,
+        "stratification": "scenario"
+      }
+    }
+  },
+  "governance": {
+    "owner": "ruhroh-maintainers",
+    "createdAt": "2026-08-12",
+    "updatedAt": "2026-08-12",
+    "changelog": [
+      "1.0.0-experimental.1: Added conformance-gated token and implementation-wall-time objectives; cost is deliberately excluded."
+    ],
+    "acceptanceCriteria": [
+      "Every target must satisfy the per-scenario Wilson 95% lower-bound floor.",
+      "Token ratios require complete implementation-token coverage for every included run.",
+      "The suite remains experimental until Kestrel structured telemetry passes synthetic and live two-turn conformance."
+    ],
+    "contaminationReview": "Uses the existing original simple-newsletter scenario; results must record the frozen scenario version and repository baseline.",
+    "rewardHackingReview": "The quality floor, failed-work numerator, fixed run plan, and evidence completeness gates prevent low-token incomplete work from becoming an eligible frontier point.",
+    "reviewChecklist": [
+      "Confirm the adapter manifest and effective capability hash are present on every run.",
+      "Confirm implementation tokens and wall time exclude evaluator and packaging work.",
+      "Confirm no run or failed call was removed without an approved infrastructure exclusion.",
+      "Confirm Kestrel live conformance before making general availability claims."
+    ],
+    "deprecationPolicy": "Any methodology, objective, telemetry, or scenario change requires a new suite version and new evidence. Add cost only in a new version after cost telemetry conformance."
+  }
+}

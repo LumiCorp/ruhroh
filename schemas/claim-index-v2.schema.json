@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json",
+  "title": "Ruhroh Claim Index v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["$schema", "version", "generatedAt", "source", "registryReady", "registryBlockers", "claimCount", "publishableCount", "blockedCount", "invalidCount", "suiteCount", "targetCount", "totalRuns", "totalAcceptedOutcomes", "claims"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/claim-index-v2.schema.json" },
+    "version": { "const": "ruhroh_claim_index_v2" },
+    "generatedAt": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "required": ["inputPath"],
+      "properties": {
+        "inputPath": { "type": "string", "minLength": 1 },
+        "htmlPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "registryReady": { "type": "boolean" },
+    "registryBlockers": { "$ref": "#/$defs/stringArray" },
+    "claimCount": { "type": "integer", "minimum": 0 },
+    "publishableCount": { "type": "integer", "minimum": 0 },
+    "blockedCount": { "type": "integer", "minimum": 0 },
+    "invalidCount": { "type": "integer", "minimum": 0 },
+    "suiteCount": { "type": "integer", "minimum": 0 },
+    "targetCount": { "type": "integer", "minimum": 0 },
+    "totalRuns": { "type": "integer", "minimum": 0 },
+    "totalAcceptedOutcomes": { "type": "integer", "minimum": 0 },
+    "claims": { "type": "array", "items": { "$ref": "#/$defs/claim" } }
+  },
+  "$defs": {
+    "stringArray": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "claim": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["claimPath", "valid", "publishable", "scope", "createdAt", "targets", "summary", "frontier", "evidence", "sourcePaths", "blockers", "advisories", "validationErrors", "validationWarnings"],
+      "properties": {
+        "claimPath": { "type": "string", "minLength": 1 },
+        "bundlePath": { "type": "string", "minLength": 1 },
+        "valid": { "type": "boolean" },
+        "publishable": { "type": "boolean" },
+        "scope": { "enum": ["suite", "ad_hoc_compare"] },
+        "createdAt": { "type": "string", "minLength": 1 },
+        "suite": {
+          "type": "object",
+          "required": ["id"],
+          "properties": {
+            "id": { "type": "string", "minLength": 1 },
+            "title": { "type": "string", "minLength": 1 },
+            "suiteVersion": { "type": "string", "minLength": 1 }
+          }
+        },
+        "targets": { "type": "array", "items": { "$ref": "#/$defs/target" } },
+        "summary": {
+          "type": "object",
+          "required": ["scenarioCount", "targetCount", "totalRuns", "totalAcceptedOutcomes", "runWeightedPassRate", "reviewRequired", "reviewRecommended", "pairwiseComparisonCount"],
+          "properties": {
+            "scenarioCount": { "type": "integer", "minimum": 0 },
+            "targetCount": { "type": "integer", "minimum": 0 },
+            "totalRuns": { "type": "integer", "minimum": 0 },
+            "totalAcceptedOutcomes": { "type": "integer", "minimum": 0 },
+            "runWeightedPassRate": { "type": "number", "minimum": 0, "maximum": 1 },
+            "reviewRequired": { "type": "integer", "minimum": 0 },
+            "reviewRecommended": { "type": "integer", "minimum": 0 },
+            "pairwiseComparisonCount": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "frontier": {
+          "type": "object",
+          "required": ["status", "objectives", "paretoFrontierTargetIds", "robustFrontierTargetIds"],
+          "properties": {
+            "status": { "enum": ["available", "unavailable", "quality_only"] },
+            "objectives": { "$ref": "#/$defs/stringArray" },
+            "paretoFrontierTargetIds": { "$ref": "#/$defs/stringArray" },
+            "robustFrontierTargetIds": { "$ref": "#/$defs/stringArray" }
+          }
+        },
+        "evidence": { "type": "object" },
+        "sourcePaths": { "type": "object" },
+        "blockers": { "$ref": "#/$defs/stringArray" },
+        "advisories": { "$ref": "#/$defs/stringArray" },
+        "validationErrors": { "$ref": "#/$defs/stringArray" },
+        "validationWarnings": { "$ref": "#/$defs/stringArray" }
+      }
+    },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["benchmarkTargetId", "identityStatus", "executionAdapterIds", "runs", "acceptedOutcomes", "qualityFloorStatus", "paretoStatus", "robustStatus"],
+      "properties": {
+        "benchmarkTargetId": { "type": "string", "minLength": 1 },
+        "identityStatus": { "enum": ["declared", "legacy_execution_adapter_fallback"] },
+        "executionAdapterIds": { "$ref": "#/$defs/stringArray" },
+        "runs": { "type": "integer", "minimum": 0 },
+        "acceptedOutcomes": { "type": "integer", "minimum": 0 },
+        "qualityFloorStatus": { "enum": ["passed", "failed", "indeterminate"] },
+        "paretoStatus": { "enum": ["pareto", "dominated", "ineligible", "indeterminate"] },
+        "robustStatus": { "enum": ["pareto", "dominated", "ineligible", "indeterminate"] }
+      }
+    }
+  }
+}

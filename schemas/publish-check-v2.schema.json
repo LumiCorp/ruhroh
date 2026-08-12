@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json",
+  "title": "Ruhroh Publish Check v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["$schema", "version", "source", "publishable", "blockerCount", "blockers", "remediation", "advisoryCount", "advisories", "compare"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/publish-check-v2.schema.json" },
+    "version": { "const": "ruhroh_publish_check_v2" },
+    "source": { "$ref": "#/$defs/source" },
+    "publishable": { "type": "boolean" },
+    "blockerCount": { "type": "integer", "minimum": 0 },
+    "blockers": { "$ref": "#/$defs/stringArray" },
+    "remediation": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/remediation" }
+    },
+    "advisoryCount": { "type": "integer", "minimum": 0 },
+    "advisories": { "$ref": "#/$defs/stringArray" },
+    "compare": { "$ref": "compare-v2.schema.json" },
+    "sourceVerification": { "$ref": "#/$defs/sourceVerification" }
+  },
+  "$defs": {
+    "stringArray": { "type": "array", "items": { "type": "string", "minLength": 1 } },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["resultsPath"],
+      "properties": {
+        "resultsPath": { "type": "string", "minLength": 1 },
+        "suiteId": { "type": "string", "minLength": 1 },
+        "runPlanPath": { "type": "string", "minLength": 1 },
+        "rerunLedgerPath": { "type": "string", "minLength": 1 },
+        "benchmarkClaimPath": { "type": "string", "minLength": 1 },
+        "benchmarkSummaryPath": { "type": "string", "minLength": 1 },
+        "htmlPath": { "type": "string", "minLength": 1 },
+        "summaryMarkdownPath": { "type": "string", "minLength": 1 },
+        "bundlePath": { "type": "string", "minLength": 1 },
+        "evaluatorCalibrationReportPath": { "type": "string", "minLength": 1 }
+      }
+    },
+    "remediation": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["code", "category", "severity", "blocker", "action", "docs"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "category": { "enum": ["suite", "run_plan", "artifacts", "review", "statistics", "source_verification", "claim", "comparison"] },
+        "severity": { "enum": ["blocker", "advisory"] },
+        "blocker": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1 },
+        "docs": { "type": "string", "minLength": 1 }
+      }
+    },
+    "sourceVerification": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["version", "checked", "checks", "errors", "warnings"],
+      "properties": {
+        "version": { "const": "ruhroh_claim_source_verification_v1" },
+        "checked": { "type": "boolean" },
+        "checks": { "type": "array", "items": { "type": "object" } },
+        "errors": { "$ref": "#/$defs/stringArray" },
+        "warnings": { "$ref": "#/$defs/stringArray" }
+      }
+    }
+  }
+}

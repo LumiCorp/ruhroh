@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/publication-v2.schema.json",
+  "title": "Ruhroh Publication v2",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["$schema", "version", "createdAt", "publishable", "artifacts"],
+  "properties": {
+    "$schema": { "const": "https://lumicorp.github.io/ruhroh/schemas/publication-v2.schema.json" },
+    "version": { "const": "ruhroh_publication_v2" },
+    "createdAt": { "type": "string", "minLength": 1 },
+    "publishable": { "type": "boolean" },
+    "artifacts": {
+      "type": "array",
+      "minItems": 6,
+      "items": { "$ref": "#/$defs/artifactReference" }
+    }
+  },
+  "$defs": {
+    "artifactReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["role", "path", "sha256", "contractVersion"],
+      "properties": {
+        "role": {
+          "enum": [
+            "publish-check",
+            "bundle-manifest",
+            "claim-index",
+            "compare",
+            "benchmark-claim",
+            "benchmark-summary",
+            "outcome-frontier",
+            "economic-trace",
+            "intervention-ledger",
+            "cost-reconciliation",
+            "decision-packet"
+          ]
+        },
+        "path": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+        "contractVersion": {
+          "enum": [
+            "ruhroh_publish_check_v2",
+            "ruhroh_publish_bundle_v2",
+            "ruhroh_claim_index_v2",
+            "ruhroh_compare_v2",
+            "ruhroh_benchmark_claim_v2",
+            "ruhroh_benchmark_summary_v2",
+            "ruhroh_outcome_frontier_v1",
+            "ruhroh_economic_trace_span_v1",
+            "ruhroh_intervention_ledger_v1",
+            "ruhroh_cost_reconciliation_v1",
+            "ruhroh_decision_packet_v1"
+          ]
+        }
+      },
+      "allOf": [
+        { "if": { "properties": { "role": { "const": "publish-check" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_publish_check_v2" } } } },
+        { "if": { "properties": { "role": { "const": "bundle-manifest" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_publish_bundle_v2" } } } },
+        { "if": { "properties": { "role": { "const": "claim-index" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_claim_index_v2" } } } },
+        { "if": { "properties": { "role": { "const": "compare" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_compare_v2" } } } },
+        { "if": { "properties": { "role": { "const": "benchmark-claim" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_benchmark_claim_v2" } } } },
+        { "if": { "properties": { "role": { "const": "benchmark-summary" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_benchmark_summary_v2" } } } },
+        { "if": { "properties": { "role": { "const": "outcome-frontier" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_outcome_frontier_v1" } } } },
+        { "if": { "properties": { "role": { "const": "economic-trace" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_economic_trace_span_v1" } } } },
+        { "if": { "properties": { "role": { "const": "intervention-ledger" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_intervention_ledger_v1" } } } },
+        { "if": { "properties": { "role": { "const": "cost-reconciliation" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_cost_reconciliation_v1" } } } },
+        { "if": { "properties": { "role": { "const": "decision-packet" } } }, "then": { "properties": { "contractVersion": { "const": "ruhroh_decision_packet_v1" } } } }
+      ]
+    }
+  }
+}
