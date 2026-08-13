@@ -13,6 +13,17 @@ import {
   type RuhrohNormalizedBillingRowV1,
   type RuhrohTechnicalEconomicFactV1,
 } from "./billing.js";
+import {
+  buildRuhrohCostReconciliationV2,
+  normalizeRuhrohBillingRecordsV2,
+  validateRuhrohBillingMappingProfileV2,
+  validateRuhrohBillingSourceManifestV2,
+  validateRuhrohCostReconciliationV2,
+  validateRuhrohNormalizedBillingRowV2,
+  type RuhrohBillingMappingProfileV2,
+  type RuhrohBillingSourceManifestV2,
+  type RuhrohNormalizedBillingRowV2,
+} from "./billing-v2.js";
 import { validateRuhrohEvidenceArtifactReference } from "./artifacts.js";
 import {
   buildRuhrohDecisionPacket,
@@ -73,6 +84,23 @@ import {
   type RuhrohScaleObservationV1,
 } from "./scale.js";
 import { validateRuhrohSuite, type RuhrohBenchmarkSuite } from "./suites.js";
+import {
+  buildRuhrohFocusUpdateReview,
+  compareRuhrohFocusCatalogs,
+  importRuhrohFocusBundle,
+  runRuhrohFocusValidation,
+  validateRuhrohFocusAttributionProfile,
+  validateRuhrohFocusCatalog,
+  validateRuhrohFocusConformanceProfile,
+  validateRuhrohFocusConformanceReport,
+  validateRuhrohFocusDatasetBundle,
+  validateRuhrohFocusImportReport,
+  validateRuhrohFocusMappingPack,
+  validateRuhrohFocusSpecLock,
+  validateRuhrohFocusUpdateReview,
+  type RuhrohFocusCatalogV1,
+  type RuhrohFocusDatasetInputV1,
+} from "./focus.js";
 
 export const RUHROH_ECONOMICS_COMMANDS = [
   "validate",
@@ -82,6 +110,11 @@ export const RUHROH_ECONOMICS_COMMANDS = [
   "provider-drift",
   "decision-packet",
   "billing-reconcile",
+  "billing-reconcile-v2",
+  "focus-validate",
+  "focus-import",
+  "focus-check-update",
+  "focus-propose-update",
 ] as const;
 
 export type RuhrohEconomicsCommand = typeof RUHROH_ECONOMICS_COMMANDS[number];
@@ -154,6 +187,16 @@ export function runRuhrohEconomicsCommand(envelope: unknown): RuhrohEconomicsCom
         return decisionPacketCommand(envelope.input);
       case "billing-reconcile":
         return billingReconciliationCommand(envelope.input);
+      case "billing-reconcile-v2":
+        return billingReconciliationV2Command(envelope.input);
+      case "focus-validate":
+        return focusValidationCommand(envelope.input);
+      case "focus-import":
+        return focusImportCommand(envelope.input);
+      case "focus-check-update":
+        return focusCheckUpdateCommand(envelope.input);
+      case "focus-propose-update":
+        return focusProposeUpdateCommand(envelope.input);
     }
   } catch (error) {
     return commandFailure(command, [
@@ -351,6 +394,69 @@ function billingReconciliationCommand(input: unknown): RuhrohEconomicsCommandRes
   return commandResult("billing-reconcile", errors.length === 0, output, errors);
 }
 
+function billingReconciliationV2Command(input: unknown): RuhrohEconomicsCommandResultV1 {
+  if (!isRecord(input) || !isRecord(input.billingSource) || !isRecord(input.mappingProfile) || !isRecord(input.billing) || !Array.isArray(input.technicalFacts)) {
+    return commandFailure("billing-reconcile-v2", ["input requires billingSource, mappingProfile, billing, and technicalFacts"]);
+  }
+  const source = input.billingSource as unknown as RuhrohBillingSourceManifestV2;
+  const profile = input.mappingProfile as unknown as RuhrohBillingMappingProfileV2;
+  const errors = [...validateRuhrohBillingSourceManifestV2(source), ...validateRuhrohBillingMappingProfileV2(profile)];
+  let rows: RuhrohNormalizedBillingRowV2[] = [];
+  if (input.billing.format === "records" && Array.isArray(input.billing.records) && input.billing.records.every(isRecord)) {
+    const parsed = normalizeRuhrohBillingRecordsV2(input.billing.records, profile);
+    rows = parsed.rows;
+    errors.push(...parsed.errors);
+  } else if (input.billing.format === "normalized_rows" && Array.isArray(input.billing.rows) && input.billing.rows.every(isRecord)) {
+    rows = input.billing.rows as unknown as RuhrohNormalizedBillingRowV2[];
+    errors.push(...rows.flatMap(validateRuhrohNormalizedBillingRowV2));
+  } else errors.push("billing.format must be records or normalized_rows for v2 reconciliation");
+  if (errors.length > 0) return commandResult("billing-reconcile-v2", false, { normalizedRows: rows }, unique(errors));
+  const output = buildRuhrohCostReconciliationV2({ ...input, billingSource: source, mappingProfile: profile, billingRows: rows } as unknown as Parameters<typeof buildRuhrohCostReconciliationV2>[0]);
+  const outputErrors = validateRuhrohCostReconciliationV2(output);
+  return commandResult("billing-reconcile-v2", outputErrors.length === 0, output, outputErrors);
+}
+
+function focusValidationCommand(input: unknown): RuhrohEconomicsCommandResultV1 {
+  if (!isRecord(input) || !isRecord(input.specLock) || !isRecord(input.conformanceProfile)) return commandFailure("focus-validate", ["input requires specLock and conformanceProfile"]);
+  const errors = [...validateRuhrohFocusSpecLock(input.specLock), ...validateRuhrohFocusConformanceProfile(input.conformanceProfile)];
+  if (errors.length > 0) return commandFailure("focus-validate", errors);
+  const output = runRuhrohFocusValidation(input as unknown as Parameters<typeof runRuhrohFocusValidation>[0]);
+  return commandResult("focus-validate", output.status === "passed", output, output.blockers);
+}
+
+function focusImportCommand(input: unknown): RuhrohEconomicsCommandResultV1 {
+  if (!isRecord(input) || !isRecord(input.specLock) || !isRecord(input.catalog) || !isRecord(input.catalogRef) || !isRecord(input.mappingPack) || !Array.isArray(input.datasets)) return commandFailure("focus-import", ["input requires specLock, catalog, catalogRef, mappingPack, and datasets"]);
+  const errors = [...validateRuhrohFocusSpecLock(input.specLock), ...validateRuhrohFocusCatalog(input.catalog), ...validateRuhrohFocusMappingPack(input.mappingPack)];
+  const datasets: RuhrohFocusDatasetInputV1[] = [];
+  for (const [index, value] of input.datasets.entries()) {
+    if (!isRecord(value) || !isRecord(value.sourceRef) || typeof value.dataset !== "string" || typeof value.format !== "string") { errors.push(`datasets[${index}] is invalid`); continue; }
+    if (value.format === "parquet" && typeof value.bytesBase64 === "string") datasets.push({ dataset: value.dataset, format: "parquet", bytes: Uint8Array.from(Buffer.from(value.bytesBase64, "base64")), sourceRef: value.sourceRef } as unknown as RuhrohFocusDatasetInputV1);
+    else if (value.format === "csv" && typeof value.text === "string") datasets.push({ dataset: value.dataset, format: "csv", text: value.text, sourceRef: value.sourceRef } as unknown as RuhrohFocusDatasetInputV1);
+    else if (value.format === "records" && Array.isArray(value.records) && value.records.every(isRecord)) datasets.push({ dataset: value.dataset, format: "records", records: value.records, sourceRef: value.sourceRef } as unknown as RuhrohFocusDatasetInputV1);
+    else errors.push(`datasets[${index}] payload does not match format`);
+  }
+  if (errors.length > 0) return commandFailure("focus-import", errors);
+  const output = importRuhrohFocusBundle({ ...input, datasets } as unknown as Parameters<typeof importRuhrohFocusBundle>[0]);
+  return commandResult("focus-import", output.report.readiness === "ready", output, output.report.blockers);
+}
+
+function focusCheckUpdateCommand(input: unknown): RuhrohEconomicsCommandResultV1 {
+  if (!isRecord(input) || !isRecord(input.fromCatalog) || !isRecord(input.toCatalog)) return commandFailure("focus-check-update", ["input requires fromCatalog and toCatalog"]);
+  const errors = [...validateRuhrohFocusCatalog(input.fromCatalog), ...validateRuhrohFocusCatalog(input.toCatalog)];
+  if (errors.length > 0) return commandFailure("focus-check-update", errors);
+  const output = { changes: compareRuhrohFocusCatalogs(input.fromCatalog as unknown as RuhrohFocusCatalogV1, input.toCatalog as unknown as RuhrohFocusCatalogV1) };
+  return commandResult("focus-check-update", true, output);
+}
+
+function focusProposeUpdateCommand(input: unknown): RuhrohEconomicsCommandResultV1 {
+  if (!isRecord(input) || !isRecord(input.fromCatalog) || !isRecord(input.toCatalog)) return commandFailure("focus-propose-update", ["input requires fromCatalog and toCatalog"]);
+  const errors = [...validateRuhrohFocusCatalog(input.fromCatalog), ...validateRuhrohFocusCatalog(input.toCatalog)];
+  if (errors.length > 0) return commandFailure("focus-propose-update", errors);
+  const output = buildRuhrohFocusUpdateReview(input as unknown as Parameters<typeof buildRuhrohFocusUpdateReview>[0]);
+  const outputErrors = validateRuhrohFocusUpdateReview(output);
+  return commandResult("focus-propose-update", outputErrors.length === 0, output, outputErrors);
+}
+
 function validateKnownContract(
   contractVersion: string,
   value: Record<string, unknown>,
@@ -430,6 +536,23 @@ function validateKnownContract(
       return plain(validateRuhrohTechnicalEconomicFact(value as unknown as RuhrohTechnicalEconomicFactV1));
     case "ruhroh_cost_reconciliation_v1":
       return plain(validateRuhrohCostReconciliation(value as unknown as Parameters<typeof validateRuhrohCostReconciliation>[0]));
+    case "ruhroh_billing_source_manifest_v2":
+      return plain(validateRuhrohBillingSourceManifestV2(value as unknown as RuhrohBillingSourceManifestV2));
+    case "ruhroh_billing_mapping_profile_v2":
+      return plain(validateRuhrohBillingMappingProfileV2(value as unknown as RuhrohBillingMappingProfileV2));
+    case "ruhroh_normalized_billing_row_v2":
+      return plain(validateRuhrohNormalizedBillingRowV2(value as unknown as RuhrohNormalizedBillingRowV2));
+    case "ruhroh_cost_reconciliation_v2":
+      return plain(validateRuhrohCostReconciliationV2(value as unknown as Parameters<typeof validateRuhrohCostReconciliationV2>[0]));
+    case "ruhroh_focus_spec_lock_v1": return plain(validateRuhrohFocusSpecLock(value));
+    case "ruhroh_focus_catalog_v1": return plain(validateRuhrohFocusCatalog(value));
+    case "ruhroh_focus_mapping_pack_v1": return plain(validateRuhrohFocusMappingPack(value));
+    case "ruhroh_focus_conformance_profile_v1": return plain(validateRuhrohFocusConformanceProfile(value));
+    case "ruhroh_focus_conformance_report_v1": return plain(validateRuhrohFocusConformanceReport(value));
+    case "ruhroh_focus_dataset_bundle_v1": return plain(validateRuhrohFocusDatasetBundle(value));
+    case "ruhroh_focus_attribution_profile_v1": return plain(validateRuhrohFocusAttributionProfile(value));
+    case "ruhroh_focus_import_report_v1": return plain(validateRuhrohFocusImportReport(value));
+    case "ruhroh_focus_update_review_v1": return plain(validateRuhrohFocusUpdateReview(value));
     case "ruhroh_publish_check_v1":
     case "ruhroh_publish_check_v2": {
       const result = validateRuhrohPublishCheckReport(value);

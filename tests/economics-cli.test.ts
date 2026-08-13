@@ -209,3 +209,25 @@ test("billing-reconcile command accepts CSV without leaking raw rows into its ar
   assert.equal(reconciliation.coverage.exactRows, 1);
   assert.equal(JSON.stringify(reconciliation).includes(requestId), false);
 });
+
+test("billing-reconcile-v2 keeps exact decimal strings", () => {
+  const result = command("billing-reconcile-v2", {
+    reconciliationId: "v2-cli", createdAt: "2026-08-12T20:00:00Z", benchmarkClaimRef: REF, billingSourceRef: REF, mappingProfileRef: REF,
+    billingSource: { version: "ruhroh_billing_source_manifest_v2", sourceId: "source", format: "records", externalSchemaVersion: "test", billingPeriod: { startedAt: "2026-01-01T00:00:00Z", endedAt: "2026-02-01T00:00:00Z" }, currencies: ["USD"], rowCount: 1, sourceRef: REF, privacyClassification: "restricted" },
+    mappingProfile: { version: "ruhroh_billing_mapping_profile_v2", profileId: "v2", provider: "neutral", externalSchemaVersion: "test", fields: { sourceRowId: "id", amountDecimal: "amount", currency: "currency", kind: "kind", workloadId: "workload", sku: "sku", occurredAt: "at" }, kindValues: { charge: ["Usage"] }, matching: { boundedWindowSeconds: 60, boundedFields: ["workloadId", "sku"] }, allocations: [] },
+    billing: { format: "records", records: [{ id: "row", amount: "9007199254740993.01", currency: "USD", kind: "Usage", workload: "work", sku: "sku", at: "2026-01-02T00:00:00Z" }] },
+    technicalFacts: [{ version: "ruhroh_technical_economic_fact_v1", factId: "fact", runId: "run", benchmarkTargetId: "target", workloadId: "work", occurredAt: "2026-01-02T00:00:01Z", sku: "sku", evidenceRef: REF }],
+  });
+  assert.equal(result.ok, true, result.errors.join("\n"));
+  assert.equal((result.output as any).currencies[0].sourceTotalDecimal, "9007199254740993.01");
+});
+
+test("FOCUS update commands keep working drafts review-only", () => {
+  const catalog = { version: "ruhroh_focus_catalog_v1", catalogId: "1.4", focusVersion: "1.4", modelRef: REF, datasets: [] };
+  const check = command("focus-check-update", { fromCatalog: catalog, toCatalog: catalog });
+  assert.equal(check.ok, true, check.errors.join("\n"));
+  assert.deepEqual((check.output as any).changes, []);
+  const proposal = command("focus-propose-update", { reviewId: "preview", createdAt: "2026-08-12T20:00:00Z", fromSpecLockRef: REF, toSpecLockRef: REF, candidateReleaseStatus: "preview", fromCatalog: catalog, toCatalog: catalog });
+  assert.equal(proposal.ok, true, proposal.errors.join("\n"));
+  assert.equal((proposal.output as any).recommendation, "review_required");
+});

@@ -112,6 +112,11 @@ Supported commands are:
 | `provider-drift` | Baseline, current controls, and current metrics | Drift or confounding report |
 | `decision-packet` | Decision-packet builder input | Tiered decision packet |
 | `billing-reconcile` | Source manifest, mapping, CSV/NDJSON/records, and technical facts | Currency-specific cost reconciliation |
+| `billing-reconcile-v2` | Exact-decimal normalized rows, allocation assignments, and technical facts | Exact native-currency reconciliation |
+| `focus-validate` | Pinned lock/profile, one dataset, and an explicit validator runner | Inspectable sanitized conformance report |
+| `focus-import` | Pinned FOCUS profile plus CSV, Parquet, or record datasets | Restricted normalized rows, dataset bundle, and import report |
+| `focus-check-update` | Current and candidate semantic catalogs | Read-only semantic change list |
+| `focus-propose-update` | Hash-pinned current/candidate evidence | Human-review update packet |
 
 The result is always `ruhroh_economics_command_result_v1` with `ok`, `errors`, `warnings`, and optional `output`. A domain conclusion such as `confounded`, `inconclusive`, or `review_required` is successful command execution, not a process error.
 
@@ -125,6 +130,11 @@ pnpm exec ruhroh economics findings ./finding-assessments.json --json
 pnpm exec ruhroh economics provider-drift ./provider-drift-input.json --json
 pnpm exec ruhroh economics decision-packet ./decision-packet-input.json --json
 pnpm exec ruhroh economics billing-reconcile ./billing-reconciliation-input.json --json
+pnpm exec ruhroh economics billing-reconcile-v2 ./billing-reconciliation-v2-input.json --json
+pnpm exec ruhroh economics focus-validate ./focus-validation-input.json --json
+pnpm exec ruhroh economics focus-import ./focus-import-input.json --json
+pnpm exec ruhroh economics focus-check-update ./focus-update-input.json --json
+pnpm exec ruhroh economics focus-propose-update ./focus-update-input.json --json
 ```
 
 CLI wiring should remain thin: read one envelope, dispatch once, render the returned object, and exit nonzero only when `ok` is false. The executable must not add a second interpretation layer around coverage, identity, readiness, or conformance.
@@ -142,9 +152,9 @@ Ruhroh does not infer usage by scraping a transcript. Cost is not added to the e
 
 ## Provider-neutral billing and the FOCUS boundary
 
-The neutral billing bridge accepts CSV, NDJSON, or iterable records. It preserves exact, bounded, allocated, ambiguous, and unmatched joins. Allocation weights must total one, and every source row reconciles in its native currency. Raw or restricted billing inputs never enter public bundles.
+The v1 neutral billing bridge remains unchanged. Billing v2 uses canonical decimal strings, exact assigned allocation amounts, and exact arithmetic for every native-currency total. It preserves exact, bounded, allocated, ambiguous, and unmatched joins. Raw or restricted billing inputs never enter public bundles.
 
-No FOCUS-named fields, fixtures, mappings, or exports ship in this stack. A FOCUS adapter is a separate, later contract that requires verified final FOCUS 1.5 semantics and official conformance assets. Export remains deferred until there is demonstrated demand.
+The separately versioned FOCUS adapter imports all four FOCUS 1.4 datasets from CSV or Parquet. `CostAndUsage` maps conservatively into billing v2; `BillingPeriod`, `InvoiceDetail`, and `ContractCommitment` remain restricted supporting evidence. FOCUS export and certification claims remain out of scope. See [FOCUS 1.4 Import](./focus-1-4.md).
 
 ## Review checklist
 

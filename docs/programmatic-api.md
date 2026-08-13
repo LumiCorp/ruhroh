@@ -268,7 +268,9 @@ console.log(result.output);
 
 The envelope version is `ruhroh_economics_command_v1`. Supported commands are
 `validate`, `conformance`, `scale-analyze`, `findings`, `provider-drift`,
-`decision-packet`, and `billing-reconcile`. Use
+`decision-packet`, `billing-reconcile`, `billing-reconcile-v2`,
+`focus-validate`, `focus-import`, `focus-check-update`, and
+`focus-propose-update`. Use
 `validateRuhrohEconomicsContract()` directly when an integration only needs
 version dispatch and structured validation errors.
 
@@ -279,6 +281,10 @@ may be `confounded`, and a valid decision packet may be `review_required`.
 See [Economics Evidence Stack](./economics-evidence-stack.md) for truth-plane
 ownership, identity and coverage semantics, trace privacy, connector
 conformance, and billing boundaries.
+
+FOCUS imports and exact billing v2 are also available directly from the
+`@kestrel-agents/ruhroh/focus` and `@kestrel-agents/ruhroh/billing-v2`
+subpath exports. See [FOCUS 1.4 Import](./focus-1-4.md).
 
 ## Common Recipes
 

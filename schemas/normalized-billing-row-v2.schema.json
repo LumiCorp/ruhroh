@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lumicorp.github.io/ruhroh/schemas/normalized-billing-row-v2.schema.json",
+  "title": "Ruhroh Normalized Billing Row v2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["version", "sourceRowId", "sourceRowSha256", "amountDecimal", "currency", "kind"],
+  "properties": {
+    "version": { "const": "ruhroh_normalized_billing_row_v2" },
+    "sourceRowId": { "type": "string", "minLength": 1 },
+    "sourceRowSha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "amountDecimal": { "type": "string", "pattern": "^-?(?:0|[1-9][0-9]*)(?:\\.[0-9]*[1-9])?$" },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$" },
+    "kind": { "enum": ["charge", "credit", "refund", "commitment", "tax", "prepaid", "capacity", "adjustment"] },
+    "occurredAt": { "type": "string", "format": "date-time" },
+    "providerRequestId": { "type": "string", "minLength": 1 },
+    "principalRef": { "type": "string", "minLength": 1 },
+    "workloadId": { "type": "string", "minLength": 1 },
+    "model": { "type": "string", "minLength": 1 },
+    "sku": { "type": "string", "minLength": 1 }
+  }
+}

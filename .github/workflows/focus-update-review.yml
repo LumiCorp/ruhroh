@@ -1,0 +1,115 @@
+name: FOCUS update review
+
+on:
+  schedule:
+    - cron: "17 13 * * 2"
+  workflow_dispatch:
+    inputs:
+      candidate_ref:
+        description: Official FOCUS release tag or immutable working-draft commit
+        required: false
+        type: string
+      candidate_version:
+        description: FOCUS version for a working-draft commit (required when candidate_ref is not a tag)
+        required: false
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: focus-update-review
+  cancel-in-progress: false
+
+jobs:
+  propose:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.17.1
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run build
+      - name: Resolve immutable official sources
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REQUESTED_REF: ${{ inputs.candidate_ref }}
+          REQUESTED_VERSION: ${{ inputs.candidate_version }}
+        run: |
+          set -euo pipefail
+          SPEC_REPO="FinOps-Open-Cost-and-Usage-Spec/FOCUS_Spec"
+          VALIDATOR_REPO="finopsfoundation/focus_validator"
+          REF="${REQUESTED_REF:-$(gh api "repos/${SPEC_REPO}/releases/latest" --jq .tag_name)}"
+          COMMIT="$(gh api "repos/${SPEC_REPO}/commits/${REF}" --jq .sha)"
+          if [[ "$REF" == v* ]]; then
+            STATUS=ratified
+            VERSION="${REF#v}"
+            LOCK_REF="$REF"
+          else
+            STATUS=preview
+            if [[ -z "$REQUESTED_VERSION" ]]; then
+              echo "candidate_version is required for a working-draft commit" >&2
+              exit 2
+            fi
+            VERSION="$REQUESTED_VERSION"
+            LOCK_REF="$COMMIT"
+          fi
+          VALIDATOR_TAG="$(gh api "repos/${VALIDATOR_REPO}/releases/latest" --jq .tag_name)"
+          VALIDATOR_VERSION="${VALIDATOR_TAG#v}"
+          VALIDATOR_COMMIT="$(gh api "repos/${VALIDATOR_REPO}/commits/${VALIDATOR_TAG}" --jq .sha)"
+          CURRENT="$(jq -r .specification.commitSha examples/focus/spec-lock-1.4.json)"
+          CURRENT_VALIDATOR="$(jq -r .validator.commitSha examples/focus/spec-lock-1.4.json)"
+          if [[ "$COMMIT" == "$CURRENT" && "$VALIDATOR_COMMIT" == "$CURRENT_VALIDATOR" ]]; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          MODEL_PATH="${RUNNER_TEMP}/model-${VERSION}.json"
+          gh api -H 'Accept: application/vnd.github.raw+json' "repos/${SPEC_REPO}/contents/specification/requirements/models/model-${VERSION}.json?ref=${COMMIT}" > "$MODEL_PATH"
+          echo "changed=true" >> "$GITHUB_OUTPUT"
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+          echo "short_sha=${COMMIT:0:12}" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "status=$STATUS" >> "$GITHUB_OUTPUT"
+          echo "lock_ref=$LOCK_REF" >> "$GITHUB_OUTPUT"
+          echo "model_path=$MODEL_PATH" >> "$GITHUB_OUTPUT"
+          echo "validator_version=$VALIDATOR_VERSION" >> "$GITHUB_OUTPUT"
+          echo "validator_commit=$VALIDATOR_COMMIT" >> "$GITHUB_OUTPUT"
+      - name: Generate review-only candidate
+        if: steps.source.outputs.changed == 'true'
+        run: |
+          node scripts/propose-focus-update.mjs \
+            --model "${{ steps.source.outputs.model_path }}" \
+            --version "${{ steps.source.outputs.version }}" \
+            --commit "${{ steps.source.outputs.commit }}" \
+            --ref "${{ steps.source.outputs.lock_ref }}" \
+            --status "${{ steps.source.outputs.status }}" \
+            --validator-version "${{ steps.source.outputs.validator_version }}" \
+            --validator-commit "${{ steps.source.outputs.validator_commit }}" \
+            --retrieved-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --output-dir "docs/research/focus-updates/${{ steps.source.outputs.short_sha }}"
+      - name: Open or update draft review PR
+        if: steps.source.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: asher/focus-update-${{ steps.source.outputs.short_sha }}
+          VERSION: ${{ steps.source.outputs.version }}
+        run: |
+          set -euo pipefail
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git fetch origin "$BRANCH:$BRANCH" || true
+          git switch -C "$BRANCH"
+          git add docs/research/focus-updates
+          git commit -m "chore: propose FOCUS ${VERSION} semantic review"
+          git push --force-with-lease origin "$BRANCH"
+          EXISTING="$(gh pr list --head "$BRANCH" --state open --json number --jq '.[0].number // empty')"
+          if [[ -z "$EXISTING" ]]; then
+            gh pr create --draft --head "$BRANCH" --base main --title "Review FOCUS ${VERSION} update" --body "Automated semantic review only. This PR does not promote a runtime profile, alter neutral billing contracts, claim certification, merge, publish, or weaken readiness gates."
+          fi

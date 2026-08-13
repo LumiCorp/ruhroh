@@ -1,0 +1,24 @@
+{
+  "version": "ruhroh_focus_spec_lock_v1",
+  "profileId": "focus-1.4-ratified",
+  "focusVersion": "1.4",
+  "releaseStatus": "ratified",
+  "specification": {
+    "repository": "https://github.com/FinOps-Open-Cost-and-Usage-Spec/FOCUS_Spec",
+    "ref": "v1.4",
+    "commitSha": "f1eeb30a78f7c141ef1237d589355296a2761c1c",
+    "releaseAssets": [
+      { "name": "FOCUS_spec-v1_4.pdf", "path": "upstream/FOCUS_spec-v1_4.pdf", "sha256": "01005419ae9990faa6525b155b652489448a361cb840169ad368ad983bda8260", "upstreamDigest": "01005419ae9990faa6525b155b652489448a361cb840169ad368ad983bda8260" },
+      { "name": "FOCUS_specification-v1.4.zip", "path": "upstream/FOCUS_specification-v1.4.zip", "sha256": "9fcd58b42491534ca7f5d9e02e1c1375d5dbab6279cc0cc1bae14df3850b9026", "upstreamDigest": "9fcd58b42491534ca7f5d9e02e1c1375d5dbab6279cc0cc1bae14df3850b9026" },
+      { "name": "model-1.4.json", "path": "assets/focus/1.4/model-1.4.json", "sha256": "3dd2c0c6fcc2c3d1792060fcbebba4ae074cd4dade8cde72958bd37a9a8b183f", "upstreamDigest": "3dd2c0c6fcc2c3d1792060fcbebba4ae074cd4dade8cde72958bd37a9a8b183f" }
+    ],
+    "model": { "path": "assets/focus/1.4/model-1.4.json", "sha256": "3dd2c0c6fcc2c3d1792060fcbebba4ae074cd4dade8cde72958bd37a9a8b183f" }
+  },
+  "validator": {
+    "repository": "https://github.com/finopsfoundation/focus_validator",
+    "version": "2.2.1",
+    "commitSha": "21ea623a29cdd366380388e88f6659d5cfbe55eb"
+  },
+  "datasets": ["BillingPeriod", "ContractCommitment", "CostAndUsage", "InvoiceDetail"],
+  "retrievedAt": "2026-08-12T20:15:00.000Z"
+}

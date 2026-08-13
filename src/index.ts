@@ -1,6 +1,7 @@
 export * from "./adapters.js";
 export * from "./artifacts.js";
 export * from "./billing.js";
+export * from "./billing-v2.js";
 export * from "./builtin-scenarios.js";
 export * from "./decision.js";
 export * from "./drift.js";
@@ -9,6 +10,7 @@ export * from "./economics.js";
 export * from "./economics-cli.js";
 export * from "./env.js";
 export * from "./findings.js";
+export * from "./focus.js";
 export * from "./generate.js";
 export * from "./harbor.js";
 export * from "./pack.js";
