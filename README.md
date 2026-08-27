@@ -16,6 +16,18 @@ on a convincing demo or a single pass rate.
 
 This is **loop engineering**: run, inspect, compare, improve, then run again.
 
+## Why Ruhroh
+
+Most coding-agent decisions still rest on a convincing demo or a single pass
+rate. Neither survives contact with real work: a demo hides the runs that
+failed, and one number hides why it passed. Teams adopt, trust, or rank an
+agent on evidence nobody can inspect or reproduce.
+
+Ruhroh replaces that evidence. It preserves what each run actually delivered,
+holds a claim back until the samples, reviewer, and coverage justify it, and
+keeps the same task reproducible across agents and over time. The goal is not a
+higher score — it is a conclusion another person can verify.
+
 ## What Ruhroh Helps You Learn
 
 - **Did the agent deliver the requested outcome?** Review the finished project
